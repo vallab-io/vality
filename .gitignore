@@ -8,6 +8,7 @@
 # ===============================
 node_modules/
 .pnpm-store/
+.npm/
 
 # ===============================
 # Build outputs
@@ -36,6 +37,7 @@ out/
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+.cursor/
 *.swp
 *.swo
 *~
@@ -74,15 +76,23 @@ coverage/
 *.tsbuildinfo
 
 # ===============================
+# Linting & Formatting
+# ===============================
+.eslintcache
+.stylelintcache
+
+# ===============================
 # Next.js specific
 # ===============================
 .next/
 out/
 .swc/
-next-env.d.ts
 
 # Vercel
 .vercel
+
+# next-env.d.ts는 TypeScript 설정에 필요하므로 버전 관리 권장
+# next-env.d.ts
 
 # ===============================
 # NestJS specific
