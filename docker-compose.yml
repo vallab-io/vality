@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 데이터베이스
+  postgres:
+    image: postgres:15-alpine
+    container_name: vality-postgres
+    environment:
+      POSTGRES_USER: vality
+      POSTGRES_PASSWORD: vality_password
+      POSTGRES_DB: vality_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vality"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vality-network
+
+  # Redis (선택적 - 캐싱/세션용)
+  redis:
+    image: redis:7-alpine
+    container_name: vality-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - vality-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  vality-network:
+    driver: bridge
+
