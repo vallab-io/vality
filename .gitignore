@@ -1,0 +1,152 @@
+# ===============================
+# Vality Monorepo .gitignore
+# NestJS + Next.js
+# ===============================
+
+# ===============================
+# Dependencies
+# ===============================
+node_modules/
+.pnpm-store/
+
+# ===============================
+# Build outputs
+# ===============================
+dist/
+build/
+.next/
+out/
+
+# ===============================
+# Environment variables
+# ===============================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# ===============================
+# IDE / Editor
+# ===============================
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+
+# ===============================
+# OS generated files
+# ===============================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ===============================
+# Logs
+# ===============================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ===============================
+# Testing
+# ===============================
+coverage/
+.nyc_output/
+
+# ===============================
+# TypeScript
+# ===============================
+*.tsbuildinfo
+
+# ===============================
+# Next.js specific
+# ===============================
+.next/
+out/
+.swc/
+next-env.d.ts
+
+# Vercel
+.vercel
+
+# ===============================
+# NestJS specific
+# ===============================
+dist/
+
+# ===============================
+# Prisma
+# ===============================
+# Prisma 클라이언트는 생성 후 gitignore (node_modules에 생성됨)
+# prisma/migrations는 버전 관리 필요하므로 제외하지 않음
+
+# ===============================
+# Docker
+# ===============================
+# Docker 볼륨 데이터
+postgres_data/
+redis_data/
+
+# ===============================
+# Misc
+# ===============================
+*.pem
+*.key
+*.cert
+
+# Turborepo
+.turbo
+
+# PWA
+**/public/sw.js
+**/public/workbox-*.js
+**/public/worker-*.js
+**/public/sw.js.map
+**/public/workbox-*.js.map
+**/public/worker-*.js.map
+
+# Storybook
+storybook-static/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Package manager lock files (선택: 하나만 사용하는 것이 좋음)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# ===============================
+# Uploads (로컬 개발용 업로드 폴더)
+# ===============================
+uploads/
+public/uploads/
+
+# ===============================
+# Generated files
+# ===============================
+# OpenAPI 자동 생성 클라이언트 (선택적)
+# apps/web/src/lib/api/generated/
+
+# Swagger JSON 출력
+openapi.json
+swagger.json
+
