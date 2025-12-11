@@ -84,6 +84,24 @@ export default function NewsletterSettingsPage() {
     setFormData((prev) => ({ ...prev, timezone: value }));
   };
 
+  const embedCode = `<iframe
+  src="https://vality.io/@${MOCK_USER.username}/${formData.slug}/subscribe-widget"
+  width="100%"
+  height="220"
+  style="border:1px solid #e5e5e5; border-radius:12px;"
+  title="Subscribe to ${formData.name}"
+></iframe>`;
+
+  const handleCopyEmbed = async () => {
+    try {
+      await navigator.clipboard.writeText(embedCode);
+      toast.success("임베드 코드가 복사되었습니다.");
+    } catch (error) {
+      console.error("Copy embed error:", error);
+      toast.error("복사에 실패했습니다.");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -234,6 +252,36 @@ export default function NewsletterSettingsPage() {
                 {isLoading ? "저장 중..." : "변경사항 저장"}
               </Button>
             </div>
+          </div>
+        </section>
+
+        {/* Subscribe Widget Section */}
+        <section className="rounded-lg border border-border">
+          <div className="border-b border-border px-6 py-4">
+            <h2 className="font-medium">구독 위젯</h2>
+            <p className="text-sm text-muted-foreground">
+              블로그나 웹사이트 어디에서든 붙여넣을 수 있는 구독 폼입니다.
+            </p>
+          </div>
+
+          <div className="p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">임베드 코드</p>
+                <p className="text-xs text-muted-foreground">
+                  iframe 코드를 복사해 붙여넣으세요.
+                </p>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleCopyEmbed}>
+                코드 복사
+              </Button>
+            </div>
+
+            <Textarea
+              value={embedCode}
+              readOnly
+              className="min-h-[160px] font-mono text-xs"
+            />
           </div>
         </section>
       </div>
