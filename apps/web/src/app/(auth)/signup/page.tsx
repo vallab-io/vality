@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { AuthForm } from "../_components/auth-form";
+import { Logo } from "@/components/common";
 
 export const metadata: Metadata = {
   title: "회원가입",
@@ -12,9 +13,7 @@ export default function SignupPage() {
     <div className="flex min-h-screen flex-col">
       {/* Header */}
       <header className="flex h-14 items-center px-6">
-        <Link href="/" className="text-xl font-semibold tracking-tight">
-          Vality
-        </Link>
+        <Logo />
       </header>
 
       {/* Main */}

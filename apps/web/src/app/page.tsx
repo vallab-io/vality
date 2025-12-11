@@ -1,27 +1,12 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { MarketingHeader } from "./(marketing)/_components/marketing-header";
+import { MarketingFooter } from "./(marketing)/_components/marketing-footer";
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
-          <Link href="/" className="text-xl font-semibold tracking-tight">
-            Vality
-          </Link>
-          <nav className="flex items-center gap-1">
-            <Link href="/login">
-              <Button variant="ghost" size="sm">
-                로그인
-              </Button>
-            </Link>
-            <Link href="/signup">
-              <Button size="sm">시작하기</Button>
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <MarketingHeader />
 
       {/* Hero Section */}
       <main>
@@ -117,11 +102,7 @@ export default function HomePage() {
             </p>
             <div className="mt-8">
               <Link href="/signup">
-                <Button
-                  size="lg"
-                  variant="secondary"
-                  className="h-11 px-6"
-                >
+                <Button size="lg" variant="secondary" className="h-11 px-6">
                   무료로 시작하기
                 </Button>
               </Link>
@@ -130,22 +111,7 @@ export default function HomePage() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
-          <p className="text-sm text-muted-foreground">
-            © 2025 Vality
-          </p>
-          <nav className="flex items-center gap-4 text-sm text-muted-foreground">
-            <Link href="/terms" className="hover:text-foreground">
-              이용약관
-            </Link>
-            <Link href="/privacy" className="hover:text-foreground">
-              개인정보처리방침
-            </Link>
-          </nav>
-        </div>
-      </footer>
+      <MarketingFooter />
     </div>
   );
 }

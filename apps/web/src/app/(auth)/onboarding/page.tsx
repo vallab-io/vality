@@ -1,6 +1,6 @@
 import { Metadata } from "next";
-import Link from "next/link";
 import { OnboardingForm } from "./onboarding-form";
+import { Logo } from "@/components/common";
 
 export const metadata: Metadata = {
   title: "프로필 설정",
@@ -12,9 +12,7 @@ export default function OnboardingPage() {
     <div className="flex min-h-screen flex-col">
       {/* Header */}
       <header className="flex h-14 items-center px-6">
-        <Link href="/" className="text-xl font-semibold tracking-tight">
-          Vality
-        </Link>
+        <Logo />
       </header>
 
       {/* Main */}
@@ -35,4 +33,3 @@ export default function OnboardingPage() {
     </div>
   );
 }
-
