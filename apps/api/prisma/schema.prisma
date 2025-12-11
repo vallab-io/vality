@@ -14,19 +14,54 @@ datasource db {
 // User - 사용자 (뉴스레터 발행자)
 // ============================================
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  username     String   @unique
-  name         String?
-  bio          String?
-  avatarUrl    String?  @map("avatar_url")
-  passwordHash String?  @map("password_hash")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String?  @unique // 온보딩 시 설정
+  name      String?
+  bio       String?
+  avatarUrl String?  @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  newsletters Newsletter[] // 1:N (무료: 1개, 유료: 여러 개)
+  accounts    Account[] // 소셜 로그인 계정들
+  newsletters Newsletter[]
 
   @@map("users")
+}
+
+// ============================================
+// Account - 소셜 로그인 계정 (OAuth)
+// 인증 플로우: 소셜 로그인 선택 → 인증 진행 → 성공
+// ============================================
+model Account {
+  id                String   @id @default(cuid())
+  provider          String // google, apple
+  providerAccountId String   @map("provider_account_id")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @map("user_id")
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+// ============================================
+// VerificationCode - 이메일 인증 코드
+// 인증 플로우: 이메일 입력 → 인증코드 발송 → 코드 입력 → 검증
+// ============================================
+model VerificationCode {
+  id        String   @id @default(cuid())
+  email     String
+  code      String // 6자리 인증 코드
+  expiresAt DateTime @map("expires_at") // 만료 시간 (10분)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([email, code])
+  @@index([email])
+  @@index([expiresAt])
+  @@map("verification_codes")
 }
 
 // ============================================
@@ -35,35 +70,35 @@ model User {
 // ============================================
 model Newsletter {
   id          String  @id @default(cuid())
-  name        String // 뉴스레터 이름 (예: "John's Weekly")
-  description String? // 뉴스레터 설명
-  senderName  String? @map("sender_name") // 발신자 이름
+  name        String // 뉴스레터 이름
+  slug        String // URL용 슬러그
+  description String?
+  senderName  String? @map("sender_name")
   timezone    String  @default("Asia/Seoul")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  // 소유자 (User와 1:N 관계 - 무료: 1개, 유료: 여러 개)
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId String @map("owner_id")
 
   issues      Issue[]
   subscribers Subscriber[]
 
+  @@unique([ownerId, slug])
   @@index([ownerId])
   @@map("newsletters")
 }
 
 // ============================================
 // Issue - 뉴스레터 이슈 (개별 발행 글)
-// 뉴스레터에서 발행하는 개별 글/이메일
 // ============================================
 model Issue {
   id            String      @id @default(cuid())
   title         String
   slug          String
   content       String      @db.Text
-  excerpt       String? // 미리보기 텍스트
+  excerpt       String?
   coverImageUrl String?     @map("cover_image_url")
   status        IssueStatus @default(DRAFT)
   publishedAt   DateTime?   @map("published_at")
@@ -83,15 +118,14 @@ model Issue {
 }
 
 enum IssueStatus {
-  DRAFT // 초안
-  SCHEDULED // 예약됨
-  PUBLISHED // 발행됨
-  ARCHIVED // 보관됨
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
 }
 
 // ============================================
 // Subscriber - 구독자
-// 뉴스레터를 구독하는 사람
 // ============================================
 model Subscriber {
   id             String    @id @default(cuid())
@@ -112,14 +146,13 @@ model Subscriber {
 }
 
 enum SubStatus {
-  PENDING // 확인 대기
-  ACTIVE // 활성
-  UNSUBSCRIBED // 구독 취소
+  PENDING
+  ACTIVE
+  UNSUBSCRIBED
 }
 
 // ============================================
 // EmailLog - 이메일 발송 로그
-// Issue 발송 시 각 구독자별 발송 기록
 // ============================================
 model EmailLog {
   id        String      @id @default(cuid())
@@ -141,11 +174,11 @@ model EmailLog {
 }
 
 enum EmailStatus {
-  PENDING // 대기
-  SENT // 발송됨
-  DELIVERED // 전달됨
-  OPENED // 열람됨
-  CLICKED // 클릭됨
-  BOUNCED // 반송됨
-  FAILED // 실패
+  PENDING
+  SENT
+  DELIVERED
+  OPENED
+  CLICKED
+  BOUNCED
+  FAILED
 }
