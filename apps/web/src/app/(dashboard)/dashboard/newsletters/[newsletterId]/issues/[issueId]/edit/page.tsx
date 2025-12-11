@@ -83,6 +83,8 @@ interface IssueData {
 }
 
 type PreviewMode = "blog" | "email";
+type RecipientOption = "everyone" | "nobody";
+type SendOption = "now" | "scheduled";
 
 export default function EditIssuePage() {
   const params = useParams();
@@ -98,7 +100,12 @@ export default function EditIssuePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
-  const [sendEmail, setSendEmail] = useState(true);
+
+  // 발행 옵션 상태
+  const [recipientOption, setRecipientOption] = useState<RecipientOption>("everyone");
+  const [sendOption, setSendOption] = useState<SendOption>("now");
+  const [scheduledDate, setScheduledDate] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("");
 
   const [formData, setFormData] = useState({
     title: "",
@@ -112,12 +119,17 @@ export default function EditIssuePage() {
   );
 
   const generateSlug = (title: string) => {
-    return title
+    const cleaned = title
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
-      .replace(/[^a-z0-9가-힣\s-]/g, "")
+      .replace(/[^a-z0-9\s-]/g, "")
       .replace(/\s+/g, "-")
       .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "")
       .slice(0, 50);
+
+    return cleaned || `issue-${Date.now()}`;
   };
 
   // 이슈 데이터 로드
@@ -222,7 +234,6 @@ export default function EditIssuePage() {
 
       setIsUploading(true);
       try {
-        // TODO: 실제 API 연동
         await new Promise((resolve) => setTimeout(resolve, 1000));
         const mockUrl = URL.createObjectURL(file);
 
@@ -343,19 +354,38 @@ export default function EditIssuePage() {
       return;
     }
 
+    if (sendOption === "scheduled") {
+      if (!scheduledDate || !scheduledTime) {
+        toast.error("예약 날짜와 시간을 입력해주세요.");
+        return;
+      }
+    }
+
     setIsPublishing(true);
     try {
-      console.log("Publish:", {
+      const publishData = {
         newsletterId,
         issueId,
         ...formData,
         slug: publishSlug,
-        sendEmail,
-        recipientCount: sendEmail ? activeSubscribers.length : 0,
-      });
+        recipientOption,
+        sendOption,
+        scheduledAt:
+          sendOption === "scheduled"
+            ? new Date(`${scheduledDate}T${scheduledTime}`).toISOString()
+            : null,
+        recipientCount:
+          recipientOption === "everyone" ? activeSubscribers.length : 0,
+      };
+
+      console.log("Publish:", publishData);
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      if (sendEmail) {
+      if (sendOption === "scheduled") {
+        toast.success(
+          `발행 예약 완료! ${scheduledDate} ${scheduledTime}에 발행됩니다.`
+        );
+      } else if (recipientOption === "everyone") {
         toast.success(
           `발행 완료! ${activeSubscribers.length}명에게 이메일을 발송했습니다.`
         );
@@ -371,6 +401,9 @@ export default function EditIssuePage() {
       setIsPublishing(false);
     }
   };
+
+  // 최소 예약 가능 날짜 (현재 날짜)
+  const today = new Date().toISOString().split("T")[0];
 
   if (isLoading) {
     return (
@@ -395,6 +428,46 @@ export default function EditIssuePage() {
 
   return (
     <div className="flex h-screen flex-col bg-background">
+      {/* Top Bar */}
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <Link
+          href={`/dashboard/newsletters/${newsletterId}/issues`}
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeftIcon className="h-4 w-4" />
+          나가기
+        </Link>
+
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            onClick={handleSave}
+            disabled={isSaving || isPublishing}
+            className="text-primary hover:text-primary"
+          >
+            {isSaving ? "저장 중..." : "임시저장"}
+          </Button>
+          {!isPublished && (
+            <Button
+              onClick={openPublishDialog}
+              disabled={isSaving || isPublishing}
+              className="bg-primary hover:bg-primary/90"
+            >
+              발행하기
+            </Button>
+          )}
+          {isPublished && (
+            <Button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="bg-primary hover:bg-primary/90"
+            >
+              업데이트
+            </Button>
+          )}
+        </div>
+      </div>
+
       {/* Split View */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left: Editor */}
@@ -525,7 +598,7 @@ export default function EditIssuePage() {
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                블로그
+                아카이브
               </button>
               <button
                 onClick={() => setPreviewMode("email")}
@@ -565,46 +638,6 @@ export default function EditIssuePage() {
         </div>
       </div>
 
-      {/* Bottom Bar */}
-      <div className="flex items-center justify-between border-t border-border px-4 py-3">
-        <Link
-          href={`/dashboard/newsletters/${newsletterId}/issues`}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeftIcon className="h-4 w-4" />
-          나가기
-        </Link>
-
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            onClick={handleSave}
-            disabled={isSaving || isPublishing}
-            className="text-primary hover:text-primary"
-          >
-            {isSaving ? "저장 중..." : "임시저장"}
-          </Button>
-          {!isPublished && (
-            <Button
-              onClick={openPublishDialog}
-              disabled={isSaving || isPublishing}
-              className="bg-primary hover:bg-primary/90"
-            >
-              출간하기
-            </Button>
-          )}
-          {isPublished && (
-            <Button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="bg-primary hover:bg-primary/90"
-            >
-              업데이트
-            </Button>
-          )}
-        </div>
-      </div>
-
       {/* Publish Dialog */}
       <Dialog open={showPublishDialog} onOpenChange={setShowPublishDialog}>
         <DialogContent className="sm:max-w-lg">
@@ -616,10 +649,11 @@ export default function EditIssuePage() {
           </DialogHeader>
 
           <div className="space-y-6 py-4">
+            {/* URL Slug */}
             <div className="space-y-2">
               <Label htmlFor="slug">URL 슬러그</Label>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">
+                <span className="shrink-0 text-sm text-muted-foreground">
                   /@{MOCK_USER.username}/{MOCK_NEWSLETTER.slug}/
                 </span>
                 <Input
@@ -635,44 +669,122 @@ export default function EditIssuePage() {
               </p>
             </div>
 
-            <div className="rounded-lg border border-border p-4">
-              <label className="flex cursor-pointer items-start gap-3">
-                <input
-                  type="checkbox"
-                  checked={sendEmail}
-                  onChange={(e) => setSendEmail(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                />
-                <div className="flex-1">
-                  <span className="font-medium">구독자에게 이메일 발송</span>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {activeSubscribers.length}명의 활성 구독자에게 이메일이
-                    발송됩니다.
-                  </p>
-                </div>
-              </label>
-
-              {sendEmail && (
-                <div className="mt-4 rounded-lg bg-muted/50 p-3">
-                  <p className="text-sm font-medium">발송 대상</p>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {activeSubscribers.slice(0, 5).map((sub) => (
-                      <span
-                        key={sub.id}
-                        className="rounded bg-background px-2 py-0.5 text-xs"
-                      >
-                        {sub.email}
-                      </span>
-                    ))}
-                    {activeSubscribers.length > 5 && (
-                      <span className="rounded bg-background px-2 py-0.5 text-xs text-muted-foreground">
-                        외 {activeSubscribers.length - 5}명
-                      </span>
-                    )}
+            {/* Recipient Options */}
+            <div className="space-y-3">
+              <Label>이메일 발송 대상</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRecipientOption("everyone")}
+                  className={cn(
+                    "rounded-lg border p-3 text-left transition-colors",
+                    recipientOption === "everyone"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-muted-foreground/50"
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <UsersIcon className="h-4 w-4" />
+                    <span className="font-medium">모든 구독자</span>
                   </div>
-                </div>
-              )}
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {activeSubscribers.length}명에게 발송
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRecipientOption("nobody")}
+                  className={cn(
+                    "rounded-lg border p-3 text-left transition-colors",
+                    recipientOption === "nobody"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-muted-foreground/50"
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <NoMailIcon className="h-4 w-4" />
+                    <span className="font-medium">발송 안함</span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    아카이브만 게시
+                  </p>
+                </button>
+              </div>
             </div>
+
+            {/* Send Timing (only if sending emails) */}
+            {recipientOption === "everyone" && (
+              <div className="space-y-3">
+                <Label>발송 시점</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSendOption("now")}
+                    className={cn(
+                      "rounded-lg border p-3 text-left transition-colors",
+                      sendOption === "now"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-muted-foreground/50"
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <SendIcon className="h-4 w-4" />
+                      <span className="font-medium">바로 발송</span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      즉시 이메일 발송
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSendOption("scheduled")}
+                    className={cn(
+                      "rounded-lg border p-3 text-left transition-colors",
+                      sendOption === "scheduled"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-muted-foreground/50"
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <ClockIcon className="h-4 w-4" />
+                      <span className="font-medium">예약 발송</span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      날짜와 시간 지정
+                    </p>
+                  </button>
+                </div>
+
+                {/* Scheduled Date/Time */}
+                {sendOption === "scheduled" && (
+                  <div className="mt-3 grid grid-cols-2 gap-3 rounded-lg border border-border p-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="date" className="text-xs">
+                        날짜
+                      </Label>
+                      <Input
+                        id="date"
+                        type="date"
+                        min={today}
+                        value={scheduledDate}
+                        onChange={(e) => setScheduledDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="time" className="text-xs">
+                        시간
+                      </Label>
+                      <Input
+                        id="time"
+                        type="time"
+                        value={scheduledTime}
+                        onChange={(e) => setScheduledTime(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-2">
@@ -686,8 +798,10 @@ export default function EditIssuePage() {
             <Button onClick={handlePublish} disabled={isPublishing}>
               {isPublishing
                 ? "발행 중..."
-                : sendEmail
-                ? "발행 및 이메일 발송"
+                : sendOption === "scheduled" && recipientOption === "everyone"
+                ? "예약 발행"
+                : recipientOption === "everyone"
+                ? "발행 및 발송"
                 : "발행하기"}
             </Button>
           </div>
@@ -773,6 +887,45 @@ function CodeIcon({ className }: { className?: string }) {
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <polyline points="16,18 22,12 16,6" />
       <polyline points="8,6 2,12 8,18" />
+    </svg>
+  );
+}
+
+function UsersIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 00-3-3.87" />
+      <path d="M16 3.13a4 4 0 010 7.75" />
+    </svg>
+  );
+}
+
+function NoMailIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M22 6a2 2 0 00-2-2H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6z" />
+      <path d="M2 6l10 7 10-7" />
+      <line x1="2" y1="2" x2="22" y2="22" />
+    </svg>
+  );
+}
+
+function SendIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <line x1="22" y1="2" x2="11" y2="13" />
+      <polygon points="22,2 15,22 11,13 2,9 22,2" />
+    </svg>
+  );
+}
+
+function ClockIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12,6 12,12 16,14" />
     </svg>
   );
 }
@@ -960,7 +1113,6 @@ function renderMarkdown(content: string) {
 function renderInlineMarkdown(text: string) {
   let parts: (string | React.ReactNode)[] = [text];
 
-  // Links: [text](url)
   parts = parts.flatMap((part, i) => {
     if (typeof part !== "string") return part;
     return part.split(/(\[[^\]]+\]\([^)]+\))/g).map((segment, j) => {
@@ -982,7 +1134,6 @@ function renderInlineMarkdown(text: string) {
     });
   });
 
-  // Images: ![alt](url)
   parts = parts.flatMap((part, i) => {
     if (typeof part !== "string") return part;
     return part.split(/(!\[[^\]]*\]\([^)]+\))/g).map((segment, j) => {
@@ -1001,7 +1152,6 @@ function renderInlineMarkdown(text: string) {
     });
   });
 
-  // Strikethrough: ~~text~~
   parts = parts.flatMap((part, i) => {
     if (typeof part !== "string") return part;
     return part.split(/(~~[^~]+~~)/g).map((segment, j) => {
@@ -1012,7 +1162,6 @@ function renderInlineMarkdown(text: string) {
     });
   });
 
-  // Bold: **text**
   parts = parts.flatMap((part, i) => {
     if (typeof part !== "string") return part;
     return part.split(/(\*\*[^*]+\*\*)/g).map((segment, j) => {
@@ -1023,7 +1172,6 @@ function renderInlineMarkdown(text: string) {
     });
   });
 
-  // Italic: *text*
   parts = parts.flatMap((part, i) => {
     if (typeof part !== "string") return part;
     return part.split(/(\*[^*]+\*)/g).map((segment, j) => {
@@ -1034,7 +1182,6 @@ function renderInlineMarkdown(text: string) {
     });
   });
 
-  // Inline code: `code`
   parts = parts.flatMap((part, i) => {
     if (typeof part !== "string") return part;
     return part.split(/(`[^`]+`)/g).map((segment, j) => {

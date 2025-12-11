@@ -38,6 +38,8 @@ const MOCK_SUBSCRIBERS = [
 ];
 
 type PreviewMode = "blog" | "email";
+type RecipientOption = "everyone" | "nobody";
+type SendOption = "now" | "scheduled";
 
 export default function NewIssuePage() {
   const params = useParams();
@@ -51,7 +53,12 @@ export default function NewIssuePage() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
-  const [sendEmail, setSendEmail] = useState(true);
+
+  // 발행 옵션 상태
+  const [recipientOption, setRecipientOption] = useState<RecipientOption>("everyone");
+  const [sendOption, setSendOption] = useState<SendOption>("now");
+  const [scheduledDate, setScheduledDate] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("");
 
   const [formData, setFormData] = useState({
     title: "",
@@ -65,12 +72,19 @@ export default function NewIssuePage() {
   );
 
   const generateSlug = (title: string) => {
-    return title
+    // 한글/기타 문자는 제거하고 영문 소문자, 숫자, 하이픈만 허용
+    const cleaned = title
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // 발음기호 제거
       .toLowerCase()
-      .replace(/[^a-z0-9가-힣\s-]/g, "")
+      .replace(/[^a-z0-9\s-]/g, "")
       .replace(/\s+/g, "-")
       .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "")
       .slice(0, 50);
+
+    // 모두 제거되면 안전한 기본값 사용
+    return cleaned || `issue-${Date.now()}`;
   };
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,13 +117,9 @@ export default function NewIssuePage() {
     const newContent = beforeText + prefix + selectedText + suffix + afterText;
     setFormData((prev) => ({ ...prev, content: newContent }));
 
-    // 커서 위치 조정
     setTimeout(() => {
       textarea.focus();
-      textarea.setSelectionRange(
-        start + prefix.length,
-        end + prefix.length
-      );
+      textarea.setSelectionRange(start + prefix.length, end + prefix.length);
     }, 0);
   };
 
@@ -120,8 +130,7 @@ export default function NewIssuePage() {
 
     const start = textarea.selectionStart;
     const content = formData.content;
-    
-    // 현재 줄의 시작 위치 찾기
+
     let lineStart = start;
     while (lineStart > 0 && content[lineStart - 1] !== "\n") {
       lineStart--;
@@ -142,7 +151,6 @@ export default function NewIssuePage() {
   // 이미지 업로드 핸들러
   const handleImageUpload = useCallback(
     async (file: File) => {
-      // 파일 유효성 검사
       const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
       if (!validTypes.includes(file.type)) {
         toast.error("JPG, PNG, GIF, WEBP 형식만 업로드 가능합니다.");
@@ -157,17 +165,9 @@ export default function NewIssuePage() {
 
       setIsUploading(true);
       try {
-        // TODO: 실제 API 연동
-        // const formData = new FormData();
-        // formData.append("file", file);
-        // const response = await fetch("/api/upload", { method: "POST", body: formData });
-        // const { url } = await response.json();
-
-        // 목업: 로컬 URL 생성 (실제로는 서버 URL)
         await new Promise((resolve) => setTimeout(resolve, 1000));
         const mockUrl = URL.createObjectURL(file);
 
-        // 커서 위치에 이미지 마크다운 삽입
         const textarea = textareaRef.current;
         if (textarea) {
           const start = textarea.selectionStart;
@@ -180,7 +180,6 @@ export default function NewIssuePage() {
             content: beforeText + imageMarkdown + afterText,
           }));
 
-          // 커서 위치 조정
           setTimeout(() => {
             textarea.focus();
             const newPosition = start + imageMarkdown.length;
@@ -208,11 +207,9 @@ export default function NewIssuePage() {
     if (file) {
       handleImageUpload(file);
     }
-    // input 초기화 (같은 파일 다시 선택 가능하도록)
     e.target.value = "";
   };
 
-  // 드래그 앤 드롭 핸들러
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -231,7 +228,6 @@ export default function NewIssuePage() {
     e.stopPropagation();
   };
 
-  // 클립보드 붙여넣기 핸들러
   const handlePaste = useCallback(
     (e: React.ClipboardEvent) => {
       const items = e.clipboardData.items;
@@ -287,18 +283,37 @@ export default function NewIssuePage() {
       return;
     }
 
+    if (sendOption === "scheduled") {
+      if (!scheduledDate || !scheduledTime) {
+        toast.error("예약 날짜와 시간을 입력해주세요.");
+        return;
+      }
+    }
+
     setIsPublishing(true);
     try {
-      console.log("Publish:", {
+      const publishData = {
         newsletterId,
         ...formData,
         slug: publishSlug,
-        sendEmail,
-        recipientCount: sendEmail ? activeSubscribers.length : 0,
-      });
+        recipientOption,
+        sendOption,
+        scheduledAt:
+          sendOption === "scheduled"
+            ? new Date(`${scheduledDate}T${scheduledTime}`).toISOString()
+            : null,
+        recipientCount:
+          recipientOption === "everyone" ? activeSubscribers.length : 0,
+      };
+
+      console.log("Publish:", publishData);
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      if (sendEmail) {
+      if (sendOption === "scheduled") {
+        toast.success(
+          `발행 예약 완료! ${scheduledDate} ${scheduledTime}에 발행됩니다.`
+        );
+      } else if (recipientOption === "everyone") {
         toast.success(
           `발행 완료! ${activeSubscribers.length}명에게 이메일을 발송했습니다.`
         );
@@ -315,8 +330,40 @@ export default function NewIssuePage() {
     }
   };
 
+  // 최소 예약 가능 날짜 (현재 날짜)
+  const today = new Date().toISOString().split("T")[0];
+
   return (
     <div className="flex h-screen flex-col bg-background">
+      {/* Top Bar */}
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <Link
+          href={`/dashboard/newsletters/${newsletterId}/issues`}
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeftIcon className="h-4 w-4" />
+          나가기
+        </Link>
+
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            onClick={handleSaveDraft}
+            disabled={isSaving || isPublishing}
+            className="text-primary hover:text-primary"
+          >
+            {isSaving ? "저장 중..." : "임시저장"}
+          </Button>
+          <Button
+            onClick={openPublishDialog}
+            disabled={isSaving || isPublishing}
+            className="bg-primary hover:bg-primary/90"
+          >
+            발행하기
+          </Button>
+        </div>
+      </div>
+
       {/* Split View */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left: Editor */}
@@ -334,7 +381,6 @@ export default function NewIssuePage() {
 
           {/* Toolbar */}
           <div className="flex flex-wrap items-center gap-1 border-b border-border px-4 py-2">
-            {/* Headings */}
             <ToolbarButton onClick={() => insertLineFormat("# ")} title="제목 1">
               H<sub>1</sub>
             </ToolbarButton>
@@ -350,7 +396,6 @@ export default function NewIssuePage() {
 
             <div className="mx-2 h-5 w-px bg-border" />
 
-            {/* Text Formatting */}
             <ToolbarButton onClick={() => insertFormat("**")} title="굵게">
               <span className="font-bold">B</span>
             </ToolbarButton>
@@ -363,27 +408,18 @@ export default function NewIssuePage() {
 
             <div className="mx-2 h-5 w-px bg-border" />
 
-            {/* Quote */}
             <ToolbarButton onClick={() => insertLineFormat("> ")} title="인용">
               <QuoteIcon className="h-4 w-4" />
             </ToolbarButton>
-
-            {/* List */}
             <ToolbarButton onClick={() => insertLineFormat("- ")} title="목록">
               <ListIcon className="h-4 w-4" />
             </ToolbarButton>
 
             <div className="mx-2 h-5 w-px bg-border" />
 
-            {/* Link */}
-            <ToolbarButton
-              onClick={() => insertFormat("[", "](url)")}
-              title="링크"
-            >
+            <ToolbarButton onClick={() => insertFormat("[", "](url)")} title="링크">
               <LinkIcon className="h-4 w-4" />
             </ToolbarButton>
-
-            {/* Image */}
             <ToolbarButton
               onClick={handleImageButtonClick}
               title="이미지 업로드"
@@ -395,7 +431,6 @@ export default function NewIssuePage() {
                 <ImageIcon className="h-4 w-4" />
               )}
             </ToolbarButton>
-            {/* Hidden file input */}
             <input
               ref={fileInputRef}
               type="file"
@@ -403,8 +438,6 @@ export default function NewIssuePage() {
               onChange={handleFileInputChange}
               className="hidden"
             />
-
-            {/* Code */}
             <ToolbarButton onClick={() => insertFormat("`")} title="인라인 코드">
               <CodeIcon className="h-4 w-4" />
             </ToolbarButton>
@@ -429,7 +462,6 @@ export default function NewIssuePage() {
 
         {/* Right: Preview */}
         <div className="flex w-1/2 flex-col bg-muted/30">
-          {/* Preview Header */}
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <span className="text-sm font-medium text-muted-foreground">
               미리보기
@@ -444,7 +476,7 @@ export default function NewIssuePage() {
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                블로그
+                아카이브
               </button>
               <button
                 onClick={() => setPreviewMode("email")}
@@ -460,7 +492,6 @@ export default function NewIssuePage() {
             </div>
           </div>
 
-          {/* Preview Content */}
           <div className="flex-1 overflow-auto p-6">
             {formData.content ? (
               previewMode === "blog" ? (
@@ -485,35 +516,6 @@ export default function NewIssuePage() {
         </div>
       </div>
 
-      {/* Bottom Bar */}
-      <div className="flex items-center justify-between border-t border-border px-4 py-3">
-        <Link
-          href={`/dashboard/newsletters/${newsletterId}/issues`}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeftIcon className="h-4 w-4" />
-          나가기
-        </Link>
-
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            onClick={handleSaveDraft}
-            disabled={isSaving || isPublishing}
-            className="text-primary hover:text-primary"
-          >
-            {isSaving ? "저장 중..." : "임시저장"}
-          </Button>
-          <Button
-            onClick={openPublishDialog}
-            disabled={isSaving || isPublishing}
-            className="bg-primary hover:bg-primary/90"
-          >
-            출간하기
-          </Button>
-        </div>
-      </div>
-
       {/* Publish Dialog */}
       <Dialog open={showPublishDialog} onOpenChange={setShowPublishDialog}>
         <DialogContent className="sm:max-w-lg">
@@ -525,10 +527,11 @@ export default function NewIssuePage() {
           </DialogHeader>
 
           <div className="space-y-6 py-4">
+            {/* URL Slug */}
             <div className="space-y-2">
               <Label htmlFor="slug">URL 슬러그</Label>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">
+                <span className="shrink-0 text-sm text-muted-foreground">
                   /@{MOCK_USER.username}/{MOCK_NEWSLETTER.slug}/
                 </span>
                 <Input
@@ -544,44 +547,122 @@ export default function NewIssuePage() {
               </p>
             </div>
 
-            <div className="rounded-lg border border-border p-4">
-              <label className="flex cursor-pointer items-start gap-3">
-                <input
-                  type="checkbox"
-                  checked={sendEmail}
-                  onChange={(e) => setSendEmail(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                />
-                <div className="flex-1">
-                  <span className="font-medium">구독자에게 이메일 발송</span>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {activeSubscribers.length}명의 활성 구독자에게 이메일이
-                    발송됩니다.
-                  </p>
-                </div>
-              </label>
-
-              {sendEmail && (
-                <div className="mt-4 rounded-lg bg-muted/50 p-3">
-                  <p className="text-sm font-medium">발송 대상</p>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {activeSubscribers.slice(0, 5).map((sub) => (
-                      <span
-                        key={sub.id}
-                        className="rounded bg-background px-2 py-0.5 text-xs"
-                      >
-                        {sub.email}
-                      </span>
-                    ))}
-                    {activeSubscribers.length > 5 && (
-                      <span className="rounded bg-background px-2 py-0.5 text-xs text-muted-foreground">
-                        외 {activeSubscribers.length - 5}명
-                      </span>
-                    )}
+            {/* Recipient Options */}
+            <div className="space-y-3">
+              <Label>이메일 발송 대상</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRecipientOption("everyone")}
+                  className={cn(
+                    "rounded-lg border p-3 text-left transition-colors",
+                    recipientOption === "everyone"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-muted-foreground/50"
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <UsersIcon className="h-4 w-4" />
+                    <span className="font-medium">모든 구독자</span>
                   </div>
-                </div>
-              )}
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {activeSubscribers.length}명에게 발송
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRecipientOption("nobody")}
+                  className={cn(
+                    "rounded-lg border p-3 text-left transition-colors",
+                    recipientOption === "nobody"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-muted-foreground/50"
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <NoMailIcon className="h-4 w-4" />
+                    <span className="font-medium">발송 안함</span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    아카이브만 게시
+                  </p>
+                </button>
+              </div>
             </div>
+
+            {/* Send Timing (only if sending emails) */}
+            {recipientOption === "everyone" && (
+              <div className="space-y-3">
+                <Label>발송 시점</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSendOption("now")}
+                    className={cn(
+                      "rounded-lg border p-3 text-left transition-colors",
+                      sendOption === "now"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-muted-foreground/50"
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <SendIcon className="h-4 w-4" />
+                      <span className="font-medium">바로 발송</span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      즉시 이메일 발송
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSendOption("scheduled")}
+                    className={cn(
+                      "rounded-lg border p-3 text-left transition-colors",
+                      sendOption === "scheduled"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-muted-foreground/50"
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <ClockIcon className="h-4 w-4" />
+                      <span className="font-medium">예약 발송</span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      날짜와 시간 지정
+                    </p>
+                  </button>
+                </div>
+
+                {/* Scheduled Date/Time */}
+                {sendOption === "scheduled" && (
+                  <div className="mt-3 grid grid-cols-2 gap-3 rounded-lg border border-border p-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="date" className="text-xs">
+                        날짜
+                      </Label>
+                      <Input
+                        id="date"
+                        type="date"
+                        min={today}
+                        value={scheduledDate}
+                        onChange={(e) => setScheduledDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="time" className="text-xs">
+                        시간
+                      </Label>
+                      <Input
+                        id="time"
+                        type="time"
+                        value={scheduledTime}
+                        onChange={(e) => setScheduledTime(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-2">
@@ -595,8 +676,10 @@ export default function NewIssuePage() {
             <Button onClick={handlePublish} disabled={isPublishing}>
               {isPublishing
                 ? "발행 중..."
-                : sendEmail
-                ? "발행 및 이메일 발송"
+                : sendOption === "scheduled" && recipientOption === "everyone"
+                ? "예약 발행"
+                : recipientOption === "everyone"
+                ? "발행 및 발송"
                 : "발행하기"}
             </Button>
           </div>
@@ -686,6 +769,45 @@ function CodeIcon({ className }: { className?: string }) {
   );
 }
 
+function UsersIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 00-3-3.87" />
+      <path d="M16 3.13a4 4 0 010 7.75" />
+    </svg>
+  );
+}
+
+function NoMailIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M22 6a2 2 0 00-2-2H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6z" />
+      <path d="M2 6l10 7 10-7" />
+      <line x1="2" y1="2" x2="22" y2="22" />
+    </svg>
+  );
+}
+
+function SendIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <line x1="22" y1="2" x2="11" y2="13" />
+      <polygon points="22,2 15,22 11,13 2,9 22,2" />
+    </svg>
+  );
+}
+
+function ClockIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12,6 12,12 16,14" />
+    </svg>
+  );
+}
+
 // 블로그 미리보기 컴포넌트
 function BlogPreview({
   title,
@@ -705,9 +827,7 @@ function BlogPreview({
   return (
     <div className="mx-auto max-w-2xl rounded-lg border border-border bg-background p-8">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold">
-          {title || "제목을 입력하세요"}
-        </h1>
+        <h1 className="text-3xl font-bold">{title || "제목을 입력하세요"}</h1>
         <div className="mt-4 flex items-center gap-3 text-sm text-muted-foreground">
           <div className="h-8 w-8 rounded-full bg-muted" />
           <span>@{author}</span>
@@ -752,9 +872,7 @@ function EmailPreview({
             </div>
             <div>
               <p className="font-medium">{newsletterName}</p>
-              <p className="text-xs text-muted-foreground">
-                newsletter@vality.io
-              </p>
+              <p className="text-xs text-muted-foreground">newsletter@vality.io</p>
             </div>
           </div>
           <div className="mt-3">
@@ -790,7 +908,6 @@ function renderMarkdown(content: string) {
 
     if (!trimmed) return <br key={index} />;
 
-    // Heading 1
     if (trimmed.startsWith("# ")) {
       return (
         <h1 key={index} className="mt-8 mb-4 text-3xl font-bold">
@@ -799,7 +916,6 @@ function renderMarkdown(content: string) {
       );
     }
 
-    // Heading 2
     if (trimmed.startsWith("## ")) {
       return (
         <h2 key={index} className="mt-8 mb-4 text-2xl font-semibold">
@@ -808,7 +924,6 @@ function renderMarkdown(content: string) {
       );
     }
 
-    // Heading 3
     if (trimmed.startsWith("### ")) {
       return (
         <h3 key={index} className="mt-6 mb-3 text-xl font-semibold">
@@ -817,7 +932,6 @@ function renderMarkdown(content: string) {
       );
     }
 
-    // Heading 4
     if (trimmed.startsWith("#### ")) {
       return (
         <h4 key={index} className="mt-4 mb-2 text-lg font-semibold">
@@ -826,7 +940,6 @@ function renderMarkdown(content: string) {
       );
     }
 
-    // Bold list item
     if (trimmed.startsWith("- **")) {
       const match = trimmed.match(/- \*\*(.+?)\*\*:?\s*(.*)$/);
       if (match) {
@@ -839,7 +952,6 @@ function renderMarkdown(content: string) {
       }
     }
 
-    // Regular list item
     if (trimmed.startsWith("- ")) {
       return (
         <li key={index} className="ml-4 my-1">
@@ -848,7 +960,6 @@ function renderMarkdown(content: string) {
       );
     }
 
-    // Numbered list
     const numberedMatch = trimmed.match(/^(\d+)\.\s+(.+)$/);
     if (numberedMatch) {
       return (
@@ -858,7 +969,6 @@ function renderMarkdown(content: string) {
       );
     }
 
-    // Blockquote
     if (trimmed.startsWith("> ")) {
       return (
         <blockquote
@@ -870,7 +980,6 @@ function renderMarkdown(content: string) {
       );
     }
 
-    // Regular paragraph
     return (
       <p key={index} className="my-4 leading-relaxed">
         {renderInlineMarkdown(trimmed)}
@@ -882,7 +991,6 @@ function renderMarkdown(content: string) {
 function renderInlineMarkdown(text: string) {
   let parts: (string | React.ReactNode)[] = [text];
 
-  // Links: [text](url)
   parts = parts.flatMap((part, i) => {
     if (typeof part !== "string") return part;
     return part.split(/(\[[^\]]+\]\([^)]+\))/g).map((segment, j) => {
@@ -904,7 +1012,6 @@ function renderInlineMarkdown(text: string) {
     });
   });
 
-  // Images: ![alt](url)
   parts = parts.flatMap((part, i) => {
     if (typeof part !== "string") return part;
     return part.split(/(!\[[^\]]*\]\([^)]+\))/g).map((segment, j) => {
@@ -923,7 +1030,6 @@ function renderInlineMarkdown(text: string) {
     });
   });
 
-  // Strikethrough: ~~text~~
   parts = parts.flatMap((part, i) => {
     if (typeof part !== "string") return part;
     return part.split(/(~~[^~]+~~)/g).map((segment, j) => {
@@ -934,7 +1040,6 @@ function renderInlineMarkdown(text: string) {
     });
   });
 
-  // Bold: **text**
   parts = parts.flatMap((part, i) => {
     if (typeof part !== "string") return part;
     return part.split(/(\*\*[^*]+\*\*)/g).map((segment, j) => {
@@ -945,7 +1050,6 @@ function renderInlineMarkdown(text: string) {
     });
   });
 
-  // Italic: *text*
   parts = parts.flatMap((part, i) => {
     if (typeof part !== "string") return part;
     return part.split(/(\*[^*]+\*)/g).map((segment, j) => {
@@ -956,7 +1060,6 @@ function renderInlineMarkdown(text: string) {
     });
   });
 
-  // Inline code: `code`
   parts = parts.flatMap((part, i) => {
     if (typeof part !== "string") return part;
     return part.split(/(`[^`]+`)/g).map((segment, j) => {
