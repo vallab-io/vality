@@ -24,40 +24,65 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  newsletters Newsletter[]
-  subscribers Subscriber[]
+  newsletters Newsletter[] // 1:N (무료: 1개, 유료: 여러 개)
 
   @@map("users")
 }
 
 // ============================================
-// Newsletter - 뉴스레터 (게시글)
+// Newsletter - 뉴스레터 (채널)
+// 사용자가 운영하는 뉴스레터 브랜드/채널
 // ============================================
 model Newsletter {
-  id            String     @id @default(cuid())
-  title         String
-  slug          String
-  content       String     @db.Text
-  excerpt       String?
-  coverImageUrl String?    @map("cover_image_url")
-  status        PostStatus @default(DRAFT)
-  publishedAt   DateTime?  @map("published_at")
-  scheduledAt   DateTime?  @map("scheduled_at")
-  createdAt     DateTime   @default(now()) @map("created_at")
-  updatedAt     DateTime   @updatedAt @map("updated_at")
+  id          String  @id @default(cuid())
+  name        String // 뉴스레터 이름 (예: "John's Weekly")
+  description String? // 뉴스레터 설명
+  senderName  String? @map("sender_name") // 발신자 이름
+  timezone    String  @default("Asia/Seoul")
 
-  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  authorId String @map("author_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  emailLogs EmailLog[]
+  // 소유자 (User와 1:N 관계 - 무료: 1개, 유료: 여러 개)
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId String @map("owner_id")
 
-  @@unique([authorId, slug])
-  @@index([authorId, status])
-  @@index([publishedAt])
+  issues      Issue[]
+  subscribers Subscriber[]
+
+  @@index([ownerId])
   @@map("newsletters")
 }
 
-enum PostStatus {
+// ============================================
+// Issue - 뉴스레터 이슈 (개별 발행 글)
+// 뉴스레터에서 발행하는 개별 글/이메일
+// ============================================
+model Issue {
+  id            String      @id @default(cuid())
+  title         String
+  slug          String
+  content       String      @db.Text
+  excerpt       String? // 미리보기 텍스트
+  coverImageUrl String?     @map("cover_image_url")
+  status        IssueStatus @default(DRAFT)
+  publishedAt   DateTime?   @map("published_at")
+  scheduledAt   DateTime?   @map("scheduled_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  newsletter   Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade)
+  newsletterId String     @map("newsletter_id")
+
+  emailLogs EmailLog[]
+
+  @@unique([newsletterId, slug])
+  @@index([newsletterId, status])
+  @@index([publishedAt])
+  @@map("issues")
+}
+
+enum IssueStatus {
   DRAFT // 초안
   SCHEDULED // 예약됨
   PUBLISHED // 발행됨
@@ -66,6 +91,7 @@ enum PostStatus {
 
 // ============================================
 // Subscriber - 구독자
+// 뉴스레터를 구독하는 사람
 // ============================================
 model Subscriber {
   id             String    @id @default(cuid())
@@ -75,13 +101,13 @@ model Subscriber {
   confirmedAt    DateTime? @map("confirmed_at")
   unsubscribedAt DateTime? @map("unsubscribed_at")
 
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String @map("user_id")
+  newsletter   Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade)
+  newsletterId String     @map("newsletter_id")
 
   emailLogs EmailLog[]
 
-  @@unique([userId, email])
-  @@index([userId, status])
+  @@unique([newsletterId, email])
+  @@index([newsletterId, status])
   @@map("subscribers")
 }
 
@@ -93,6 +119,7 @@ enum SubStatus {
 
 // ============================================
 // EmailLog - 이메일 발송 로그
+// Issue 발송 시 각 구독자별 발송 기록
 // ============================================
 model EmailLog {
   id        String      @id @default(cuid())
@@ -102,13 +129,13 @@ model EmailLog {
   clickedAt DateTime?   @map("clicked_at")
   createdAt DateTime    @default(now()) @map("created_at")
 
-  newsletter   Newsletter @relation(fields: [newsletterId], references: [id], onDelete: Cascade)
-  newsletterId String     @map("newsletter_id")
+  issue   Issue  @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  issueId String @map("issue_id")
 
   subscriber   Subscriber @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
   subscriberId String     @map("subscriber_id")
 
-  @@index([newsletterId])
+  @@index([issueId])
   @@index([subscriberId])
   @@map("email_logs")
 }
@@ -122,4 +149,3 @@ enum EmailStatus {
   BOUNCED // 반송됨
   FAILED // 실패
 }
-
