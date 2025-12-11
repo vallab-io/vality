@@ -8,10 +8,15 @@ const nextConfig: NextConfig = {
         source: "/@:username",
         destination: "/:username",
       },
-      // /@username/slug -> /[username]/[slug]
+      // /@username/newsletterSlug -> /[username]/[newsletterSlug]
       {
-        source: "/@:username/:slug",
-        destination: "/:username/:slug",
+        source: "/@:username/:newsletterSlug",
+        destination: "/:username/:newsletterSlug",
+      },
+      // /@username/newsletterSlug/issueSlug -> /[username]/[newsletterSlug]/[issueSlug]
+      {
+        source: "/@:username/:newsletterSlug/:issueSlug",
+        destination: "/:username/:newsletterSlug/:issueSlug",
       },
     ];
   },

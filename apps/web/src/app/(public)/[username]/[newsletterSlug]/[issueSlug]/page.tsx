@@ -1,9 +1,8 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/common";
-import { SubscribeForm } from "../_components/subscribe-form";
+import { SubscribeForm } from "../../_components/subscribe-form";
 import { ShareButtons } from "./_components/share-buttons";
 
 // 목업 사용자 데이터
@@ -13,24 +12,26 @@ const MOCK_USERS: Record<string, { name: string; avatarUrl: string | null }> = {
 };
 
 // 목업 뉴스레터 데이터
-const MOCK_NEWSLETTERS: Record<
-  string,
-  {
-    id: string;
-    slug: string;
-    title: string;
-    content: string;
-    publishedAt: string;
-    author: string;
-  }
-> = {
-  "design-trends-2025": {
-    id: "1",
-    slug: "design-trends-2025",
-    title: "2025년 주목할 디자인 트렌드",
-    publishedAt: "2025-01-15",
-    author: "johndoe",
-    content: `
+const MOCK_NEWSLETTERS: Record<string, Record<string, { name: string }>> = {
+  johndoe: {
+    weekly: { name: "John's Weekly" },
+    "design-tips": { name: "Design Tips" },
+  },
+  jane: {
+    "tech-notes": { name: "Tech Notes" },
+  },
+};
+
+// 목업 이슈 데이터
+const MOCK_ISSUES: Record<string, Record<string, Record<string, Issue>>> = {
+  johndoe: {
+    weekly: {
+      "design-trends-2025": {
+        id: "clh2issue001abc123def",
+        slug: "design-trends-2025",
+        title: "2025년 주목할 디자인 트렌드",
+        publishedAt: "2025-01-15",
+        content: `
 새해를 맞아 올해 주목할 만한 디자인 트렌드를 정리해 보았습니다.
 
 ## 1. AI 기반 디자인 도구의 성숙
@@ -65,15 +66,14 @@ Figma의 AI 기능, Adobe Firefly의 발전, 그리고 새로운 스타트업들
 다음 주에는 실제로 이런 트렌드를 적용한 사례들을 살펴보겠습니다.
 
 읽어주셔서 감사합니다! 🙏
-    `,
-  },
-  "productivity-tips": {
-    id: "2",
-    slug: "productivity-tips",
-    title: "디자이너를 위한 생산성 팁 10가지",
-    publishedAt: "2025-01-08",
-    author: "johndoe",
-    content: `
+        `,
+      },
+      "productivity-tips": {
+        id: "clh2issue002abc123def",
+        slug: "productivity-tips",
+        title: "디자이너를 위한 생산성 팁 10가지",
+        publishedAt: "2025-01-08",
+        content: `
 바쁜 일상 속에서 효율적으로 일하는 방법을 공유합니다.
 
 ## 1. Figma 단축키 마스터하기
@@ -103,59 +103,129 @@ Figma의 AI 기능, Adobe Firefly의 발전, 그리고 새로운 스타트업들
 반복 작업을 자동화하는 플러그인을 찾아보세요. Content Reel, Unsplash, Iconify 등은 필수입니다.
 
 나머지 5가지는 다음 뉴스레터에서 이어서 다루겠습니다!
-    `,
+        `,
+      },
+      "remote-work-guide": {
+        id: "clh2issue003abc123def",
+        slug: "remote-work-guide",
+        title: "리모트 워크 3년차의 노하우",
+        publishedAt: "2025-01-01",
+        content: `
+재택근무를 시작한 지 3년. 그동안 배운 것들과 효과적인 원격 협업 방법에 대해 공유합니다.
+
+## 1. 전용 작업 공간 만들기
+
+침대에서 일하지 마세요. 업무 전용 공간을 만들면 뇌가 "이제 일할 시간"이라고 인식합니다.
+
+## 2. 루틴의 힘
+
+출근하지 않더라도 아침 루틴을 유지하세요. 샤워하고, 옷을 갈아입고, 커피를 마시는 것만으로도 업무 모드로 전환됩니다.
+
+## 3. 비동기 커뮤니케이션 마스터하기
+
+모든 것을 회의로 해결하려 하지 마세요. 문서화된 커뮤니케이션의 힘을 믿으세요.
+
+## 4. 카메라 켜기
+
+화상 회의에서 카메라를 켜면 집중력이 높아지고, 팀원과의 연결감도 유지됩니다.
+
+## 5. 명확한 업무 종료 시간
+
+집에서 일하면 언제 끝내야 할지 모호해집니다. 명확한 종료 시간을 정하고 지키세요.
+        `,
+      },
+    },
+    "design-tips": {
+      "figma-component-guide": {
+        id: "clh2issue007abc123def",
+        slug: "figma-component-guide",
+        title: "Figma 컴포넌트 완벽 가이드",
+        publishedAt: "2025-01-05",
+        content: `
+효율적인 컴포넌트 설계부터 베리언트 활용까지, Figma 컴포넌트의 모든 것을 다룹니다.
+
+## 1. 컴포넌트란?
+
+재사용 가능한 디자인 요소입니다. 한 번 만들어두면 프로젝트 전체에서 일관되게 사용할 수 있습니다.
+
+## 2. 좋은 컴포넌트의 조건
+
+- **유연성**: 다양한 상황에 대응 가능
+- **일관성**: 동일한 패턴 유지
+- **명확한 네이밍**: 누구나 찾기 쉬운 이름
+
+## 3. 베리언트 활용하기
+
+버튼의 크기, 상태, 스타일을 베리언트로 관리하면 훨씬 효율적입니다.
+
+## 4. 컴포넌트 프로퍼티
+
+Boolean, Instance swap, Text 프로퍼티를 활용해 더 유연한 컴포넌트를 만드세요.
+        `,
+      },
+    },
   },
 };
 
-// 이전/다음 글 목록
-const NEWSLETTER_ORDER = ["design-trends-2025", "productivity-tips"];
+// 이슈 목록 (이전/다음 네비게이션용)
+const ISSUE_ORDER: Record<string, Record<string, string[]>> = {
+  johndoe: {
+    weekly: ["design-trends-2025", "productivity-tips", "remote-work-guide"],
+    "design-tips": ["figma-component-guide"],
+  },
+};
 
-interface NewsletterPageProps {
-  params: Promise<{ username: string; slug: string }>;
+interface Issue {
+  id: string;
+  slug: string;
+  title: string;
+  publishedAt: string;
+  content: string;
+}
+
+interface IssuePageProps {
+  params: Promise<{ username: string; newsletterSlug: string; issueSlug: string }>;
 }
 
 export async function generateMetadata({
   params,
-}: NewsletterPageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const newsletter = MOCK_NEWSLETTERS[slug];
+}: IssuePageProps): Promise<Metadata> {
+  const { username, newsletterSlug, issueSlug } = await params;
+  const issue = MOCK_ISSUES[username]?.[newsletterSlug]?.[issueSlug];
+  const user = MOCK_USERS[username];
 
-  if (!newsletter) {
-    return { title: "뉴스레터를 찾을 수 없습니다" };
+  if (!issue || !user) {
+    return { title: "글을 찾을 수 없습니다" };
   }
 
-  const author = MOCK_USERS[newsletter.author];
-
   return {
-    title: newsletter.title,
-    description: newsletter.content.slice(0, 160).replace(/[#\n]/g, " ").trim(),
+    title: issue.title,
+    description: issue.content.slice(0, 160).replace(/[#\n]/g, " ").trim(),
     openGraph: {
-      title: newsletter.title,
+      title: issue.title,
       type: "article",
-      authors: author ? [author.name] : undefined,
+      authors: [user.name],
     },
   };
 }
 
-export default async function NewsletterPage({ params }: NewsletterPageProps) {
-  const { username, slug } = await params;
-  const newsletter = MOCK_NEWSLETTERS[slug];
+export default async function IssuePage({ params }: IssuePageProps) {
+  const { username, newsletterSlug, issueSlug } = await params;
   const user = MOCK_USERS[username];
+  const newsletter = MOCK_NEWSLETTERS[username]?.[newsletterSlug];
+  const issue = MOCK_ISSUES[username]?.[newsletterSlug]?.[issueSlug];
 
-  if (!newsletter || !user || newsletter.author !== username) {
+  if (!user || !newsletter || !issue) {
     notFound();
   }
 
   // 이전/다음 글 찾기
-  const currentIndex = NEWSLETTER_ORDER.indexOf(slug);
-  const prevSlug = currentIndex > 0 ? NEWSLETTER_ORDER[currentIndex - 1] : null;
-  const nextSlug =
-    currentIndex < NEWSLETTER_ORDER.length - 1
-      ? NEWSLETTER_ORDER[currentIndex + 1]
-      : null;
-
-  const prevNewsletter = prevSlug ? MOCK_NEWSLETTERS[prevSlug] : null;
-  const nextNewsletter = nextSlug ? MOCK_NEWSLETTERS[nextSlug] : null;
+  const issueOrder = ISSUE_ORDER[username]?.[newsletterSlug] || [];
+  const currentIndex = issueOrder.indexOf(issueSlug);
+  const prevSlug = currentIndex > 0 ? issueOrder[currentIndex - 1] : null;
+  const nextSlug = currentIndex < issueOrder.length - 1 ? issueOrder[currentIndex + 1] : null;
+  const prevIssue = prevSlug ? MOCK_ISSUES[username]?.[newsletterSlug]?.[prevSlug] : null;
+  const nextIssue = nextSlug ? MOCK_ISSUES[username]?.[newsletterSlug]?.[nextSlug] : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -163,10 +233,10 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
       <header className="border-b border-border">
         <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-6">
           <Link
-            href={`/@${username}`}
+            href={`/@${username}/${newsletterSlug}`}
             className="text-sm text-muted-foreground hover:text-foreground"
           >
-            ← {user.name}의 뉴스레터
+            ← {newsletter.name}
           </Link>
           <Link
             href="/login"
@@ -181,76 +251,71 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
         {/* Article Header */}
         <header className="mb-10">
           <time className="text-sm text-muted-foreground">
-            {formatDate(newsletter.publishedAt)}
+            {formatDate(issue.publishedAt)}
           </time>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
-            {newsletter.title}
+            {issue.title}
           </h1>
 
           {/* Author */}
           <div className="mt-6 flex items-center gap-3">
             <UserAvatar name={user.name} imageUrl={user.avatarUrl} size="md" />
             <div>
-              <Link
-                href={`/@${username}`}
-                className="font-medium hover:underline"
-              >
+              <Link href={`/@${username}`} className="font-medium hover:underline">
                 {user.name}
               </Link>
-              <p className="text-sm text-muted-foreground">@{username}</p>
+              <p className="text-sm text-muted-foreground">
+                <Link href={`/@${username}/${newsletterSlug}`} className="hover:underline">
+                  {newsletter.name}
+                </Link>
+              </p>
             </div>
           </div>
         </header>
 
         {/* Article Content */}
         <article className="prose prose-neutral max-w-none dark:prose-invert">
-          {renderContent(newsletter.content)}
+          {renderContent(issue.content)}
         </article>
 
         {/* Share Buttons */}
         <div className="mt-10 flex items-center justify-between border-t border-border pt-6">
           <span className="text-sm text-muted-foreground">공유하기</span>
-          <ShareButtons title={newsletter.title} />
+          <ShareButtons title={issue.title} />
         </div>
 
         {/* Subscribe CTA */}
         <div className="mt-10 rounded-xl border border-border p-6 text-center">
-          <h2 className="text-lg font-semibold">
-            {user.name}의 뉴스레터 구독하기
-          </h2>
+          <h2 className="text-lg font-semibold">{newsletter.name} 구독하기</h2>
           <p className="mt-2 text-sm text-muted-foreground">
             새로운 글이 발행되면 이메일로 알려드립니다.
           </p>
-          <div className="mt-4 mx-auto max-w-sm">
-            <SubscribeForm username={username} />
+          <div className="mx-auto mt-4 max-w-sm">
+            <SubscribeForm username={username} newsletterSlug={newsletterSlug} />
           </div>
         </div>
 
         {/* Prev/Next Navigation */}
-        {(prevNewsletter || nextNewsletter) && (
+        {(prevIssue || nextIssue) && (
           <nav className="mt-10 grid gap-4 sm:grid-cols-2">
-            {prevNewsletter ? (
+            {prevIssue ? (
               <Link
-                href={`/@${username}/${prevNewsletter.slug}`}
+                href={`/@${username}/${newsletterSlug}/${prevIssue.slug}`}
                 className="rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
               >
                 <span className="text-sm text-muted-foreground">← 이전 글</span>
-                <p className="mt-1 font-medium line-clamp-1">
-                  {prevNewsletter.title}
-                </p>
+                <p className="mt-1 font-medium line-clamp-1">{prevIssue.title}</p>
               </Link>
             ) : (
               <div />
             )}
-            {nextNewsletter && (
+            {nextIssue && (
               <Link
-                href={`/@${username}/${nextNewsletter.slug}`}
+                href={`/@${username}/${newsletterSlug}/${nextIssue.slug}`}
                 className="rounded-lg border border-border p-4 text-right transition-colors hover:bg-muted/50"
               >
                 <span className="text-sm text-muted-foreground">다음 글 →</span>
-                <p className="mt-1 font-medium line-clamp-1">
-                  {nextNewsletter.title}
-                </p>
+                <p className="mt-1 font-medium line-clamp-1">{nextIssue.title}</p>
               </Link>
             )}
           </nav>
@@ -273,16 +338,14 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
 }
 
 function formatDate(dateString: string): string {
-  const date = new Date(dateString);
   return new Intl.DateTimeFormat("ko-KR", {
     year: "numeric",
     month: "long",
     day: "numeric",
-  }).format(date);
+  }).format(new Date(dateString));
 }
 
 function renderContent(content: string) {
-  // 간단한 마크다운 렌더링
   return content.split("\n").map((line, index) => {
     const trimmed = line.trim();
     if (!trimmed) return <br key={index} />;

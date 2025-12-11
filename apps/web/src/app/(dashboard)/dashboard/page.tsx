@@ -30,28 +30,28 @@ const MOCK_STATS = {
 
 const MOCK_NEWSLETTERS = [
   {
-    id: "1",
+    id: "clh2issue001abc123def",
     title: "2025년 1월 뉴스레터",
     status: "published" as const,
     publishedAt: "2025-01-15",
     openRate: 42.5,
   },
   {
-    id: "2",
+    id: "clh2issue002abc123def",
     title: "새해 인사 - 2025년을 시작하며",
     status: "published" as const,
     publishedAt: "2025-01-01",
     openRate: 38.2,
   },
   {
-    id: "3",
+    id: "clh2issue004abc123def",
     title: "12월 회고와 내년 계획",
     status: "published" as const,
     publishedAt: "2024-12-28",
     openRate: 45.1,
   },
   {
-    id: "4",
+    id: "clh2issue003abc123def",
     title: "다음 주 발행 예정",
     status: "draft" as const,
     publishedAt: null,

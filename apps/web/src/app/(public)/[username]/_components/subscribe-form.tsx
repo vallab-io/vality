@@ -9,10 +9,17 @@ import { cn } from "@/lib/utils";
 
 interface SubscribeFormProps {
   username: string;
+  newsletterSlug?: string;
   variant?: "light" | "dark";
+  compact?: boolean;
 }
 
-export function SubscribeForm({ username, variant = "light" }: SubscribeFormProps) {
+export function SubscribeForm({
+  username,
+  newsletterSlug,
+  variant = "light",
+  compact = false,
+}: SubscribeFormProps) {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -29,7 +36,7 @@ export function SubscribeForm({ username, variant = "light" }: SubscribeFormProp
 
     try {
       // TODO: API 연동
-      console.log("Subscribe:", { email, username });
+      console.log("Subscribe:", { email, username, newsletterSlug });
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -47,14 +54,17 @@ export function SubscribeForm({ username, variant = "light" }: SubscribeFormProp
     return (
       <div
         className={cn(
-          "flex items-center justify-center gap-2 rounded-lg py-4",
+          "flex items-center justify-center gap-2 rounded-lg",
+          compact ? "py-2 text-sm" : "py-4",
           variant === "dark"
             ? "bg-background/10 text-background"
             : "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400"
         )}
       >
-        <CheckIcon className="h-5 w-5" />
-        <span className="font-medium">구독 신청 완료! 이메일을 확인해주세요.</span>
+        <CheckIcon className={cn(compact ? "h-4 w-4" : "h-5 w-5")} />
+        <span className="font-medium">
+          {compact ? "구독 완료!" : "구독 신청 완료! 이메일을 확인해주세요."}
+        </span>
       </div>
     );
   }
@@ -63,12 +73,13 @@ export function SubscribeForm({ username, variant = "light" }: SubscribeFormProp
     <form onSubmit={handleSubmit} className="flex gap-2">
       <Input
         type="email"
-        placeholder="이메일을 입력하세요"
+        placeholder="이메일 입력"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         disabled={isLoading}
         className={cn(
-          "h-11 flex-1",
+          compact ? "h-9 text-sm" : "h-11",
+          "flex-1",
           variant === "dark" &&
             "border-background/20 bg-background/10 text-background placeholder:text-background/50 focus-visible:ring-background/30"
         )}
@@ -76,13 +87,14 @@ export function SubscribeForm({ username, variant = "light" }: SubscribeFormProp
       <Button
         type="submit"
         disabled={isLoading || !email}
+        size={compact ? "sm" : "default"}
         className={cn(
-          "h-11 px-6",
+          compact ? "h-9 px-4" : "h-11 px-6",
           variant === "dark" &&
             "bg-background text-foreground hover:bg-background/90"
         )}
       >
-        {isLoading ? "구독 중..." : "구독하기"}
+        {isLoading ? "..." : "구독"}
       </Button>
     </form>
   );
