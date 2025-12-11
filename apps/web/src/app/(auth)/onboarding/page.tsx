@@ -1,13 +1,13 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { AuthForm } from "../_components/auth-form";
+import { OnboardingForm } from "./onboarding-form";
 
 export const metadata: Metadata = {
-  title: "회원가입",
-  description: "Vality에 가입하고 나만의 뉴스레터를 시작하세요",
+  title: "프로필 설정",
+  description: "Vality 프로필을 설정하세요",
 };
 
-export default function SignupPage() {
+export default function OnboardingPage() {
   return (
     <div className="flex min-h-screen flex-col">
       {/* Header */}
@@ -22,23 +22,17 @@ export default function SignupPage() {
         <div className="w-full max-w-sm space-y-8">
           <div className="space-y-2 text-center">
             <h1 className="text-2xl font-semibold tracking-tight">
-              Vality 시작하기
+              프로필 설정
             </h1>
+            <p className="text-sm text-muted-foreground">
+              뉴스레터에서 사용할 정보를 입력하세요
+            </p>
           </div>
 
-          <AuthForm mode="signup" />
-
-          <p className="text-center text-sm text-muted-foreground">
-            이미 계정이 있으신가요?{" "}
-            <Link
-              href="/login"
-              className="font-medium text-foreground underline-offset-4 hover:underline"
-            >
-              로그인
-            </Link>
-          </p>
+          <OnboardingForm />
         </div>
       </main>
     </div>
   );
 }
+

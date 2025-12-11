@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { LoginForm } from "./login-form";
+import { AuthForm } from "../_components/auth-form";
 
 export const metadata: Metadata = {
   title: "로그인",
@@ -9,30 +9,36 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
-      <div className="w-full max-w-md space-y-8">
-        {/* Logo */}
-        <div className="text-center">
-          <Link href="/" className="text-3xl font-bold">
-            Vality
-          </Link>
-          <p className="mt-2 text-muted-foreground">
-            계정에 로그인하세요
+    <div className="flex min-h-screen flex-col">
+      {/* Header */}
+      <header className="flex h-14 items-center px-6">
+        <Link href="/" className="text-xl font-semibold tracking-tight">
+          Vality
+        </Link>
+      </header>
+
+      {/* Main */}
+      <main className="flex flex-1 items-center justify-center px-6 pb-20">
+        <div className="w-full max-w-sm space-y-8">
+          <div className="space-y-2 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Vality 로그인
+            </h1>
+          </div>
+
+          <AuthForm mode="login" />
+
+          <p className="text-center text-sm text-muted-foreground">
+            계정이 없으신가요?{" "}
+            <Link
+              href="/signup"
+              className="font-medium text-foreground underline-offset-4 hover:underline"
+            >
+              회원가입
+            </Link>
           </p>
         </div>
-
-        {/* Login Form */}
-        <LoginForm />
-
-        {/* Sign up link */}
-        <p className="text-center text-sm text-muted-foreground">
-          계정이 없으신가요?{" "}
-          <Link href="/signup" className="font-medium text-primary hover:underline">
-            회원가입
-          </Link>
-        </p>
-      </div>
+      </main>
     </div>
   );
 }
-
