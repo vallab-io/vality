@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { GoogleIcon, AppleIcon } from "@/components/icons";
+import { AppleIcon, GoogleIcon } from "@/components/icons";
 import { toast } from "sonner";
 
 export function SocialButtons() {

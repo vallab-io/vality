@@ -1,8 +1,16 @@
 package io.vality.di
 
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-import io.vality.repository.*
+import io.vality.repository.AccountRepository
+import io.vality.repository.EmailLogRepository
+import io.vality.repository.IssueRepository
+import io.vality.repository.NewsletterRepository
+import io.vality.repository.SubscriberRepository
+import io.vality.repository.UserRepository
+import io.vality.repository.VerificationCodeRepository
 import io.vality.service.AuthService
+import io.vality.service.oauth.GoogleOAuthService
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
@@ -18,10 +26,10 @@ val appModule = module {
     singleOf(::IssueRepository)
     singleOf(::SubscriberRepository)
     singleOf(::EmailLogRepository)
-    
-    // Services
+
+    // Auth Services
     single {
-        val config = get<com.typesafe.config.Config>()
+        val config = get<Config>()
         AuthService(
             userRepository = get(),
             accountRepository = get(),
@@ -29,6 +37,15 @@ val appModule = module {
             jwtSecret = config.getString("ktor.jwt.secret"),
             jwtIssuer = config.getString("ktor.jwt.issuer"),
             jwtAudience = config.getString("ktor.jwt.audience")
+        )
+    }
+
+    // OAuth Services
+    single {
+        val config = get<Config>()
+        GoogleOAuthService(
+            clientId = config.getString("ktor.oauth.google.clientId"),
+            clientSecret = config.getString("ktor.oauth.google.clientSecret")
         )
     }
     
