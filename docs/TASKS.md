@@ -10,11 +10,17 @@
 
 - [x] 기획 문서 작성 (docs/)
 - [x] Next.js 프로젝트 초기화 (apps/web)
-- [x] NestJS 프로젝트 초기화 (apps/api)
+- [x] Ktor API 프로젝트 초기화 (apps/api)
 - [x] shadcn/ui 설정
 - [x] 기본 페이지 스켈레톤
-- [x] Prisma 스키마 초안
+- [x] Prisma 스키마 초안 (참고용)
 - [x] Docker Compose 설정
+- [x] Ktor 기본 설정 (Serialization, CORS, StatusPages 등)
+- [x] Exposed ORM 설정
+- [x] Flyway 마이그레이션 설정
+- [x] Koin DI 설정
+- [x] User 도메인 및 Repository 구현
+- [x] Health API 구현
 
 ---
 
@@ -220,27 +226,42 @@
 
 ## 🔌 Phase 5: 백엔드 개발 & 연동
 
-### Step 13: 데이터베이스 & 기본 설정
+### Step 13: 데이터베이스 & 기본 설정 ✅
 ```
 예상 시간: 2-3시간
 ```
 
-- [ ] Docker PostgreSQL 실행
-- [ ] Prisma 마이그레이션
-- [ ] 기본 API 테스트
+- [x] Ktor 프로젝트 초기화
+- [x] Exposed ORM 설정 (PostgreSQL + HikariCP)
+- [x] Flyway 마이그레이션 설정
+- [x] Koin DI 설정
+- [x] 기본 플러그인 설정 (Serialization, CORS, StatusPages 등)
+- [x] Health API 구현
+- [x] User 도메인 및 Repository 구현
+- [ ] 나머지 도메인 모델 구현 (Newsletter, Issue, Subscriber 등)
+
+**기술 스택**: Ktor 2.3.12, Exposed 1.0.0-rc-4, Flyway 10.9.1, Koin 3.5.6 ✅
 
 ---
 
-### Step 14: 인증 API (NestJS)
+### Step 14: 인증 API (Ktor)
 ```
 예상 시간: 4-6시간
 ```
 
-- [ ] AuthModule 생성
-- [ ] 회원가입 API
-- [ ] 로그인 API (JWT)
-- [ ] 내 정보 조회 API
+- [ ] JWT 인증 플러그인 설정
+- [ ] 인증 라우팅 구현 (`/api/auth`)
+- [ ] 회원가입 API (이메일 인증 방식)
+  - [ ] 이메일 인증 코드 발송 API
+  - [ ] 인증 코드 검증 API
+  - [ ] 회원가입 완료 API
+- [ ] 소셜 로그인 API (Google, Apple)
+- [ ] 로그인 API (JWT 토큰 발급)
+- [ ] 내 정보 조회 API (`/api/auth/me`)
+- [ ] 토큰 갱신 API
 - [ ] 프론트엔드 연동
+
+**참고**: Account, VerificationCode 도메인 모델 필요
 
 ---
 
@@ -249,10 +270,17 @@
 예상 시간: 4-5시간
 ```
 
-- [ ] NewsletterModule 생성
+- [ ] Newsletter 도메인 모델 구현
+- [ ] NewsletterRepository 구현
+- [ ] Newsletter 라우팅 구현 (`/api/newsletters`)
 - [ ] CRUD API
-- [ ] 발행 API
-- [ ] 공개 조회 API
+  - [ ] 뉴스레터 생성 API
+  - [ ] 뉴스레터 목록 조회 API (내 뉴스레터)
+  - [ ] 뉴스레터 상세 조회 API
+  - [ ] 뉴스레터 수정 API
+  - [ ] 뉴스레터 삭제 API
+- [ ] 발행 API (Issue 생성 및 발송)
+- [ ] 공개 조회 API (`/api/public/@[username]/[slug]`)
 - [ ] 프론트엔드 연동
 
 ---
@@ -262,52 +290,82 @@
 예상 시간: 3-4시간
 ```
 
-- [ ] SubscriberModule 생성
-- [ ] 구독 신청 API
-- [ ] 구독 확인/취소 API
-- [ ] 구독자 목록 API
+- [ ] Subscriber 도메인 모델 구현
+- [ ] SubscriberRepository 구현
+- [ ] Subscriber 라우팅 구현 (`/api/subscribers`)
+- [ ] 구독 신청 API (공개)
+- [ ] 구독 확인 API (이메일 링크)
+- [ ] 구독 취소 API
+- [ ] 구독자 목록 API (인증 필요)
+- [ ] 구독자 통계 API
 - [ ] 프론트엔드 연동
 
 ---
 
-### Step 17: 이메일 발송
+### Step 17: 이슈(Issue) API
 ```
 예상 시간: 4-5시간
 ```
 
-- [ ] Resend 연동
-- [ ] 이메일 템플릿
-- [ ] 뉴스레터 발송 API
-- [ ] 구독 확인 이메일
+- [ ] Issue 도메인 모델 구현
+- [ ] IssueRepository 구현
+- [ ] Issue 라우팅 구현 (`/api/issues`)
+- [ ] CRUD API
+  - [ ] 이슈 생성 API
+  - [ ] 이슈 목록 조회 API
+  - [ ] 이슈 상세 조회 API
+  - [ ] 이슈 수정 API
+  - [ ] 이슈 삭제 API
+- [ ] 발행 API (상태 변경 + 이메일 발송)
+- [ ] 예약 발행 API
+- [ ] 공개 조회 API (`/api/public/@[username]/[slug]/[issueSlug]`)
+- [ ] 프론트엔드 연동
 
 ---
 
-### Step 18: 파일 업로드 (S3)
+### Step 18: 이메일 발송
+```
+예상 시간: 4-5시간
+```
+
+- [ ] Resend 연동 (Ktor HTTP Client)
+- [ ] 이메일 템플릿 (HTML)
+- [ ] 이메일 발송 Service 구현
+- [ ] 뉴스레터 발송 API (구독자들에게 일괄 발송)
+- [ ] 구독 확인 이메일
+- [ ] 이메일 발송 로그 (EmailLog 도메인)
+- [ ] 프론트엔드 연동
+
+---
+
+### Step 19: 파일 업로드 (S3)
 ```
 예상 시간: 3-4시간
 ```
 
-- [ ] AWS S3 연동
-- [ ] 이미지 업로드 API
+- [ ] AWS S3 연동 (Ktor HTTP Client 또는 AWS SDK)
+- [ ] 이미지 업로드 API (`/api/upload`)
+- [ ] 파일 업로드 라우팅 구현
+- [ ] 이미지 최적화 (선택)
 - [ ] 프론트엔드 에디터 연동
 
 ---
 
 ## 🎯 Phase 6: SEO & 마무리
 
-### Step 19: SEO 최적화
+### Step 20: SEO 최적화
 ```
 예상 시간: 3-4시간
 ```
 
-- [ ] 동적 메타태그
+- [ ] 동적 메타태그 (Next.js)
 - [ ] OG 이미지 자동 생성
 - [ ] 구조화 데이터 (JSON-LD)
-- [ ] Sitemap, RSS
+- [ ] Sitemap, RSS 생성
 
 ---
 
-### Step 20: 최종 QA & 배포
+### Step 21: 최종 QA & 배포
 ```
 예상 시간: 4-6시간
 ```
@@ -316,7 +374,8 @@
 - [ ] 버그 수정
 - [ ] 성능 최적화
 - [ ] Vercel 배포 (프론트)
-- [ ] Railway/EC2 배포 (백엔드)
+- [ ] Railway/Render/EC2 배포 (백엔드 Ktor)
+- [ ] 데이터베이스 마이그레이션 자동화 (CI/CD)
 
 ---
 
@@ -343,15 +402,16 @@ Phase 4: 공개 페이지 UI (Step 10-12)
 ├── 뉴스레터 상세
 └── 구독 위젯
 
-Phase 5: 백엔드 & 연동 (Step 13-18)
-├── DB 설정
-├── 인증 API
+Phase 5: 백엔드 & 연동 (Step 13-19)
+├── DB 설정 (Ktor + Exposed + Flyway)
+├── 인증 API (Ktor + JWT)
 ├── 뉴스레터 API
+├── 이슈 API
 ├── 구독자 API
 ├── 이메일 발송
 └── 파일 업로드
 
-Phase 6: SEO & 마무리 (Step 19-20)
+Phase 6: SEO & 마무리 (Step 20-21)
 ├── SEO 최적화
 └── 배포
 ```
