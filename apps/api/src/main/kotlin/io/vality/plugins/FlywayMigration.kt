@@ -25,7 +25,7 @@ fun runFlywayMigration() {
     logger.info("📍 데이터베이스: $databaseUrl")
 
     val flyway: Flyway = Flyway.configure()
-        .dataSource(databaseUrl, username, password)
+        .dataSource("${databaseUrl}?prepareThreshold=0", username, password)
         .locations("classpath:db/migration")
         .baselineOnMigrate(true)
         .baselineVersion("1")

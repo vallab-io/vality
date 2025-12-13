@@ -238,7 +238,7 @@
 - [x] 기본 플러그인 설정 (Serialization, CORS, StatusPages 등)
 - [x] Health API 구현
 - [x] User 도메인 및 Repository 구현
-- [ ] 나머지 도메인 모델 구현 (Newsletter, Issue, Subscriber 등)
+- [x] 나머지 도메인 모델 구현 (Newsletter, Issue, Subscriber 등)
 
 **기술 스택**: Ktor 2.3.12, Exposed 1.0.0-rc-4, Flyway 10.9.1, Koin 3.5.6 ✅
 
@@ -249,12 +249,12 @@
 예상 시간: 4-6시간
 ```
 
-- [ ] JWT 인증 플러그인 설정
-- [ ] 인증 라우팅 구현 (`/api/auth`)
-- [ ] 회원가입 API (이메일 인증 방식)
-  - [ ] 이메일 인증 코드 발송 API
-  - [ ] 인증 코드 검증 API
-  - [ ] 회원가입 완료 API
+- [x] JWT 인증 플러그인 설정
+- [x] 인증 라우팅 구현 (`/api/auth`)
+- [x] 회원가입 API (이메일 인증 방식)
+  - [x] 이메일 인증 코드 발송 API
+  - [x] 인증 코드 검증 API
+  - [x] 회원가입 완료 API
 - [ ] 소셜 로그인 API (Google, Apple)
 - [ ] 로그인 API (JWT 토큰 발급)
 - [ ] 내 정보 조회 API (`/api/auth/me`)

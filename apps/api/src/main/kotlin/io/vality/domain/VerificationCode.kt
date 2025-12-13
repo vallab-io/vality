@@ -5,16 +5,13 @@ import kotlinx.serialization.Serializable
 import java.time.Instant
 
 @Serializable
-data class User(
+data class VerificationCode(
     val id: String,
     val email: String,
-    val username: String? = null,
-    val name: String? = null,
-    val bio: String? = null,
-    val avatarUrl: String? = null,
+    val code: String, // 6자리 인증 코드
+    @Contextual
+    val expiresAt: Instant,
     @Contextual
     val createdAt: Instant,
-    @Contextual
-    val updatedAt: Instant,
 )
 

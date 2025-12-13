@@ -22,7 +22,7 @@ out/
 # Environment variables
 # ===============================
 .env
-.env.local
+apps/web/.env.local
 .env.development.local
 .env.test.local
 .env.production.local
@@ -91,8 +91,8 @@ out/
 # Vercel
 .vercel
 
-# next-env.d.ts는 TypeScript 설정에 필요하므로 버전 관리 권장
-# next-env.d.ts
+# next-.env.local.d.ts는 TypeScript 설정에 필요하므로 버전 관리 권장
+# next-.env.local.d.ts
 
 # ===============================
 # NestJS specific

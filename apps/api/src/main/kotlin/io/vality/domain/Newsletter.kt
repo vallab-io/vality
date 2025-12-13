@@ -5,13 +5,14 @@ import kotlinx.serialization.Serializable
 import java.time.Instant
 
 @Serializable
-data class User(
+data class Newsletter(
     val id: String,
-    val email: String,
-    val username: String? = null,
-    val name: String? = null,
-    val bio: String? = null,
-    val avatarUrl: String? = null,
+    val name: String,
+    val slug: String,
+    val description: String? = null,
+    val senderName: String? = null,
+    val timezone: String = "Asia/Seoul",
+    val ownerId: String,
     @Contextual
     val createdAt: Instant,
     @Contextual

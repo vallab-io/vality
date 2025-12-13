@@ -26,7 +26,7 @@
 ### 2. 환경 변수 설정
 
 ```bash
-cp env.example .env
+cp .env.local.example .env.local
 ```
 
 `.env` 파일을 열어서 필요한 값들을 설정하세요.
@@ -72,6 +72,8 @@ docker-compose up -d
 서버가 실행되면:
 - API: http://localhost:4000/api
 - Health Check: http://localhost:4000/api/health
+- API 문서 (Swagger UI): http://localhost:4000/api/docs
+- OpenAPI JSON: http://localhost:4000/api/docs/openapi.json
 
 ## 프로젝트 구조
 
@@ -84,7 +86,8 @@ src/main/kotlin/io/vality/
 │   ├── StatusPagesPlugin.kt
 │   ├── DefaultHeadersPlugin.kt
 │   ├── LoggingPlugin.kt
-│   └── DatabasePlugin.kt
+│   ├── DatabasePlugin.kt
+│   └── OpenAPIPlugin.kt         # OpenAPI 스펙 생성
 ├── routing/                    # 라우팅
 │   ├── Routing.kt
 │   └── health/
@@ -121,6 +124,28 @@ src/main/kotlin/io/vality/
 - DSL 기반 라우팅
 - 플러그인 시스템
 - 함수형 스타일
+
+## API 문서
+
+서버 실행 후 다음 URL에서 API 문서를 확인할 수 있습니다:
+
+- **Swagger UI**: http://localhost:4000/api/docs
+- **OpenAPI JSON**: http://localhost:4000/api/docs/openapi.json
+
+### Swagger UI 사용법
+
+1. 브라우저에서 `http://localhost:4000/api/docs` 접속
+2. 각 API 엔드포인트의 상세 정보 확인
+3. "Try it out" 버튼을 클릭하여 API 테스트
+4. JWT 인증이 필요한 API의 경우, 우측 상단의 "Authorize" 버튼을 클릭하여 토큰 입력
+
+### OpenAPI JSON 다운로드
+
+OpenAPI JSON 파일을 다운로드하여 다른 도구에서 사용할 수 있습니다:
+
+```bash
+curl http://localhost:4000/api/docs/openapi.json > openapi.json
+```
 
 ## 스크립트
 

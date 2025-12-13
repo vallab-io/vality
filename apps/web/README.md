@@ -23,7 +23,7 @@ npm install
 ### 2. 환경 변수 설정
 
 ```bash
-cp env.example .env.local
+cp .env.local.example .env.local.local
 ```
 
 ### 3. 개발 서버 실행

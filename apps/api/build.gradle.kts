@@ -29,6 +29,11 @@ dependencies {
     implementation("io.ktor:ktor-server-call-logging-jvm")
     implementation("io.ktor:ktor-server-default-headers-jvm")
     
+    // Ktor HTTP Client (OAuth2용)
+    implementation("io.ktor:ktor-client-core-jvm")
+    implementation("io.ktor:ktor-client-cio-jvm")
+    implementation("io.ktor:ktor-client-content-negotiation-jvm")
+    
     // Kotlin Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.8.1")
@@ -55,16 +60,22 @@ dependencies {
     // JWT
     implementation("io.ktor:ktor-server-auth-jvm")
     implementation("io.ktor:ktor-server-auth-jwt-jvm")
-    implementation("io.jsonwebtoken:jjwt-api:0.12.6")
-    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
-    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
+    implementation("com.auth0:java-jwt:4.4.0")
     
     // Dependency Injection - Koin
     implementation("io.insert-koin:koin-ktor:3.5.6")
     implementation("io.insert-koin:koin-logger-slf4j:3.5.6")
     
-    // Utilities
-    implementation("com.github.f4b6a3:ulid-creator:5.2.3")
+    // Utilities - CUID (Collision-resistant Unique Identifier)
+    // CUID는 소문자, URL-friendly, 약 25자
+    implementation("io.github.cdimascio:java-dotenv:5.2.2")
+    // CUID는 직접 구현하거나 Java 라이브러리 사용
+    // 간단한 CUID 생성 유틸리티 구현
+    
+    // OpenAPI/Swagger
+    implementation("io.swagger.core.v3:swagger-core:2.2.22")
+    implementation("io.swagger.core.v3:swagger-models:2.2.22")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.17.1")
     
     // Testing
     testImplementation("io.ktor:ktor-server-tests-jvm")
