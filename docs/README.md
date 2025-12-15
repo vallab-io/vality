@@ -14,7 +14,6 @@
 | [tasks.md](./tasks.md) | 개발 작업 순서 및 체크리스트 | ✅ 최신 |
 | [implementation-status.md](./implementation-status.md) | 구현 현황 요약 | ✅ 최신 |
 | [email-system.md](./email-system.md) | 이메일 발송 시스템 구현 계획 | ✅ 최신 |
-| [image-upload.md](./image-upload.md) | 이미지 업로드 시스템 구현 계획 | ✅ 최신 |
 | [oauth-state-management.md](./oauth-state-management.md) | OAuth State 관리 가이드 | ✅ 최신 |
 
 ## 🎯 한 줄 요약
