@@ -1,5 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { refreshAccessToken } from "./auth";
+import { v4 as uuidv4 } from "uuid";
 
 // API 기본 URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
@@ -13,6 +14,8 @@ export const apiClient = axios.create({
   },
   withCredentials: true, // 쿠키 포함
 });
+
+const REQUEST_ID_HEADER = "X-Request-Id";
 
 // 토큰 갱신 중 플래그 (무한 루프 방지)
 let isRefreshing = false;
@@ -37,6 +40,10 @@ apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // 클라이언트 사이드에서만 토큰 추가
     if (typeof window !== "undefined") {
+      if (!config.headers?.[REQUEST_ID_HEADER]) {
+        config.headers[REQUEST_ID_HEADER] = uuidv4();
+      }
+
       const token = localStorage.getItem("accessToken");
       if (token) {
         // 토큰 앞뒤 공백 제거

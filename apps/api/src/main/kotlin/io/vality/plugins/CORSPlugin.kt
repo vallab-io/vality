@@ -21,6 +21,7 @@ fun Application.configureCORS(config: Config) {
         allowMethod(HttpMethod.Post)
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.Authorization)
+        allowHeader("X-Request-Id")
         allowCredentials = true
         allowNonSimpleContentTypes = true
         anyHost()

@@ -76,7 +76,9 @@ dependencies {
     implementation("io.swagger.core.v3:swagger-core:2.2.22")
     implementation("io.swagger.core.v3:swagger-models:2.2.22")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.1")
-    
+    implementation("io.ktor:ktor-server-core:2.3.12")
+    implementation("io.ktor:ktor-server-double-receive:2.3.12")
+
     // Testing
     testImplementation("io.ktor:ktor-server-tests-jvm")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
