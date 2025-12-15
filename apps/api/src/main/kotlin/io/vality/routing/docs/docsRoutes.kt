@@ -94,82 +94,73 @@ fun Route.docsRoutes() {
                 }
             })
 
-            openAPI.path("/api/auth/verify-code", PathItem().apply {
+            openAPI.path("/api/auth/email-auth", PathItem().apply {
                 post = Operation().apply {
-                    summary = "인증 코드 검증"
-                    description = "발송된 인증 코드를 검증합니다."
+                    summary = "이메일 인증 로그인/회원가입 (통합)"
+                    description = "email + code로 로그인 또는 신규 회원가입 후 AuthResponse를 반환합니다."
                     tags = listOf("인증")
                     requestBody = RequestBody().apply {
-                        description = "이메일과 인증 코드"
                         required = true
                         content = Content().apply {
                             addMediaType("application/json", MediaType().apply {
                                 schema = Schema<Any>().apply {
                                     type = "object"
                                     required = listOf("email", "code")
-                                    properties = mapOf("email" to Schema<Any>().apply {
-                                        type = "string"
-                                        format = "email"
-                                        example = "user@example.com"
-                                    }, "code" to Schema<Any>().apply {
-                                        type = "string"
-                                        example = "123456"
-                                    })
+                                    properties = mapOf(
+                                        "email" to Schema<Any>().apply {
+                                            type = "string"; format = "email"; example = "user@example.com"
+                                        },
+                                        "code" to Schema<Any>().apply {
+                                            type = "string"; example = "123456"
+                                        }
+                                    )
                                 }
                             })
                         }
                     }
                     responses = ApiResponses().apply {
-                        addApiResponse("200", ApiResponse().apply {
-                            description = "인증 코드 검증 성공"
-                        })
-                        addApiResponse("400", ApiResponse().apply {
-                            description = "잘못된 인증 코드"
-                        })
+                        addApiResponse("200", ApiResponse().apply { description = "로그인/회원가입 성공 (AuthResponse 반환)" })
+                        addApiResponse("400", ApiResponse().apply { description = "잘못된 요청 또는 인증 실패" })
                     }
                 }
             })
 
-            openAPI.path("/api/auth/signup", PathItem().apply {
+            openAPI.path("/api/auth/check-username", PathItem().apply {
+                get = Operation().apply {
+                    summary = "사용자명 중복 확인"
+                    description = "username 쿼리 파라미터로 사용 가능 여부를 조회합니다."
+                    tags = listOf("인증")
+                    responses = ApiResponses().apply {
+                        addApiResponse("200", ApiResponse().apply { description = "{ available: boolean }" })
+                        addApiResponse("400", ApiResponse().apply { description = "username 누락" })
+                    }
+                }
+            })
+
+            openAPI.path("/api/auth/refresh", PathItem().apply {
                 post = Operation().apply {
-                    summary = "회원가입"
-                    description = "이메일 인증을 완료한 후 회원가입을 진행합니다."
+                    summary = "AccessToken 갱신"
+                    description = "refreshToken으로 새로운 accessToken/refreshToken을 발급합니다."
                     tags = listOf("인증")
                     requestBody = RequestBody().apply {
-                        description = "회원가입 정보"
                         required = true
                         content = Content().apply {
                             addMediaType("application/json", MediaType().apply {
                                 schema = Schema<Any>().apply {
                                     type = "object"
-                                    required = listOf("email", "code")
-                                    properties = mapOf("email" to Schema<Any>().apply {
-                                        type = "string"
-                                        format = "email"
-                                        example = "user@example.com"
-                                    }, "code" to Schema<Any>().apply {
-                                        type = "string"
-                                        example = "123456"
-                                    }, "username" to Schema<Any>().apply {
-                                        type = "string"
-                                        nullable = true
-                                        example = "johndoe"
-                                    }, "name" to Schema<Any>().apply {
-                                        type = "string"
-                                        nullable = true
-                                        example = "John Doe"
-                                    })
+                                    required = listOf("refreshToken")
+                                    properties = mapOf(
+                                        "refreshToken" to Schema<Any>().apply {
+                                            type = "string"; example = "refresh-token"
+                                        }
+                                    )
                                 }
                             })
                         }
                     }
                     responses = ApiResponses().apply {
-                        addApiResponse("201", ApiResponse().apply {
-                            description = "회원가입 성공"
-                        })
-                        addApiResponse("400", ApiResponse().apply {
-                            description = "잘못된 요청"
-                        })
+                        addApiResponse("200", ApiResponse().apply { description = "갱신 성공 (AuthResponse 반환)" })
+                        addApiResponse("400", ApiResponse().apply { description = "잘못된 refreshToken" })
                     }
                 }
             })
@@ -190,6 +181,43 @@ fun Route.docsRoutes() {
                         addApiResponse("404", ApiResponse().apply {
                             description = "사용자를 찾을 수 없음"
                         })
+                    }
+                }
+                patch = Operation().apply {
+                    summary = "프로필 업데이트"
+                    description = "username(필수), name, bio를 수정합니다."
+                    tags = listOf("인증")
+                    security = listOf(SecurityRequirement().addList("bearer-jwt"))
+                    requestBody = RequestBody().apply {
+                        required = true
+                        content = Content().apply {
+                            addMediaType("application/json", MediaType().apply {
+                                schema = Schema<Any>().apply {
+                                    type = "object"
+                                    required = listOf("username")
+                                    properties = mapOf(
+                                        "username" to Schema<Any>().apply { type = "string"; example = "johndoe" },
+                                        "name" to Schema<Any>().apply { type = "string"; nullable = true; example = "John Doe" },
+                                        "bio" to Schema<Any>().apply { type = "string"; nullable = true; example = "소개글" }
+                                    )
+                                }
+                            })
+                        }
+                    }
+                    responses = ApiResponses().apply {
+                        addApiResponse("200", ApiResponse().apply { description = "업데이트 성공" })
+                        addApiResponse("400", ApiResponse().apply { description = "유효성 오류 또는 중복 username" })
+                        addApiResponse("401", ApiResponse().apply { description = "인증 실패" })
+                    }
+                }
+                delete = Operation().apply {
+                    summary = "계정 삭제"
+                    description = "현재 로그인한 사용자의 계정을 삭제합니다."
+                    tags = listOf("인증")
+                    security = listOf(SecurityRequirement().addList("bearer-jwt"))
+                    responses = ApiResponses().apply {
+                        addApiResponse("200", ApiResponse().apply { description = "삭제 성공" })
+                        addApiResponse("401", ApiResponse().apply { description = "인증 실패" })
                     }
                 }
             })
