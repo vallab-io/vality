@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Logo, UserAvatar } from "@/components/common";
 import { CheckIcon, PlusIcon, HomeIcon, SettingsIcon } from "@/components/icons";
@@ -21,13 +21,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useAtomValue, useSetAtom } from "jotai";
+import { userAtom } from "@/stores/auth.store";
 
-// 목업 데이터
-const MOCK_USER = {
-  name: "John Doe",
-  email: "john@example.com",
-  plan: "free" as "free" | "pro",
-};
+// 플랜 기본값 (향후 API 연동 시 교체)
+const DEFAULT_PLAN: "free" | "pro" = "free";
 
 const MOCK_NEWSLETTERS = [
   { id: "clh1abc123def456ghi789", name: "John's Weekly", slug: "johns-weekly" },
@@ -71,12 +69,15 @@ function ChevronIcon({ className, isOpen }: { className?: string; isOpen: boolea
 
 export function DashboardSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const setUser = useSetAtom(userAtom);
+  const user = useAtomValue(userAtom);
   const [selectedNewsletter, setSelectedNewsletter] = useState(MOCK_NEWSLETTERS[0]);
   const [isNewsletterOpen, setIsNewsletterOpen] = useState(true);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
   const canCreateNewsletter =
-    MOCK_USER.plan === "pro" || MOCK_NEWSLETTERS.length < MAX_FREE_NEWSLETTERS;
+    DEFAULT_PLAN === "pro" || MOCK_NEWSLETTERS.length < MAX_FREE_NEWSLETTERS;
 
   const handleCreateNewsletter = () => {
     if (!canCreateNewsletter) {
@@ -211,16 +212,26 @@ export function DashboardSidebar() {
 
         {/* User Section */}
         <div className="border-t border-border p-4">
-          <Link
-            href="/dashboard/settings"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-          >
+          <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground">
             <UserAvatar
-              name={MOCK_USER.name}
-              email={MOCK_USER.email}
+              name={user?.name || user?.email || "사용자"}
+              email={user?.email || undefined}
               showInfo
             />
-          </Link>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3 w-full"
+            onClick={() => {
+              localStorage.removeItem("accessToken");
+              localStorage.removeItem("refreshToken");
+              setUser(null);
+              router.push("/login");
+            }}
+          >
+            로그아웃
+          </Button>
         </div>
       </aside>
 

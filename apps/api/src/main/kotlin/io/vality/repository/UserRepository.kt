@@ -35,12 +35,12 @@ class UserRepository {
                 Users.bio,
                 Users.avatarUrl,
                 Users.createdAt,
-                Users.updatedAt
+                Users.updatedAt,
             )
         )
             .where { Users.id eq id }
-            .map { it.toUser() }
             .singleOrNull()
+            ?.toUser()
     }
 
     suspend fun findByEmail(email: String): User? = dbQuery {
@@ -57,8 +57,8 @@ class UserRepository {
             )
         )
             .where { Users.email eq email }
-            .map { it.toUser() }
             .singleOrNull()
+            ?.toUser()
     }
 
     suspend fun findByUsername(username: String): User? = dbQuery {
@@ -75,8 +75,8 @@ class UserRepository {
             )
         )
             .where { Users.username eq username }
-            .map { it.toUser() }
             .singleOrNull()
+            ?.toUser()
     }
 
     suspend fun existsByEmail(email: String): Boolean = dbQuery {

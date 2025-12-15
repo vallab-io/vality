@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { handleOAuthCallback } from "@/lib/api/auth";
 import { userAtom } from "@/stores/auth.store";
@@ -12,9 +12,15 @@ export default function GoogleCallbackPage() {
   const searchParams = useSearchParams();
   const setUser = useSetAtom(userAtom);
   const [error, setError] = useState<string | null>(null);
+  const isProcessingRef = useRef(false);
 
   useEffect(() => {
+    // StrictMode 이중 호출/중복 실행 방지
+    if (isProcessingRef.current) return;
+
     const processCallback = async () => {
+      isProcessingRef.current = true;
+
       const code = searchParams.get("code");
       const state = searchParams.get("state");
       const errorParam = searchParams.get("error");

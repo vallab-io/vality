@@ -86,7 +86,8 @@ class NewsletterRepository {
     suspend fun existsByOwnerIdAndSlug(ownerId: String, slug: String): Boolean = dbQuery {
         Newsletters.select(listOf(Newsletters.id))
             .where { (Newsletters.ownerId eq ownerId) and (Newsletters.slug eq slug) }
-            .count() > 0
+            .limit(1)
+            .firstOrNull() != null
     }
 
     suspend fun create(newsletter: Newsletter): Newsletter = dbQuery {

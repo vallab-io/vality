@@ -27,6 +27,8 @@ fun Application.configureDatabase(config: Config) {
         maxLifetime = config.getLong("ktor.database.pool.maxLifetime")
         isAutoCommit = false
         transactionIsolation = "TRANSACTION_REPEATABLE_READ"
+        // PostgreSQL prepared statement 이름 충돌 방지
+        addDataSourceProperty("prepareThreshold", 0)
         validate()
     }
 

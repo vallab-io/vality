@@ -1,28 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/common";
 import { toast } from "sonner";
-
-// 목업 사용자 데이터
-const MOCK_USER = {
-  name: "John Doe",
-  username: "johndoe",
-  bio: "프로덕트 디자이너 · 스타트업에서 일하고 있습니다. 디자인, 생산성, 그리고 일하는 방식에 대해 씁니다.",
-  avatarUrl: null as string | null,
-};
+import { useAtomValue, useSetAtom } from "jotai";
+import { userAtom } from "@/stores/auth.store";
+import { checkUsernameAvailability, updateProfile } from "@/lib/api/auth";
+import { getErrorMessage } from "@/lib/api/client";
 
 export function ProfileSettings() {
+  const user = useAtomValue(userAtom);
+  const setUser = useSetAtom(userAtom);
+
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    name: MOCK_USER.name,
-    username: MOCK_USER.username,
-    bio: MOCK_USER.bio,
+    name: user?.name || "",
+    username: user?.username || "",
+    bio: user?.bio || "",
   });
+
+  // user 변경 시 폼 초기화
+  useEffect(() => {
+    setFormData({
+      name: user?.name || "",
+      username: user?.username || "",
+      bio: user?.bio || "",
+    });
+  }, [user]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -31,18 +41,73 @@ export function ProfileSettings() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Username 유효성 및 중복 확인 (debounce)
+  useEffect(() => {
+    const check = async () => {
+      const username = formData.username.trim().toLowerCase();
+
+      if (username.length === 0) {
+        setUsernameError("사용자명을 입력해주세요.");
+        return;
+      }
+      if (username.length < 3) {
+        setUsernameError("사용자명은 3자 이상이어야 합니다.");
+        return;
+      }
+
+      // 기존 username과 동일하면 중복 체크 불필요
+      if (user?.username === username) {
+        setUsernameError(null);
+        return;
+      }
+
+      setIsCheckingUsername(true);
+      setUsernameError(null);
+
+      try {
+        const available = await checkUsernameAvailability(username);
+        if (!available) {
+          setUsernameError("이미 사용 중인 사용자명입니다.");
+        }
+      } catch (error) {
+        // 네트워크 오류 등은 UI에 노출하지 않음
+        console.error("Username check error:", error);
+      } finally {
+        setIsCheckingUsername(false);
+      }
+    };
+
+    const id = setTimeout(check, 500);
+    return () => clearTimeout(id);
+  }, [formData.username, user?.username]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (usernameError) {
+      toast.error(usernameError);
+      return;
+    }
+
+    if (!formData.username || formData.username.trim().length < 3) {
+      toast.error("사용자명은 3자 이상이어야 합니다.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // TODO: API 연동
-      console.log("Profile update:", formData);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const updated = await updateProfile({
+        username: formData.username.trim().toLowerCase(),
+        name: formData.name || undefined,
+        bio: formData.bio || undefined,
+      });
+      setUser(updated);
       toast.success("프로필이 저장되었습니다.");
     } catch (error) {
       console.error("Profile update error:", error);
-      toast.error("프로필 저장에 실패했습니다.");
+      const msg = getErrorMessage(error);
+      toast.error(msg || "프로필 저장에 실패했습니다.");
     } finally {
       setIsLoading(false);
     }
@@ -61,7 +126,7 @@ export function ProfileSettings() {
         <div className="flex items-center gap-4">
           <UserAvatar
             name={formData.name}
-            imageUrl={MOCK_USER.avatarUrl}
+            imageUrl={undefined}
             size="lg"
           />
           <div className="flex gap-2">
@@ -123,9 +188,13 @@ export function ProfileSettings() {
             className="rounded-l-none"
           />
         </div>
-        <p className="text-xs text-muted-foreground">
-          영문, 숫자, 언더스코어(_)만 사용 가능합니다.
-        </p>
+        {usernameError ? (
+          <p className="text-xs text-destructive">{usernameError}</p>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            영문, 숫자, 언더스코어(_)만 사용 가능합니다.
+          </p>
+        )}
       </div>
 
       {/* Bio */}
@@ -147,7 +216,7 @@ export function ProfileSettings() {
 
       {/* Submit Button */}
       <div className="flex justify-end pt-4">
-        <Button type="submit" disabled={isLoading}>
+        <Button type="submit" disabled={isLoading || isCheckingUsername}>
           {isLoading ? "저장 중..." : "저장하기"}
         </Button>
       </div>

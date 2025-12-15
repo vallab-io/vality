@@ -1,32 +1,74 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { PageHeader, UserAvatar } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-
-// 목업 사용자 데이터
-const MOCK_USER = {
-  name: "John Doe",
-  username: "johndoe",
-  bio: "프로덕트 디자이너 · 스타트업에서 일하고 있습니다. 디자인, 생산성, 그리고 일하는 방식에 대해 씁니다.",
-  avatarUrl: null as string | null,
-};
+import { useAtomValue, useSetAtom } from "jotai";
+import { authLoadingAtom, userAtom } from "@/stores/auth.store";
+import {
+  getCurrentUser,
+  updateProfile,
+  deleteAccount,
+  checkUsernameAvailability,
+} from "@/lib/api/auth";
+import { getErrorMessage } from "@/lib/api/client";
 
 export default function SettingsPage() {
+  const router = useRouter();
+  const authLoading = useAtomValue(authLoadingAtom);
+  const user = useAtomValue(userAtom);
+  const setUser = useSetAtom(userAtom);
+
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    name: MOCK_USER.name,
-    username: MOCK_USER.username,
-    bio: MOCK_USER.bio,
+    name: user?.name || "",
+    username: user?.username || "",
+    bio: user?.bio || "",
   });
+
+  // 유저 정보 보장
+  useEffect(() => {
+    if (authLoading) return;
+    if (user) return;
+
+    const fetchUser = async () => {
+      try {
+        const me = await getCurrentUser();
+        setUser(me);
+        setFormData({
+          name: me.name || "",
+          username: me.username || "",
+          bio: me.bio || "",
+        });
+      } catch (error) {
+        console.error("Failed to load user", error);
+        router.push("/login");
+      }
+    };
+
+    fetchUser();
+  }, [authLoading, user, setUser, router]);
+
+  // user 업데이트 시 폼 동기화
+  useEffect(() => {
+    if (!user) return;
+    setFormData({
+      name: user.name || "",
+      username: user.username || "",
+      bio: user.bio || "",
+    });
+  }, [user]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -35,17 +77,61 @@ export default function SettingsPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Username 유효성 & 중복 확인
+  useEffect(() => {
+    const check = async () => {
+      const username = formData.username.trim().toLowerCase();
+      if (!username) {
+        setUsernameError("사용자명을 입력하세요.");
+        return;
+      }
+      if (username.length < 3) {
+        setUsernameError("사용자명은 3자 이상이어야 합니다.");
+        return;
+      }
+      if (user?.username === username) {
+        setUsernameError(null);
+        return;
+      }
+      setIsCheckingUsername(true);
+      setUsernameError(null);
+      try {
+        const available = await checkUsernameAvailability(username);
+        if (!available) setUsernameError("이미 사용 중인 사용자명입니다.");
+      } catch (error) {
+        console.error("Username check error:", error);
+      } finally {
+        setIsCheckingUsername(false);
+      }
+    };
+    const id = setTimeout(check, 500);
+    return () => clearTimeout(id);
+  }, [formData.username, user?.username]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    if (usernameError) {
+      toast.error(usernameError);
+      return;
+    }
+    if (!formData.username || formData.username.trim().length < 3) {
+      toast.error("사용자명은 3자 이상이어야 합니다.");
+      return;
+    }
 
+    setIsLoading(true);
     try {
-      console.log("Profile update:", formData);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const updated = await updateProfile({
+        username: formData.username.trim().toLowerCase(),
+        name: formData.name || undefined,
+        bio: formData.bio || undefined,
+      });
+      setUser(updated);
       toast.success("프로필이 저장되었습니다.");
     } catch (error) {
       console.error("Profile update error:", error);
-      toast.error("프로필 저장에 실패했습니다.");
+      const msg = getErrorMessage(error);
+      toast.error(msg || "프로필 저장에 실패했습니다.");
     } finally {
       setIsLoading(false);
     }
@@ -63,12 +149,16 @@ export default function SettingsPage() {
 
     setIsDeleteLoading(true);
     try {
-      console.log("Delete account");
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await deleteAccount();
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      setUser(null);
       toast.success("계정이 삭제되었습니다.");
+      router.push("/login");
     } catch (error) {
       console.error("Delete account error:", error);
-      toast.error("계정 삭제에 실패했습니다.");
+      const msg = getErrorMessage(error);
+      toast.error(msg || "계정 삭제에 실패했습니다.");
     } finally {
       setIsDeleteLoading(false);
     }
@@ -89,8 +179,8 @@ export default function SettingsPage() {
             {/* Profile Image */}
             <div className="flex items-center gap-4">
               <UserAvatar
-                name={formData.name}
-                imageUrl={MOCK_USER.avatarUrl}
+                name={formData.name || user?.email || "사용자"}
+                imageUrl={null}
                 size="lg"
               />
               <div>
@@ -138,9 +228,13 @@ export default function SettingsPage() {
                   className="rounded-l-none"
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                vality.io/@{formData.username}
-              </p>
+              {usernameError ? (
+                <p className="text-xs text-destructive">{usernameError}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  vality.io/@{formData.username || "username"}
+                </p>
+              )}
             </div>
 
             {/* Bio */}
@@ -165,7 +259,7 @@ export default function SettingsPage() {
 
             {/* Submit */}
             <div className="flex justify-end pt-2">
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading || isCheckingUsername}>
                 {isLoading ? "저장 중..." : "변경사항 저장"}
               </Button>
             </div>

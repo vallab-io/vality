@@ -141,6 +141,12 @@ class AuthService(
         userRepository.update(updatedUser)
         return updatedUser.toUserResponse()
     }
+
+    suspend fun deleteAccount(userId: String) {
+        // 관련 refreshToken 제거 후 사용자 삭제
+        refreshTokenRepository.deleteByUserId(userId)
+        userRepository.delete(userId)
+    }
     
     private fun generateToken(userId: String): String {
         return JWT.create()
@@ -182,7 +188,7 @@ class AuthService(
                 val updatedUser = user.copy(
                     name = userInfo.name ?: user.name,
                     avatarUrl = userInfo.avatarUrl ?: user.avatarUrl,
-                    updatedAt = now
+                    updatedAt = now,
                 )
                 userRepository.update(updatedUser)
 

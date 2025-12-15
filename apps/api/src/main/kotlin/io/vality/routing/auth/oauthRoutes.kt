@@ -64,6 +64,7 @@ fun Route.oauthRoutes() {
             try {
                 val code = call.request.queryParameters["code"]
                 val state = call.request.queryParameters["state"]
+                logger.info("Google OAuth complete: code=$code, state=$state")
 
                 // 필수 파라미터 확인
                 if (code == null || state == null) {
@@ -79,7 +80,8 @@ fun Route.oauthRoutes() {
                 val redirectUri = OAuthStateStore.validateState(state) ?: run {
                     logger.error("Invalid or expired state: state=$state")
                     call.respond(
-                        HttpStatusCode.BadRequest, "Invalid or expired state"
+                        HttpStatusCode.BadRequest,
+                        "Invalid or expired state",
                     )
                     return@post
                 }

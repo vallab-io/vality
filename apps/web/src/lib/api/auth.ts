@@ -98,6 +98,11 @@ export async function getCurrentUser(): Promise<UserResponse> {
   return response.data.data;
 }
 
+// 계정 삭제
+export async function deleteAccount(): Promise<void> {
+  await apiClient.delete("/auth/me");
+}
+
 export async function updateProfile(
   data: UpdateProfileRequest
 ): Promise<UserResponse> {

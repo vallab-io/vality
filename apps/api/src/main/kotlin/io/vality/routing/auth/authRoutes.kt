@@ -8,6 +8,7 @@ import io.ktor.server.auth.principal
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
@@ -153,6 +154,27 @@ fun Route.authRoutes() {
                     call.respond(
                         HttpStatusCode.InternalServerError,
                         ApiResponse.error<Nothing>(message = e.message ?: "Failed to update profile"),
+                    )
+                }
+            }
+
+            delete("/me") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal?.payload?.subject ?: return@delete call.respond(
+                    HttpStatusCode.Unauthorized,
+                    ApiResponse.error<Nothing>(message = "Unauthorized"),
+                )
+
+                try {
+                    authService.deleteAccount(userId)
+                    call.respond(
+                        HttpStatusCode.OK,
+                        ApiResponse.success(data = Unit, message = "Account deleted"),
+                    )
+                } catch (e: Exception) {
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        ApiResponse.error<Nothing>(message = e.message ?: "Failed to delete account"),
                     )
                 }
             }

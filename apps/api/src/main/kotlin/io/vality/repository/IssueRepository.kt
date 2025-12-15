@@ -140,7 +140,8 @@ class IssueRepository {
     suspend fun existsByNewsletterIdAndSlug(newsletterId: String, slug: String): Boolean = dbQuery {
         Issues.select(listOf(Issues.id))
             .where { (Issues.newsletterId eq newsletterId) and (Issues.slug eq slug) }
-            .count() > 0
+            .limit(1)
+            .firstOrNull() != null
     }
 
     suspend fun create(issue: Issue): Issue = dbQuery {
