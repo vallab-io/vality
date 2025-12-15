@@ -10,6 +10,7 @@ interface ApiResponse<T> {
 // AuthResponse 타입 정의
 export interface AuthResponse {
   accessToken: string;
+  refreshToken: string;
   tokenType: string;
   user: {
     id: string;
@@ -70,6 +71,22 @@ export interface UserResponse {
   name: string | null;
   bio: string | null;
   avatarUrl: string | null;
+}
+
+// RefreshToken으로 AccessToken 갱신
+export async function refreshAccessToken(
+  refreshToken: string
+): Promise<AuthResponse> {
+  const response = await apiClient.post<ApiResponse<AuthResponse>>(
+    "/auth/refresh",
+    {
+      refreshToken,
+    }
+  );
+  if (!response.data.data) {
+    throw new Error(response.data.message || "Failed to refresh token");
+  }
+  return response.data.data;
 }
 
 // 현재 사용자 정보 조회

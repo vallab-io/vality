@@ -1,18 +1,34 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/common";
 import { MenuIcon, CloseIcon } from "@/components/icons";
 import { MARKETING_NAV_ITEMS } from "@/constants/navigation";
+import { useAtomValue } from "jotai";
+import { userAtom, authLoadingAtom } from "@/stores/auth.store";
 
 export function MarketingHeader() {
+  const router = useRouter();
+  const user = useAtomValue(userAtom);
+  const authLoading = useAtomValue(authLoadingAtom);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
+
+  const handleLoginClick = () => {
+    if (authLoading) return;
+    if (user) {
+      router.push("/dashboard");
+    } else {
+      router.push("/login");
+    }
+    closeMenu();
+  };
 
   return (
     <>
@@ -35,14 +51,14 @@ export function MarketingHeader() {
 
           {/* Desktop Actions */}
           <nav className="hidden items-center gap-1 md:flex">
-            <Link href="/login">
-              <Button variant="ghost" size="sm">
-                로그인
-              </Button>
-            </Link>
-            <Link href="/signup">
-              <Button size="sm">시작하기</Button>
-            </Link>
+            <Button size="sm" onClick={handleLoginClick} disabled={authLoading}>
+              로그인
+            </Button>
+            {!user && (
+              <Link href="/signup">
+                <Button size="sm">시작하기</Button>
+              </Link>
+            )}
           </nav>
 
           {/* Mobile Menu Button */}
@@ -107,14 +123,14 @@ export function MarketingHeader() {
 
         {/* Actions */}
         <div className="border-t border-border p-4 space-y-2">
-          <Link href="/login" onClick={closeMenu}>
-            <Button variant="outline" className="w-full">
-              로그인
-            </Button>
-          </Link>
-          <Link href="/signup" onClick={closeMenu}>
-            <Button className="w-full">시작하기</Button>
-          </Link>
+          <Button className="w-full" onClick={handleLoginClick} disabled={authLoading}>
+            로그인
+          </Button>
+          {!user && (
+            <Link href="/signup" onClick={closeMenu}>
+              <Button className="w-full">시작하기</Button>
+            </Link>
+          )}
         </div>
       </div>
     </>

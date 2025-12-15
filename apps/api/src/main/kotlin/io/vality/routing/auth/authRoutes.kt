@@ -14,6 +14,7 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.vality.dto.ApiResponse
 import io.vality.dto.auth.EmailAuthRequest
+import io.vality.dto.auth.RefreshTokenRequest
 import io.vality.dto.auth.SendVerificationCodeRequest
 import io.vality.dto.auth.SendVerificationCodeResponse
 import io.vality.dto.auth.UpdateProfileRequest
@@ -58,6 +59,26 @@ fun Route.authRoutes() {
                 call.respond(
                     HttpStatusCode.InternalServerError,
                     ApiResponse.error<Nothing>(message = e.message ?: "Failed to authenticate"),
+                )
+            }
+        }
+
+        // RefreshToken으로 AccessToken 갱신
+        post("/refresh") {
+            val request = call.receive<RefreshTokenRequest>()
+
+            try {
+                val response = authService.refreshAccessToken(request.refreshToken)
+                call.respond(HttpStatusCode.OK, ApiResponse.success(data = response))
+            } catch (e: IllegalArgumentException) {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiResponse.error<Nothing>(message = e.message ?: "Invalid refresh token"),
+                )
+            } catch (e: Exception) {
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    ApiResponse.error<Nothing>(message = e.message ?: "Failed to refresh token"),
                 )
             }
         }

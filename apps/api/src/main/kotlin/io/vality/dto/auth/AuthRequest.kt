@@ -20,4 +20,9 @@ data class UpdateProfileRequest(
     val bio: String? = null,
 )
 
+@Serializable
+data class RefreshTokenRequest(
+    val refreshToken: String,
+)
+
 

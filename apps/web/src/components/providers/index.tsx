@@ -39,10 +39,13 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
           // 인증 실패 시 (토큰 만료 등) localStorage 정리
           console.error("Failed to get current user:", error);
           localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
           setUser(null);
         }
       } catch (error) {
         console.error("Auth initialization error:", error);
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
         setUser(null);
       } finally {
         setAuthLoading(false);

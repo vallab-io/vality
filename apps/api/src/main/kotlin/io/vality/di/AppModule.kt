@@ -6,6 +6,7 @@ import io.vality.repository.AccountRepository
 import io.vality.repository.EmailLogRepository
 import io.vality.repository.IssueRepository
 import io.vality.repository.NewsletterRepository
+import io.vality.repository.RefreshTokenRepository
 import io.vality.repository.SubscriberRepository
 import io.vality.repository.UserRepository
 import io.vality.repository.VerificationCodeRepository
@@ -22,6 +23,7 @@ val appModule = module {
     singleOf(::UserRepository)
     singleOf(::AccountRepository)
     singleOf(::VerificationCodeRepository)
+    singleOf(::RefreshTokenRepository)
     singleOf(::NewsletterRepository)
     singleOf(::IssueRepository)
     singleOf(::SubscriberRepository)
@@ -34,6 +36,7 @@ val appModule = module {
             userRepository = get(),
             accountRepository = get(),
             verificationCodeRepository = get(),
+            refreshTokenRepository = get(),
             jwtSecret = config.getString("ktor.jwt.secret"),
             jwtIssuer = config.getString("ktor.jwt.issuer"),
             jwtAudience = config.getString("ktor.jwt.audience")

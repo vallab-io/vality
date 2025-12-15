@@ -95,6 +95,7 @@ export function VerificationCodeForm({
       // 토큰과 사용자 정보 저장
       if (typeof window !== "undefined") {
         localStorage.setItem("accessToken", authResponse.accessToken);
+        localStorage.setItem("refreshToken", authResponse.refreshToken);
       }
       setUser(authResponse.user);
 

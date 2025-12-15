@@ -4,17 +4,21 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.vality.domain.Account
 import io.vality.domain.AccountProvider
+import io.vality.domain.RefreshToken
 import io.vality.domain.User
 import io.vality.domain.VerificationCode
 import io.vality.dto.auth.AuthResponse
 import io.vality.dto.auth.UserResponse
 import io.vality.dto.auth.toUserResponse
 import io.vality.repository.AccountRepository
+import io.vality.repository.RefreshTokenRepository
 import io.vality.repository.UserRepository
 import io.vality.repository.VerificationCodeRepository
 import io.vality.service.oauth.OAuthUserInfo
 import io.vality.util.CuidGenerator
+import java.security.SecureRandom
 import java.time.Instant
+import java.util.Base64
 import java.util.Date
 
 /**
@@ -24,6 +28,7 @@ class AuthService(
     private val userRepository: UserRepository,
     private val accountRepository: AccountRepository,
     private val verificationCodeRepository: VerificationCodeRepository,
+    private val refreshTokenRepository: RefreshTokenRepository,
     private val jwtSecret: String,
     private val jwtIssuer: String,
     private val jwtAudience: String
@@ -94,11 +99,13 @@ class AuthService(
         verificationCodeRepository.findByEmailAndCode(email, code)
             ?.let { verificationCodeRepository.delete(it.id) }
         
-        // JWT 토큰 생성
+        // JWT 토큰 및 RefreshToken 생성
         val accessToken = generateToken(user.id)
+        val refreshToken = generateRefreshToken(user.id)
         
         return AuthResponse(
             accessToken = accessToken,
+            refreshToken = refreshToken.token,
             user = user.toUserResponse()
         )
     }
@@ -140,7 +147,7 @@ class AuthService(
             .withIssuer(jwtIssuer)
             .withAudience(jwtAudience)
             .withSubject(userId)
-            .withExpiresAt(Date.from(Instant.now().plusSeconds(86400))) // 24시간
+            .withExpiresAt(Date.from(Instant.now().plusSeconds(3600))) // 1시간 (refreshToken으로 갱신 가능)
             .withIssuedAt(Date.from(Instant.now()))
             .sign(Algorithm.HMAC256(jwtSecret))
     }
@@ -180,8 +187,10 @@ class AuthService(
                 userRepository.update(updatedUser)
 
                 val accessToken = generateToken(updatedUser.id)
+                val refreshToken = generateRefreshToken(updatedUser.id)
                 return AuthResponse(
                     accessToken = accessToken,
+                    refreshToken = refreshToken.token,
                     user = updatedUser.toUserResponse()
                 )
             }
@@ -213,8 +222,10 @@ class AuthService(
             userRepository.update(updatedUser)
 
             val accessToken = generateToken(updatedUser.id)
+            val refreshToken = generateRefreshToken(updatedUser.id)
             return AuthResponse(
                 accessToken = accessToken,
+                refreshToken = refreshToken.token,
                 user = updatedUser.toUserResponse()
             )
         }
@@ -242,10 +253,69 @@ class AuthService(
         accountRepository.create(account)
 
         val accessToken = generateToken(newUser.id)
+        val refreshToken = generateRefreshToken(newUser.id)
         return AuthResponse(
             accessToken = accessToken,
+            refreshToken = refreshToken.token,
             user = newUser.toUserResponse()
         )
+    }
+
+    /**
+     * RefreshToken으로 새로운 AccessToken 발급
+     */
+    suspend fun refreshAccessToken(refreshTokenString: String): AuthResponse {
+        // RefreshToken 검증
+        val refreshToken = refreshTokenRepository.findByToken(refreshTokenString)
+            ?: throw IllegalArgumentException("Invalid or expired refresh token")
+
+        // 사용자 정보 조회
+        val user = userRepository.findById(refreshToken.userId)
+            ?: throw IllegalStateException("User not found")
+
+        // 기존 RefreshToken 삭제 (rotation 방식)
+        refreshTokenRepository.deleteByToken(refreshTokenString)
+
+        // 새로운 AccessToken 및 RefreshToken 발급
+        val accessToken = generateToken(user.id)
+        val newRefreshToken = generateRefreshToken(user.id)
+
+        return AuthResponse(
+            accessToken = accessToken,
+            refreshToken = newRefreshToken.token,
+            user = user.toUserResponse()
+        )
+    }
+
+    /**
+     * RefreshToken 생성 및 저장
+     * 만료 기간: 30일
+     */
+    private suspend fun generateRefreshToken(userId: String): RefreshToken {
+        val token = generateSecureRandomToken()
+        val expiresAt = Instant.now().plusSeconds(30 * 24 * 60 * 60) // 30일
+        val now = Instant.now()
+
+        val refreshToken = RefreshToken(
+            id = CuidGenerator.generate(),
+            userId = userId,
+            token = token,
+            expiresAt = expiresAt,
+            createdAt = now,
+        )
+
+        refreshTokenRepository.create(refreshToken)
+        return refreshToken
+    }
+
+    /**
+     * 보안 랜덤 토큰 생성 (Base64 URL-safe)
+     */
+    private fun generateSecureRandomToken(): String {
+        val random = SecureRandom()
+        val bytes = ByteArray(32) // 256 bits
+        random.nextBytes(bytes)
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
     }
 }
 

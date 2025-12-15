@@ -134,3 +134,16 @@ object EmailLogs : Table("email_logs") {
 
     override val primaryKey = PrimaryKey(id)
 }
+
+// ============================================
+// RefreshToken - 리프레시 토큰
+// ============================================
+object RefreshTokens : Table("refresh_tokens") {
+    val id = varchar("id", 25)
+    val userId = varchar("user_id", 25).references(Users.id, onDelete = ReferenceOption.CASCADE)
+    val token = varchar("token", 255).uniqueIndex()
+    val expiresAt = timestamp("expires_at")
+    val createdAt = timestamp("created_at")
+
+    override val primaryKey = PrimaryKey(id)
+}
