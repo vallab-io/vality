@@ -26,9 +26,9 @@ fun Application.configureCORS(config: Config) {
         anyHost()
         
         // 특정 origin만 허용하려면 아래 주석 해제
-        // allowedOrigins.forEach { origin ->
-        //     allowHost(origin, schemes = listOf("http", "https"))
-        // }
+//         allowedOrigins.forEach { origin ->
+//             allowHost(origin, schemes = listOf("http", "https"))
+//         }
     }
 }
 
