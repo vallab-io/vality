@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { SocialButtons } from "./social-buttons";
 import { VerificationCodeForm } from "./verification-code-form";
+import { sendVerificationCode } from "@/lib/api/auth";
+import { getErrorMessage } from "@/lib/api/client";
 
 interface AuthFormProps {
   mode: "login" | "signup";
@@ -27,17 +29,14 @@ export function AuthForm({ mode }: AuthFormProps) {
     setIsLoading(true);
 
     try {
-      // TODO: API 연동 - 인증 코드 발송
-      console.log("Sending verification code to:", email);
-
-      // 임시: 코드 발송 시뮬레이션
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
+      // API 연동 - 인증 코드 발송
+      await sendVerificationCode(email);
       toast.success("인증 코드가 발송되었습니다. 이메일을 확인해주세요.");
       setIsCodeSent(true);
     } catch (error) {
       console.error("Error sending code:", error);
-      toast.error("인증 코드 발송에 실패했습니다. 다시 시도해주세요.");
+      const errorMessage = getErrorMessage(error);
+      toast.error(errorMessage || "인증 코드 발송에 실패했습니다. 다시 시도해주세요.");
     } finally {
       setIsLoading(false);
     }

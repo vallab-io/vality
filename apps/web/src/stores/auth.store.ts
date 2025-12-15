@@ -5,7 +5,7 @@ import { atomWithStorage } from "jotai/utils";
 export interface User {
   id: string;
   email: string;
-  username: string;
+  username: string | null;
   name: string | null;
   bio: string | null;
   avatarUrl: string | null;
@@ -21,20 +21,13 @@ export interface AuthState {
 // 사용자 정보 (localStorage에 저장)
 export const userAtom = atomWithStorage<User | null>("user", null);
 
-// 액세스 토큰 (localStorage에 저장)
-export const accessTokenAtom = atomWithStorage<string | null>(
-  "accessToken",
-  null
-);
-
 // 로딩 상태
 export const authLoadingAtom = atom<boolean>(true);
 
-// 인증 여부 파생 atom
+// 인증 여부 파생 atom (user가 null이 아니면 인증됨)
 export const isAuthenticatedAtom = atom((get) => {
   const user = get(userAtom);
-  const token = get(accessTokenAtom);
-  return !!user && !!token;
+  return user !== null;
 });
 
 // 전체 인증 상태 파생 atom

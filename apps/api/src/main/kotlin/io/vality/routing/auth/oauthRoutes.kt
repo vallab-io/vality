@@ -1,10 +1,9 @@
 package io.vality.routing.auth
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
-import io.ktor.server.plugins.origin
-import io.ktor.server.request.host
-import io.ktor.server.request.port
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
@@ -19,8 +18,6 @@ import io.vality.service.oauth.OAuthStateStore
 import org.koin.ktor.ext.inject
 import org.slf4j.LoggerFactory
 import java.util.UUID
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 
 private val logger = LoggerFactory.getLogger("OAuthRoutes")
 
@@ -99,19 +96,22 @@ fun Route.oauthRoutes() {
                     userInfo = userInfo,
                 )
 
-                // AuthResponse 반환
-                call.respond(HttpStatusCode.OK, authResponse)
+                // AuthResponse 반환 (ApiResponse로 래핑)
+                call.respond(
+                    HttpStatusCode.OK,
+                    io.vality.dto.ApiResponse.success(data = authResponse)
+                )
             } catch (e: OAuthException) {
                 logger.error("OAuth error: ${e.message}", e)
                 call.respond(
                     HttpStatusCode.BadRequest,
-                    "OAuth error: ${e.message}",
+                    io.vality.dto.ApiResponse.error<Nothing>(message = e.message),
                 )
             } catch (e: Exception) {
                 logger.error("Google OAuth complete error", e)
                 call.respond(
                     HttpStatusCode.InternalServerError,
-                    "Internal server error during Google OAuth: ${e.message}",
+                    io.vality.dto.ApiResponse.error<Nothing>(message = e.message ?: "Internal server error"),
                 )
             }
         }

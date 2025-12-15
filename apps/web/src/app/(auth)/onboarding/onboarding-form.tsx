@@ -1,21 +1,73 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { updateProfile, checkUsernameAvailability } from "@/lib/api/auth";
+import { userAtom } from "@/stores/auth.store";
+import { useSetAtom, useAtomValue } from "jotai";
+import { getErrorMessage } from "@/lib/api/client";
 
 export function OnboardingForm() {
   const router = useRouter();
+  const setUser = useSetAtom(userAtom);
+  const user = useAtomValue(userAtom);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     username: "",
     name: "",
     bio: "",
   });
+
+  // user에 name이 있으면 기본값으로 설정
+  useEffect(() => {
+    if (user?.name) {
+      setFormData((prev) => ({ ...prev, name: user.name || "" }));
+    }
+  }, [user]);
+
+  // Username 중복 확인 (debounce)
+  useEffect(() => {
+    const checkUsername = async () => {
+      const username = formData.username.trim();
+      
+      // 최소 길이 체크
+      if (username.length < 3) {
+        setUsernameError(null);
+        return;
+      }
+
+      // 현재 사용자의 username과 같으면 체크하지 않음
+      if (user?.username === username) {
+        setUsernameError(null);
+        return;
+      }
+
+      setIsCheckingUsername(true);
+      setUsernameError(null);
+
+      try {
+        const isAvailable = await checkUsernameAvailability(username);
+        if (!isAvailable) {
+          setUsernameError("이미 사용 중인 사용자명입니다.");
+        }
+      } catch (error) {
+        console.error("Username check error:", error);
+        // 에러가 발생해도 사용자에게 표시하지 않음 (네트워크 오류 등)
+      } finally {
+        setIsCheckingUsername(false);
+      }
+    };
+
+    const timeoutId = setTimeout(checkUsername, 500); // 500ms debounce
+    return () => clearTimeout(timeoutId);
+  }, [formData.username, user?.username]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -43,26 +95,46 @@ export function OnboardingForm() {
       return;
     }
 
+    // Username 중복 확인
+    if (usernameError) {
+      toast.error(usernameError);
+      return;
+    }
+
+    // 최종 중복 확인 (제출 전)
+    if (user?.username !== formData.username) {
+      try {
+        const isAvailable = await checkUsernameAvailability(formData.username);
+        if (!isAvailable) {
+          toast.error("이미 사용 중인 사용자명입니다.");
+          return;
+        }
+      } catch (error) {
+        console.error("Final username check error:", error);
+        toast.error("사용자명 확인 중 오류가 발생했습니다.");
+        return;
+      }
+    }
+
     setIsLoading(true);
 
     try {
-      // TODO: API 연동 - 프로필 저장
-      console.log("Saving profile:", formData);
+      // API 연동 - 프로필 저장
+      const updatedUser = await updateProfile({
+        username: formData.username, // 필수
+        name: formData.name || undefined,
+        bio: formData.bio || undefined,
+      });
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // 임시: 로컬 스토리지 업데이트
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      localStorage.setItem(
-        "user",
-        JSON.stringify({ ...user, ...formData })
-      );
+      // 사용자 정보 업데이트
+      setUser(updatedUser);
 
       toast.success("프로필이 저장되었습니다!");
       router.push("/dashboard");
     } catch (error) {
       console.error("Save error:", error);
-      toast.error("저장에 실패했습니다. 다시 시도해주세요.");
+      const errorMessage = getErrorMessage(error);
+      toast.error(errorMessage || "저장에 실패했습니다. 다시 시도해주세요.");
     } finally {
       setIsLoading(false);
     }
@@ -75,20 +147,35 @@ export function OnboardingForm() {
         <Label htmlFor="username">
           사용자명 <span className="text-destructive">*</span>
         </Label>
-        <Input
-          id="username"
-          name="username"
-          type="text"
-          placeholder="username"
-          value={formData.username}
-          onChange={handleUsernameChange}
-          disabled={isLoading}
-          className="h-11"
-          autoFocus
-        />
-        <p className="text-xs text-muted-foreground">
-          vality.io/@{formData.username || "username"}
-        </p>
+        <div className="relative">
+          <Input
+            id="username"
+            name="username"
+            type="text"
+            placeholder="username"
+            value={formData.username}
+            onChange={handleUsernameChange}
+            disabled={isLoading}
+            className={`h-11 ${usernameError ? "border-destructive" : ""}`}
+            autoFocus
+          />
+          {isCheckingUsername && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+            </div>
+          )}
+        </div>
+        {usernameError ? (
+          <p className="text-xs text-destructive">{usernameError}</p>
+        ) : formData.username.length >= 3 && !isCheckingUsername && !usernameError ? (
+          <p className="text-xs text-green-600 dark:text-green-400">
+            사용 가능한 사용자명입니다.
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            vality.io/@{formData.username || "username"}
+          </p>
+        )}
       </div>
 
       {/* 이름 */}
@@ -125,7 +212,13 @@ export function OnboardingForm() {
       <Button
         type="submit"
         className="h-11 w-full"
-        disabled={isLoading || !formData.username}
+        disabled={
+          isLoading ||
+          !formData.username ||
+          formData.username.length < 3 ||
+          !!usernameError ||
+          isCheckingUsername
+        }
       >
         {isLoading ? "저장 중..." : "시작하기"}
       </Button>

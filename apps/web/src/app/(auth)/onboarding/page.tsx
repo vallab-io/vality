@@ -1,13 +1,43 @@
-import { Metadata } from "next";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAtomValue } from "jotai";
 import { OnboardingForm } from "./onboarding-form";
 import { Logo } from "@/components/common";
-
-export const metadata: Metadata = {
-  title: "프로필 설정",
-  description: "Vality 프로필을 설정하세요",
-};
+import { userAtom, isAuthenticatedAtom, authLoadingAtom } from "@/stores/auth.store";
 
 export default function OnboardingPage() {
+  const router = useRouter();
+  const user = useAtomValue(userAtom);
+  const isAuthenticated = useAtomValue(isAuthenticatedAtom);
+  const authLoading = useAtomValue(authLoadingAtom);
+
+  useEffect(() => {
+    // 인증 초기화가 완료될 때까지 기다림
+    if (authLoading) {
+      return;
+    }
+
+    // 인증 확인 (user가 null이면 인증되지 않음)
+    if (!isAuthenticated || !user) {
+      router.push("/login");
+      return;
+    }
+  }, [authLoading, isAuthenticated, user, router]);
+
+  // 인증 초기화 중이거나 인증 확인 중
+  if (authLoading || !isAuthenticated || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
+          <p className="text-muted-foreground">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       {/* Header */}

@@ -1,4 +1,7 @@
-import { Metadata } from "next";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,11 +18,8 @@ import {
   PlusIcon,
   MoreIcon,
 } from "@/components/icons";
-
-export const metadata: Metadata = {
-  title: "대시보드",
-  description: "뉴스레터 관리 대시보드",
-};
+import { useAtomValue } from "jotai";
+import { userAtom, isAuthenticatedAtom, authLoadingAtom } from "@/stores/auth.store";
 
 // 목업 데이터: 실제로는 API에서 가져올 데이터
 const MOCK_STATS = {
@@ -63,6 +63,42 @@ const MOCK_NEWSLETTERS = [
 const HAS_DATA = true;
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const user = useAtomValue(userAtom);
+  const isAuthenticated = useAtomValue(isAuthenticatedAtom);
+  const authLoading = useAtomValue(authLoadingAtom);
+
+  useEffect(() => {
+    // 인증 초기화가 완료될 때까지 기다림
+    if (authLoading) {
+      return;
+    }
+
+    // 인증 확인 (user가 null이면 인증되지 않음)
+    if (!isAuthenticated || !user) {
+      router.push("/login");
+      return;
+    }
+
+    // onboarding 완료 확인 (username과 name이 모두 있어야 함)
+    if (!user.username) {
+      router.push("/onboarding");
+      return;
+    }
+  }, [authLoading, isAuthenticated, user, router]);
+
+  // 인증 초기화 중이거나 인증 및 onboarding 완료 확인 중
+  if (authLoading || !isAuthenticated || !user || !user.username) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
+          <p className="text-muted-foreground">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
+
   const stats = HAS_DATA ? MOCK_STATS : { totalSubscribers: 0, publishedNewsletters: 0, draftNewsletters: 0 };
   const newsletters = HAS_DATA ? MOCK_NEWSLETTERS : [];
 

@@ -7,7 +7,7 @@ import io.vality.domain.User
 data class AuthResponse(
     val accessToken: String,
     val tokenType: String = "Bearer",
-    val user: UserResponse
+    val user: UserResponse,
 )
 
 @Serializable
@@ -17,7 +17,7 @@ data class UserResponse(
     val username: String? = null,
     val name: String? = null,
     val bio: String? = null,
-    val avatarUrl: String? = null
+    val avatarUrl: String? = null,
 )
 
 fun User.toUserResponse(): UserResponse {
@@ -34,9 +34,4 @@ fun User.toUserResponse(): UserResponse {
 @Serializable
 data class SendVerificationCodeResponse(
     val message: String = "Verification code sent"
-)
-
-@Serializable
-data class VerifyCodeResponse(
-    val valid: Boolean
 )

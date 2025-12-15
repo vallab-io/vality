@@ -9,14 +9,14 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
+import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.vality.dto.ApiResponse
+import io.vality.dto.auth.EmailAuthRequest
 import io.vality.dto.auth.SendVerificationCodeRequest
 import io.vality.dto.auth.SendVerificationCodeResponse
-import io.vality.dto.auth.SignupRequest
-import io.vality.dto.auth.VerifyCodeRequest
-import io.vality.dto.auth.VerifyCodeResponse
+import io.vality.dto.auth.UpdateProfileRequest
 import io.vality.service.AuthService
 import org.koin.ktor.ext.inject
 
@@ -42,31 +42,13 @@ fun Route.authRoutes() {
             }
         }
 
-        // 인증 코드 검증
-        post("/verify-code") {
-            val request = call.receive<VerifyCodeRequest>()
+        // 이메일 인증 로그인/회원가입 (통합)
+        post("/email-auth") {
+            val request = call.receive<EmailAuthRequest>()
 
             try {
-                val isValid = authService.verifyCode(request.email, request.code)
-                call.respond(
-                    HttpStatusCode.OK,
-                    ApiResponse.success(data = VerifyCodeResponse(valid = isValid)),
-                )
-            } catch (e: Exception) {
-                call.respond(
-                    HttpStatusCode.BadRequest,
-                    ApiResponse.error<Nothing>(message = e.message ?: "Failed to verify code"),
-                )
-            }
-        }
-
-        // 회원가입 (이메일 인증 방식)
-        post("/signup") {
-            val request = call.receive<SignupRequest>()
-
-            try {
-                val response = authService.signup(request)
-                call.respond(HttpStatusCode.Created, ApiResponse.success(data = response))
+                val response = authService.authenticateWithEmail(request.email, request.code)
+                call.respond(HttpStatusCode.OK, ApiResponse.success(data = response))
             } catch (e: IllegalArgumentException) {
                 call.respond(
                     HttpStatusCode.BadRequest,
@@ -75,12 +57,38 @@ fun Route.authRoutes() {
             } catch (e: Exception) {
                 call.respond(
                     HttpStatusCode.InternalServerError,
-                    ApiResponse.error<Nothing>(message = e.message ?: "Failed to signup"),
+                    ApiResponse.error<Nothing>(message = e.message ?: "Failed to authenticate"),
                 )
             }
         }
 
-        // 내 정보 조회 (인증 필요)
+        // Username 존재 여부 확인
+        get("/check-username") {
+            val username = call.request.queryParameters["username"]
+
+            if (username == null || username.isBlank()) {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiResponse.error<Nothing>(message = "Username is required"),
+                )
+                return@get
+            }
+
+            try {
+                val isAvailable = authService.checkUsernameAvailability(username)
+                call.respond(
+                    HttpStatusCode.OK,
+                    ApiResponse.success(data = mapOf("available" to isAvailable)),
+                )
+            } catch (e: Exception) {
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    ApiResponse.error<Nothing>(message = e.message ?: "Failed to check username"),
+                )
+            }
+        }
+
+        // 내 정보 조회 및 업데이트 (인증 필요)
         authenticate("jwt") {
             get("/me") {
                 val principal = call.principal<JWTPrincipal>()
@@ -95,6 +103,35 @@ fun Route.authRoutes() {
                     call.respond(
                         HttpStatusCode.NotFound,
                         ApiResponse.error<Nothing>(message = e.message ?: "User not found"),
+                    )
+                }
+            }
+
+            patch("/me") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal?.payload?.subject ?: return@patch call.respond(
+                    HttpStatusCode.Unauthorized, ApiResponse.error<Nothing>(message = "Unauthorized")
+                )
+
+                val request = call.receive<UpdateProfileRequest>()
+
+                try {
+                    val user = authService.updateProfile(
+                        userId = userId,
+                        username = request.username,
+                        name = request.name,
+                        bio = request.bio,
+                    )
+                    call.respond(HttpStatusCode.OK, ApiResponse.success(data = user))
+                } catch (e: IllegalArgumentException) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        ApiResponse.error<Nothing>(message = e.message ?: "Invalid request"),
+                    )
+                } catch (e: Exception) {
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        ApiResponse.error<Nothing>(message = e.message ?: "Failed to update profile"),
                     )
                 }
             }

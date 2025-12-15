@@ -19,8 +19,12 @@ apiClient.interceptors.request.use(
     // 클라이언트 사이드에서만 토큰 추가
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("accessToken");
-      if (token && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`;
+      if (token) {
+        // 토큰 앞뒤 공백 제거
+        const cleanToken = token.trim();
+        if (cleanToken && config.headers) {
+          config.headers.Authorization = `Bearer ${cleanToken}`;
+        }
       }
     }
     return config;

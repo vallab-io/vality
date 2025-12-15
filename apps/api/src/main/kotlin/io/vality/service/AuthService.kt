@@ -7,7 +7,6 @@ import io.vality.domain.AccountProvider
 import io.vality.domain.User
 import io.vality.domain.VerificationCode
 import io.vality.dto.auth.AuthResponse
-import io.vality.dto.auth.SignupRequest
 import io.vality.dto.auth.UserResponse
 import io.vality.dto.auth.toUserResponse
 import io.vality.repository.AccountRepository
@@ -52,35 +51,48 @@ class AuthService(
         
         return true
     }
-    
-    suspend fun verifyCode(email: String, code: String): Boolean {
+
+    private suspend fun verifyCode(email: String, code: String): Boolean {
         val verificationCode = verificationCodeRepository.findValidByEmailAndCode(email, code)
         return verificationCode != null
     }
-    
-    suspend fun signup(request: SignupRequest): AuthResponse {
+
+
+    /**
+     * 이메일 인증으로 로그인/회원가입 처리
+     * - 기존 사용자가 있으면 로그인
+     * - 기존 사용자가 없으면 회원가입
+     */
+    suspend fun authenticateWithEmail(email: String, code: String): AuthResponse {
         // 인증 코드 검증
-        if (!verifyCode(request.email, request.code)) {
+        if (!verifyCode(email, code)) {
             throw IllegalArgumentException("Invalid verification code")
         }
-        
-        // 사용자 생성
-        val now = Instant.now()
-        val user = User(
-            id = CuidGenerator.generate(),
-            email = request.email,
-            username = request.username,
-            name = request.name,
-            createdAt = now,
-            updatedAt = now,
-        )
-        
-        userRepository.create(user)
+
+        // 기존 사용자 확인
+        val existingUser = userRepository.findByEmail(email)
+
+        val user = if (existingUser != null) {
+            // 기존 사용자: 로그인 처리
+            existingUser
+        } else {
+            // 신규 사용자: 회원가입 처리
+            val now = Instant.now()
+            val newUser = User(
+                id = CuidGenerator.generate(),
+                email = email,
+                username = null, // 나중에 설정
+                name = null, // 나중에 설정
+                createdAt = now,
+                updatedAt = now,
+            )
+            userRepository.create(newUser)
+            newUser
+        }
         
         // 인증 코드 삭제
-        verificationCodeRepository.findByEmailAndCode(request.email, request.code)?.let {
-            verificationCodeRepository.delete(it.id)
-        }
+        verificationCodeRepository.findByEmailAndCode(email, code)
+            ?.let { verificationCodeRepository.delete(it.id) }
         
         // JWT 토큰 생성
         val accessToken = generateToken(user.id)
@@ -95,6 +107,32 @@ class AuthService(
         val user = userRepository.findById(userId)
             ?: throw IllegalStateException("User not found")
         return user.toUserResponse()
+    }
+    
+    suspend fun checkUsernameAvailability(username: String): Boolean {
+        return !userRepository.existsByUsername(username)
+    }
+    
+    suspend fun updateProfile(userId: String, username: String, name: String?, bio: String?): UserResponse {
+        val user = userRepository.findById(userId)
+            ?: throw IllegalStateException("User not found")
+        
+        // username 중복 확인 (변경하는 경우)
+        if (username != user.username) {
+            if (userRepository.existsByUsername(username)) {
+                throw IllegalArgumentException("Username already exists")
+            }
+        }
+        
+        val updatedUser = user.copy(
+            username = username,
+            name = name ?: user.name,
+            bio = bio ?: user.bio,
+            updatedAt = Instant.now(),
+        )
+        
+        userRepository.update(updatedUser)
+        return updatedUser.toUserResponse()
     }
     
     private fun generateToken(userId: String): String {

@@ -3,14 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { handleOAuthCallback } from "@/lib/api/auth";
-import { accessTokenAtom, userAtom } from "@/stores/auth.store";
+import { userAtom } from "@/stores/auth.store";
 import { useSetAtom } from "jotai";
 import { toast } from "sonner";
 
 export default function GoogleCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const setAccessToken = useSetAtom(accessTokenAtom);
   const setUser = useSetAtom(userAtom);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,7 +46,9 @@ export default function GoogleCallbackPage() {
         const authResponse = await handleOAuthCallback(code, state);
 
         // 토큰과 사용자 정보 저장
-        setAccessToken(authResponse.accessToken);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("accessToken", authResponse.accessToken);
+        }
         setUser(authResponse.user);
 
         toast.success("로그인 성공!");
@@ -67,7 +68,7 @@ export default function GoogleCallbackPage() {
     };
 
     processCallback();
-  }, [searchParams, router, setAccessToken, setUser]);
+  }, [searchParams, router, setUser]);
 
   if (error) {
     return (

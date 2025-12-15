@@ -8,17 +8,16 @@ data class SendVerificationCodeRequest(
 )
 
 @Serializable
-data class VerifyCodeRequest(
+data class EmailAuthRequest(
     val email: String,
     val code: String,
 )
 
 @Serializable
-data class SignupRequest(
-    val email: String,
-    val code: String,
-    val username: String? = null,
+data class UpdateProfileRequest(
+    val username: String, // 필수
     val name: String? = null,
+    val bio: String? = null,
 )
 
 

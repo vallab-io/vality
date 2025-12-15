@@ -82,13 +82,15 @@ class UserRepository {
     suspend fun existsByEmail(email: String): Boolean = dbQuery {
         Users.select(listOf(Users.id))
             .where { Users.email eq email }
-            .count() > 0
+            .limit(1)
+            .firstOrNull() != null
     }
 
     suspend fun existsByUsername(username: String): Boolean = dbQuery {
         Users.select(listOf(Users.id))
             .where { Users.username eq username }
-            .count() > 0
+            .limit(1)
+            .firstOrNull() != null
     }
 
     suspend fun create(user: User): User = dbQuery {

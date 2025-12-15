@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { emailAuth, sendVerificationCode } from "@/lib/api/auth";
+import { userAtom } from "@/stores/auth.store";
+import { useSetAtom } from "jotai";
+import { getErrorMessage } from "@/lib/api/client";
 
 interface VerificationCodeFormProps {
   email: string;
@@ -20,6 +24,7 @@ export function VerificationCodeForm({
   onBack,
 }: VerificationCodeFormProps) {
   const router = useRouter();
+  const setUser = useSetAtom(userAtom);
   const [code, setCode] = useState<string[]>(Array(CODE_LENGTH).fill(""));
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -84,29 +89,29 @@ export function VerificationCodeForm({
     setIsLoading(true);
 
     try {
-      // TODO: API 연동 - 인증 코드 검증
-      console.log("Verifying code:", verificationCode, "for email:", email);
+      // API 연동 - 이메일 인증 로그인/회원가입 (통합)
+      const authResponse = await emailAuth(email, verificationCode);
 
-      // 임시: 검증 시뮬레이션
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // 토큰과 사용자 정보 저장
+      if (typeof window !== "undefined") {
+        localStorage.setItem("accessToken", authResponse.accessToken);
+      }
+      setUser(authResponse.user);
 
-      // 임시: 로컬 스토리지에 저장
-      localStorage.setItem(
-        "user",
-        JSON.stringify({ email, isVerified: true })
-      );
-
-      toast.success(mode === "login" ? "로그인 성공!" : "회원가입 성공!");
+      // username, name이 비어있으면 회원가입으로 간주하고 프로필 설정 페이지로 이동
+      const isNewUser = !authResponse.user.username || !authResponse.user.name;
       
-      if (mode === "signup") {
-        // 회원가입 시 프로필 설정 페이지로 이동
+      if (isNewUser) {
+        toast.success("회원가입 성공! 프로필을 설정해주세요.");
         router.push("/onboarding");
       } else {
+        toast.success("로그인 성공!");
         router.push("/dashboard");
       }
     } catch (error) {
       console.error("Verification error:", error);
-      toast.error("인증 코드가 올바르지 않습니다. 다시 시도해주세요.");
+      const errorMessage = getErrorMessage(error);
+      toast.error(errorMessage || "인증 코드가 올바르지 않습니다. 다시 시도해주세요.");
       setCode(Array(CODE_LENGTH).fill(""));
       inputRefs.current[0]?.focus();
     } finally {
@@ -118,17 +123,15 @@ export function VerificationCodeForm({
     setIsResending(true);
 
     try {
-      // TODO: API 연동 - 인증 코드 재발송
-      console.log("Resending code to:", email);
-
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
+      // API 연동 - 인증 코드 재발송
+      await sendVerificationCode(email);
       toast.success("인증 코드가 재발송되었습니다.");
       setCode(Array(CODE_LENGTH).fill(""));
       inputRefs.current[0]?.focus();
     } catch (error) {
       console.error("Resend error:", error);
-      toast.error("재발송에 실패했습니다. 다시 시도해주세요.");
+      const errorMessage = getErrorMessage(error);
+      toast.error(errorMessage || "재발송에 실패했습니다. 다시 시도해주세요.");
     } finally {
       setIsResending(false);
     }
