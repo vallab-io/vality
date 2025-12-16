@@ -17,7 +17,9 @@ import io.vality.repository.VerificationCodeRepository
 import io.vality.service.oauth.OAuthUserInfo
 import io.vality.service.upload.ExternalImageUploadService
 import io.vality.service.upload.ImageUrlService
+import io.vality.service.upload.S3Service
 import io.vality.util.CuidGenerator
+import io.vality.util.S3Paths
 import java.security.SecureRandom
 import java.time.Instant
 import java.util.Base64
@@ -30,6 +32,7 @@ class AuthService(
     private val refreshTokenRepository: RefreshTokenRepository,
     private val externalImageUploadService: ExternalImageUploadService,
     private val imageUrlService: ImageUrlService,
+    private val s3Service: S3Service,
     private val jwtSecret: String,
     private val jwtIssuer: String,
     private val jwtAudience: String,
@@ -121,7 +124,14 @@ class AuthService(
         return !userRepository.existsByUsername(username)
     }
     
-    suspend fun updateProfile(userId: String, username: String, name: String?, bio: String?): UserResponse {
+    suspend fun updateProfile(
+        userId: String,
+        username: String,
+        name: String?,
+        bio: String?,
+        imageUrl: String? = null,
+        removeAvatar: Boolean = false,
+    ): UserResponse {
         val user = userRepository.findById(userId)
             ?: throw IllegalStateException("User not found")
         
@@ -132,10 +142,40 @@ class AuthService(
             }
         }
         
+        // 기존 아바타 이미지 삭제 처리
+        val oldImageUrl = user.imageUrl
+        val newImageUrl = when {
+            removeAvatar -> null // 삭제 플래그가 true면 null
+            imageUrl != null -> imageUrl // 새 파일명이 전달되면 업데이트
+            else -> oldImageUrl // 그 외에는 기존 값 유지
+        }
+        
+        // 기존 이미지가 있고 새 이미지가 다르거나 삭제되는 경우 S3에서 삭제
+        if (oldImageUrl != null && oldImageUrl != newImageUrl) {
+            try {
+                // 파일명만 있는 경우 S3 Key 생성
+                val oldKey = if (oldImageUrl.startsWith("http://") || oldImageUrl.startsWith("https://")) {
+                    // 절대 URL인 경우 Key 추출 (마이그레이션 전 호환성)
+                    // URL에서 파일명만 추출하여 경로 재구성
+                    val filename = oldImageUrl.substringAfterLast("/")
+                    S3Paths.userPath(userId, filename)
+                } else {
+                    // 파일명만 있는 경우
+                    S3Paths.userPath(userId, oldImageUrl)
+                }
+                s3Service.deleteFile(oldKey)
+            } catch (e: Exception) {
+                // S3 삭제 실패는 로그만 남기고 계속 진행 (이미지가 없을 수도 있음)
+                org.slf4j.LoggerFactory.getLogger(AuthService::class.java)
+                    .warn("Failed to delete old image from S3: $oldImageUrl", e)
+            }
+        }
+        
         val updatedUser = user.copy(
             username = username,
             name = name ?: user.name,
             bio = bio ?: user.bio,
+            imageUrl = newImageUrl,
             updatedAt = Instant.now(),
         )
         
@@ -231,7 +271,7 @@ class AuthService(
         val userId = CuidGenerator.generate()
 
         // Google 프로필 이미지가 있으면 S3에 업로드
-        val avatarUrlKey = userInfo.avatarUrl?.let {
+        val imageUrlKey = userInfo.avatarUrl?.let {
             externalImageUploadService.uploadFromExternalUrl(userInfo.avatarUrl, userId) ?: throw IllegalStateException(
                 "Failed to upload Google profile image"
             )
@@ -241,7 +281,7 @@ class AuthService(
             id = userId,
             email = userInfo.email ?: throw IllegalArgumentException("Email is required for new user"),
             name = userInfo.name,
-            avatarUrl = avatarUrlKey,
+            imageUrl = imageUrlKey,
             createdAt = now,
             updatedAt = now,
         )

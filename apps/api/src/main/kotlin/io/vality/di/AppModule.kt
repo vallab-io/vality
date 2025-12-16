@@ -13,6 +13,7 @@ import io.vality.repository.VerificationCodeRepository
 import io.vality.service.AuthService
 import io.vality.service.oauth.GoogleOAuthService
 import io.vality.service.upload.ExternalImageUploadService
+import io.vality.service.upload.ImageUploadService
 import io.vality.service.upload.ImageUrlService
 import io.vality.service.upload.S3Service
 import org.koin.core.module.dsl.singleOf
@@ -22,6 +23,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.s3.presigner.S3Presigner
 
 val appModule = module {
     // Config
@@ -43,6 +45,12 @@ val appModule = module {
         ExternalImageUploadService(s3Service)
     }
 
+    // Image Upload Service
+    single {
+        val s3Service = get<S3Service>()
+        ImageUploadService(s3Service)
+    }
+
     // Image URL Service
     single {
         val config = get<Config>()
@@ -60,6 +68,7 @@ val appModule = module {
             refreshTokenRepository = get(),
             externalImageUploadService = get(),
             imageUrlService = get(),
+            s3Service = get(),
             jwtSecret = config.getString("ktor.jwt.secret"),
             jwtIssuer = config.getString("ktor.jwt.issuer"),
             jwtAudience = config.getString("ktor.jwt.audience"),
@@ -106,14 +115,44 @@ val appModule = module {
         clientBuilder.build()
     }
 
+    // S3Presigner (Presigned URL 생성용)
+    single {
+        val config = get<Config>()
+        val accessKeyId = config.getString("ktor.aws.s3.accessKeyId")
+        val secretAccessKey = config.getString("ktor.aws.s3.secretAccessKey")
+        val regionStr = config.getString("ktor.aws.s3.region")
+        val region = Region.of(regionStr)
+
+        // AWS 자격 증명 설정
+        val credentialsProvider = if (accessKeyId.isNotEmpty() && secretAccessKey.isNotEmpty()) {
+            StaticCredentialsProvider.create(
+                AwsBasicCredentials.create(accessKeyId, secretAccessKey)
+            )
+        } else {
+            null
+        }
+
+        // S3Presigner 빌더
+        val presignerBuilder = S3Presigner.builder()
+            .region(region)
+
+        credentialsProvider?.let {
+            presignerBuilder.credentialsProvider(it)
+        }
+
+        presignerBuilder.build()
+    }
+
     single {
         val config = get<Config>()
         val s3Client = get<S3Client>()
+        val s3Presigner = get<S3Presigner>()
         val bucketName = config.getString("ktor.aws.s3.bucket")
         val region = config.getString("ktor.aws.s3.region")
 
         S3Service(
             s3Client = s3Client,
+            s3Presigner = s3Presigner,
             bucketName = bucketName,
             region = region,
         )

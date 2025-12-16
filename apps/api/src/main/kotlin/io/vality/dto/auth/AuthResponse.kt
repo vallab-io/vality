@@ -19,7 +19,7 @@ data class UserResponse(
     val username: String? = null,
     val name: String? = null,
     val bio: String? = null,
-    val avatarUrl: String? = null,
+    val imageUrl: String? = null,
 )
 
 fun User.toUserResponse(imageUrlService: ImageUrlService): UserResponse {
@@ -29,7 +29,7 @@ fun User.toUserResponse(imageUrlService: ImageUrlService): UserResponse {
         username = this.username,
         name = this.name,
         bio = this.bio,
-        avatarUrl = imageUrlService.getAvatarUrl(this),
+        imageUrl = imageUrlService.getImageUrl(this),
     )
 }
 

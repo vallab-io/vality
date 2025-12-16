@@ -18,7 +18,7 @@ export interface AuthResponse {
     username: string | null;
     name: string | null;
     bio: string | null;
-    avatarUrl: string | null;
+    imageUrl: string | null;
   };
 }
 
@@ -62,6 +62,8 @@ export interface UpdateProfileRequest {
   username: string; // 필수
   name?: string;
   bio?: string;
+  imageUrl?: string | null; // 프로필 이미지 파일명 (새로 업로드한 경우)
+  removeAvatar?: boolean; // 프로필 이미지 삭제 여부
 }
 
 export interface UserResponse {
@@ -70,7 +72,7 @@ export interface UserResponse {
   username: string | null;
   name: string | null;
   bio: string | null;
-  avatarUrl: string | null;
+  imageUrl: string | null;
 }
 
 // RefreshToken으로 AccessToken 갱신

@@ -11,14 +11,14 @@ const MOCK_USERS: Record<string, UserProfile> = {
     username: "johndoe",
     name: "John Doe",
     bio: "프로덕트 디자이너 · 스타트업에서 일하고 있습니다. 디자인, 생산성, 그리고 일하는 방식에 대해 씁니다.",
-    avatarUrl: null,
+    imageUrl: null,
   },
   jane: {
     id: "clh1user002abc123def789",
     username: "jane",
     name: "Jane Kim",
     bio: "개발자 · 기술 블로거. 웹 개발, AI, 그리고 개발자의 삶에 대해 이야기합니다.",
-    avatarUrl: null,
+    imageUrl: null,
   },
 };
 
@@ -123,7 +123,7 @@ interface UserProfile {
   username: string;
   name: string;
   bio: string;
-  avatarUrl: string | null;
+  imageUrl: string | null;
 }
 
 interface Newsletter {
@@ -211,7 +211,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         <section className="flex flex-col items-center text-center">
           <UserAvatar
             name={user.name}
-            imageUrl={user.avatarUrl}
+            imageUrl={user.imageUrl}
             size="lg"
             className="mb-4"
           />

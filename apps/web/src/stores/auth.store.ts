@@ -8,7 +8,7 @@ export interface User {
   username: string | null;
   name: string | null;
   bio: string | null;
-  avatarUrl: string | null;
+  imageUrl: string | null;
 }
 
 // 인증 상태 타입

@@ -143,6 +143,8 @@ fun Route.authRoutes() {
                         username = request.username,
                         name = request.name,
                         bio = request.bio,
+                        imageUrl = request.imageUrl,
+                        removeAvatar = request.removeAvatar,
                     )
                     call.respond(HttpStatusCode.OK, ApiResponse.success(data = user))
                 } catch (e: IllegalArgumentException) {

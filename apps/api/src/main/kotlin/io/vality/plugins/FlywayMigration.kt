@@ -28,7 +28,7 @@ fun runFlywayMigration() {
         .dataSource("${databaseUrl}?prepareThreshold=0", username, password)
         .locations("classpath:db/migration")
         .baselineOnMigrate(true)
-        .baselineVersion("2")
+        .baselineVersion("3")
         .load()
 
     try {

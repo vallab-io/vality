@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import { useAtomValue, useSetAtom } from "jotai";
 import { userAtom } from "@/stores/auth.store";
 import { checkUsernameAvailability, updateProfile } from "@/lib/api/auth";
 import { getErrorMessage } from "@/lib/api/client";
+import { requestPresignedUrl, uploadImageToS3 } from "@/lib/api/upload";
 
 export function ProfileSettings() {
   const user = useAtomValue(userAtom);
@@ -19,6 +20,9 @@ export function ProfileSettings() {
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     name: user?.name || "",
     username: user?.username || "",
@@ -113,9 +117,89 @@ export function ProfileSettings() {
     }
   };
 
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 파일 검증
+    const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+    if (!validTypes.includes(file.type)) {
+      toast.error("JPEG, PNG, GIF, WebP 형식만 업로드 가능합니다.");
+      return;
+    }
+
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if (file.size > maxSize) {
+      toast.error("파일 크기는 2MB 이하여야 합니다.");
+      return;
+    }
+
+    // 미리보기
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // 업로드
+    setIsUploadingImage(true);
+    try {
+      // 1. Presigned URL 요청
+      const { presignedUrl, filename } = await requestPresignedUrl({
+        type: "user",
+        filename: file.name,
+        contentType: file.type,
+        fileSize: file.size,
+      });
+
+      // 2. S3에 직접 업로드
+      await uploadImageToS3(presignedUrl, file);
+
+      // 3. 프로필 업데이트 (파일명 저장)
+      const updated = await updateProfile({
+        username: formData.username || user?.username || "",
+        name: formData.name || undefined,
+        bio: formData.bio || undefined,
+        imageUrl: filename, // 파일명만 저장
+      });
+
+      setUser(updated);
+      toast.success("프로필 이미지가 업로드되었습니다.");
+      setPreviewImage(null);
+    } catch (error) {
+      console.error("Image upload error:", error);
+      const msg = getErrorMessage(error);
+      toast.error(msg || "이미지 업로드에 실패했습니다.");
+      setPreviewImage(null);
+    } finally {
+      setIsUploadingImage(false);
+      // 파일 입력 초기화
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   const handleImageUpload = () => {
-    // TODO: 이미지 업로드 구현
-    toast.info("이미지 업로드는 준비 중입니다.");
+    fileInputRef.current?.click();
+  };
+
+  const handleImageRemove = async () => {
+    try {
+      const updated = await updateProfile({
+        username: formData.username || user?.username || "",
+        name: formData.name || undefined,
+        bio: formData.bio || undefined,
+        removeAvatar: true, // 삭제 플래그 설정
+      });
+      setUser(updated);
+      setPreviewImage(null);
+      toast.success("프로필 이미지가 제거되었습니다.");
+    } catch (error) {
+      console.error("Image remove error:", error);
+      const msg = getErrorMessage(error);
+      toast.error(msg || "이미지 제거에 실패했습니다.");
+    }
   };
 
   return (
@@ -125,25 +209,37 @@ export function ProfileSettings() {
         <Label>프로필 이미지</Label>
         <div className="flex items-center gap-4">
           <UserAvatar
-            name={formData.name}
-            imageUrl={undefined}
+            name={formData.name || user?.name || undefined}
+            email={user?.email || undefined}
+            imageUrl={previewImage || user?.imageUrl || undefined}
             size="lg"
           />
           <div className="flex gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+              onChange={handleImageSelect}
+              className="hidden"
+              disabled={isUploadingImage}
+            />
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleImageUpload}
+              disabled={isUploadingImage}
             >
-              이미지 변경
+              {isUploadingImage ? "업로드 중..." : "이미지 변경"}
             </Button>
-            {MOCK_USER.avatarUrl && (
+            {(user?.imageUrl || previewImage) && (
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 className="text-destructive hover:text-destructive"
+                onClick={handleImageRemove}
+                disabled={isUploadingImage}
               >
                 삭제
               </Button>
@@ -151,7 +247,7 @@ export function ProfileSettings() {
           </div>
         </div>
         <p className="text-xs text-muted-foreground">
-          JPG, PNG, GIF 형식. 최대 2MB
+          JPG, PNG, GIF, WebP 형식. 최대 2MB
         </p>
       </div>
 

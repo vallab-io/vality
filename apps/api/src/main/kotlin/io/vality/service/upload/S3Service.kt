@@ -9,19 +9,60 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
+import software.amazon.awssdk.services.s3.presigner.S3Presigner
+import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest
+import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest
+import java.time.Duration
 
 /**
  * AWS S3 서비스
  *
- * 서버에서 이미지를 다운로드하여 S3에 직접 업로드할 때 사용합니다.
- * (Google OAuth 프로필 이미지 등)
+ * - Presigned URL 생성: 프론트엔드에서 직접 S3에 업로드할 때 사용
+ * - 직접 업로드: 서버에서 이미지를 다운로드하여 S3에 업로드할 때 사용 (Google OAuth 등)
  */
 class S3Service(
     private val s3Client: S3Client,
+    private val s3Presigner: S3Presigner,
     private val bucketName: String,
     private val region: String,
 ) {
     private val logger = LoggerFactory.getLogger(S3Service::class.java)
+
+    /**
+     * Presigned URL 생성 (프론트엔드에서 직접 S3에 업로드할 때 사용)
+     *
+     * @param key S3 Key (경로)
+     * @param contentType 파일 MIME 타입 (예: "image/jpeg")
+     * @param expiresIn 만료 시간 (초 단위, 기본값: 3600초 = 1시간)
+     * @return Presigned URL 문자열
+     */
+    suspend fun generatePresignedUrl(
+        key: String,
+        contentType: String,
+        expiresIn: Long = 3600,
+    ): String = withContext(Dispatchers.IO) {
+        try {
+            val putObjectRequest = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .contentType(contentType)
+                .build()
+
+            val presignRequest = PutObjectPresignRequest.builder()
+                .signatureDuration(Duration.ofSeconds(expiresIn))
+                .putObjectRequest(putObjectRequest)
+                .build()
+
+            val presignedRequest: PresignedPutObjectRequest = s3Presigner.presignPutObject(presignRequest)
+            val presignedUrl = presignedRequest.url().toString()
+
+            logger.debug("Generated presigned URL for key: $key, expires in: ${expiresIn}s")
+            presignedUrl
+        } catch (e: Exception) {
+            logger.error("Failed to generate presigned URL for key: $key", e)
+            throw S3ServiceException("Failed to generate presigned URL", e)
+        }
+    }
 
     /**
      * 파일 삭제

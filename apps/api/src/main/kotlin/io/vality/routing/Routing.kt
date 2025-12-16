@@ -6,6 +6,7 @@ import io.vality.routing.auth.authRoutes
 import io.vality.routing.auth.oauthRoutes
 import io.vality.routing.docs.docsRoutes
 import io.vality.routing.health.healthRoutes
+import io.vality.routing.upload.uploadRoutes
 
 fun Application.configureRouting() {
     routing {
@@ -13,10 +14,7 @@ fun Application.configureRouting() {
         docsRoutes()
         authRoutes()
         oauthRoutes()
-        // TODO: 다른 라우트 추가
-        // userRoutes()
-        // newsletterRoutes()
-        // issueRoutes()
+        uploadRoutes()
     }
 }
 

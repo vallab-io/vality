@@ -11,7 +11,7 @@ data class User(
     val username: String? = null,
     val name: String? = null,
     val bio: String? = null,
-    val avatarUrl: String? = null,
+    val imageUrl: String? = null,
     @Contextual
     val createdAt: Instant,
     @Contextual

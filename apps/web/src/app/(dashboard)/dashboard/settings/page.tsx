@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader, UserAvatar } from "@/components/common";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
   checkUsernameAvailability,
 } from "@/lib/api/auth";
 import { getErrorMessage } from "@/lib/api/client";
+import { requestPresignedUrl, uploadImageToS3 } from "@/lib/api/upload";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -30,6 +31,9 @@ export default function SettingsPage() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     name: user?.name || "",
@@ -137,8 +141,89 @@ export default function SettingsPage() {
     }
   };
 
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 파일 검증
+    const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+    if (!validTypes.includes(file.type)) {
+      toast.error("JPEG, PNG, GIF, WebP 형식만 업로드 가능합니다.");
+      return;
+    }
+
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if (file.size > maxSize) {
+      toast.error("파일 크기는 2MB 이하여야 합니다.");
+      return;
+    }
+
+    // 미리보기
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // 업로드
+    setIsUploadingImage(true);
+    try {
+      // 1. Presigned URL 요청
+      const { presignedUrl, filename } = await requestPresignedUrl({
+        type: "user",
+        filename: file.name,
+        contentType: file.type,
+        fileSize: file.size,
+      });
+
+      // 2. S3에 직접 업로드
+      await uploadImageToS3(presignedUrl, file);
+
+      // 3. 프로필 업데이트 (파일명 저장)
+      const updated = await updateProfile({
+        username: formData.username || user?.username || "",
+        name: formData.name || undefined,
+        bio: formData.bio || undefined,
+        imageUrl: filename, // 파일명만 저장
+      });
+
+      setUser(updated);
+      toast.success("프로필 이미지가 업로드되었습니다.");
+      setPreviewImage(null);
+    } catch (error) {
+      console.error("Image upload error:", error);
+      const msg = getErrorMessage(error);
+      toast.error(msg || "이미지 업로드에 실패했습니다.");
+      setPreviewImage(null);
+    } finally {
+      setIsUploadingImage(false);
+      // 파일 입력 초기화
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   const handleImageUpload = () => {
-    toast.info("이미지 업로드는 준비 중입니다.");
+    fileInputRef.current?.click();
+  };
+
+  const handleImageRemove = async () => {
+    try {
+      const updated = await updateProfile({
+        username: formData.username || user?.username || "",
+        name: formData.name || undefined,
+        bio: formData.bio || undefined,
+        removeAvatar: true, // 삭제 플래그 설정
+      });
+      setUser(updated);
+      setPreviewImage(null);
+      toast.success("프로필 이미지가 제거되었습니다.");
+    } catch (error) {
+      console.error("Image remove error:", error);
+      const msg = getErrorMessage(error);
+      toast.error(msg || "이미지 제거에 실패했습니다.");
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -179,21 +264,45 @@ export default function SettingsPage() {
             {/* Profile Image */}
             <div className="flex items-center gap-4">
               <UserAvatar
-                name={formData.name || user?.email || "사용자"}
-                imageUrl={null}
+                name={formData.name || user?.name || user?.email || "사용자"}
+                email={user?.email || undefined}
+                imageUrl={previewImage || user?.imageUrl || undefined}
                 size="lg"
               />
-              <div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleImageUpload}
-                >
-                  이미지 변경
-                </Button>
-                <p className="mt-1.5 text-xs text-muted-foreground">
-                  JPG, PNG, GIF. 최대 2MB
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                    disabled={isUploadingImage}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleImageUpload}
+                    disabled={isUploadingImage}
+                  >
+                    {isUploadingImage ? "업로드 중..." : "이미지 변경"}
+                  </Button>
+                  {(user?.imageUrl || previewImage) && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={handleImageRemove}
+                      disabled={isUploadingImage}
+                    >
+                      삭제
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  JPG, PNG, GIF, WebP 형식. 최대 2MB
                 </p>
               </div>
             </div>

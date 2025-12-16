@@ -216,6 +216,7 @@ export function DashboardSidebar() {
             <UserAvatar
               name={user?.name || user?.email || "사용자"}
               email={user?.email || undefined}
+              imageUrl={user?.imageUrl || undefined}
               showInfo
             />
           </div>

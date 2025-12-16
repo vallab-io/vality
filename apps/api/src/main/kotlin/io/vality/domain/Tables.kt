@@ -14,7 +14,7 @@ object Users : Table("users") {
         .uniqueIndex()
     val name = varchar("name", 255).nullable()
     val bio = text("bio").nullable()
-    val avatarUrl = varchar("avatar_url", 500).nullable()
+    val imageUrl = varchar("image_url", 500).nullable()
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
 

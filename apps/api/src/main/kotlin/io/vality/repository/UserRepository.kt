@@ -19,7 +19,7 @@ class UserRepository {
             username = this[Users.username],
             name = this[Users.name],
             bio = this[Users.bio],
-            avatarUrl = this[Users.avatarUrl],
+            imageUrl = this[Users.imageUrl],
             createdAt = this[Users.createdAt],
             updatedAt = this[Users.updatedAt]
         )
@@ -33,7 +33,7 @@ class UserRepository {
                 Users.username,
                 Users.name,
                 Users.bio,
-                Users.avatarUrl,
+                Users.imageUrl,
                 Users.createdAt,
                 Users.updatedAt,
             )
@@ -51,7 +51,7 @@ class UserRepository {
                 Users.username,
                 Users.name,
                 Users.bio,
-                Users.avatarUrl,
+                Users.imageUrl,
                 Users.createdAt,
                 Users.updatedAt
             )
@@ -69,7 +69,7 @@ class UserRepository {
                 Users.username,
                 Users.name,
                 Users.bio,
-                Users.avatarUrl,
+                Users.imageUrl,
                 Users.createdAt,
                 Users.updatedAt
             )
@@ -100,7 +100,7 @@ class UserRepository {
             it[username] = user.username
             it[name] = user.name
             it[bio] = user.bio
-            it[avatarUrl] = user.avatarUrl
+            it[imageUrl] = user.imageUrl
             it[createdAt] = user.createdAt
             it[updatedAt] = user.updatedAt
         }
@@ -113,7 +113,7 @@ class UserRepository {
             it[username] = user.username
             it[name] = user.name
             it[bio] = user.bio
-            it[avatarUrl] = user.avatarUrl
+            it[imageUrl] = user.imageUrl
             it[updatedAt] = user.updatedAt
         }
         user

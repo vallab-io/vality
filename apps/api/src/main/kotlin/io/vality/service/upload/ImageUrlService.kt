@@ -56,13 +56,13 @@ class ImageUrlService(
     }
     
     /**
-     * 사용자 아바타 URL 반환
+     * 사용자 이미지 URL 반환
      * 
      * @param user User 객체
-     * @return 완성된 아바타 URL 또는 null
+     * @return 완성된 이미지 URL 또는 null
      */
-    fun getAvatarUrl(user: User): String? {
-        return getUserImageUrl(user.avatarUrl, user.id)
+    fun getImageUrl(user: User): String? {
+        return getUserImageUrl(user.imageUrl, user.id)
     }
 }
 

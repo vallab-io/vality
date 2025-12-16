@@ -14,13 +14,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-// 목업 데이터
-const MOCK_USER = {
-  name: "John Doe",
-  email: "john@example.com",
-  plan: "free" as "free" | "pro",
-};
+import { useAtomValue } from "jotai";
+import { userAtom } from "@/stores/auth.store";
 
 const MOCK_NEWSLETTERS = [
   { id: "clh1abc123def456ghi789", name: "John's Weekly", slug: "johns-weekly" },
@@ -63,18 +58,21 @@ function ChevronIcon({ className, isOpen }: { className?: string; isOpen: boolea
 }
 
 export function DashboardHeader() {
+  const user = useAtomValue(userAtom);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const [selectedNewsletter, setSelectedNewsletter] = useState(MOCK_NEWSLETTERS[0]);
   const [isNewsletterOpen, setIsNewsletterOpen] = useState(true);
   const [showNewsletterSwitcher, setShowNewsletterSwitcher] = useState(false);
   const pathname = usePathname();
+  
+  const userPlan: "free" | "pro" = "free"; // TODO: API에서 가져오기
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
 
   const canCreateNewsletter =
-    MOCK_USER.plan === "pro" || MOCK_NEWSLETTERS.length < MAX_FREE_NEWSLETTERS;
+    userPlan === "pro" || MOCK_NEWSLETTERS.length < MAX_FREE_NEWSLETTERS;
 
   const handleCreateNewsletter = () => {
     if (!canCreateNewsletter) {
@@ -272,8 +270,9 @@ export function DashboardHeader() {
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
           >
             <UserAvatar
-              name={MOCK_USER.name}
-              email={MOCK_USER.email}
+              name={user?.name || user?.email || "사용자"}
+              email={user?.email || undefined}
+              imageUrl={user?.imageUrl || undefined}
               showInfo
             />
           </Link>

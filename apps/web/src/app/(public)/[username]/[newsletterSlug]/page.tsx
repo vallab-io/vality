@@ -10,13 +10,13 @@ const MOCK_USERS: Record<string, UserProfile> = {
     id: "clh1user001abc123def789",
     username: "johndoe",
     name: "John Doe",
-    avatarUrl: null,
+    imageUrl: null,
   },
   jane: {
     id: "clh1user002abc123def789",
     username: "jane",
     name: "Jane Kim",
-    avatarUrl: null,
+    imageUrl: null,
   },
 };
 
@@ -132,7 +132,7 @@ interface UserProfile {
   id: string;
   username: string;
   name: string;
-  avatarUrl: string | null;
+  imageUrl: string | null;
 }
 
 interface Newsletter {
@@ -221,7 +221,7 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
             href={`/@${username}`}
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
           >
-            <UserAvatar name={user.name} imageUrl={user.avatarUrl} size="sm" />
+            <UserAvatar name={user.name} imageUrl={user.imageUrl} size="sm" />
             <span>{user.name}</span>
           </Link>
           <h1 className="mt-4 text-3xl font-bold">{newsletter.name}</h1>

@@ -6,9 +6,9 @@ import { SubscribeForm } from "../../_components/subscribe-form";
 import { ShareButtons } from "./_components/share-buttons";
 
 // 목업 사용자 데이터
-const MOCK_USERS: Record<string, { name: string; avatarUrl: string | null }> = {
-  johndoe: { name: "John Doe", avatarUrl: null },
-  jane: { name: "Jane Kim", avatarUrl: null },
+const MOCK_USERS: Record<string, { name: string; imageUrl: string | null }> = {
+  johndoe: { name: "John Doe", imageUrl: null },
+  jane: { name: "Jane Kim", imageUrl: null },
 };
 
 // 목업 뉴스레터 데이터
@@ -259,7 +259,7 @@ export default async function IssuePage({ params }: IssuePageProps) {
 
           {/* Author */}
           <div className="mt-6 flex items-center gap-3">
-            <UserAvatar name={user.name} imageUrl={user.avatarUrl} size="md" />
+            <UserAvatar name={user.name} imageUrl={user.imageUrl} size="md" />
             <div>
               <Link href={`/@${username}`} className="font-medium hover:underline">
                 {user.name}
