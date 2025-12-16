@@ -183,7 +183,7 @@ export default function AnalyticsPage() {
               {MOCK_STATS.totalSubscribers.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">+{MOCK_STATS.subscribersGrowth}%</span>{" "}
+              <span className="text-[#2563EB] dark:text-[#38BDF8]">+{MOCK_STATS.subscribersGrowth}%</span>{" "}
               지난 달 대비
             </p>
           </CardContent>
@@ -262,7 +262,7 @@ export default function AnalyticsPage() {
             </div>
             <div className="text-right">
               <p className="text-sm text-muted-foreground">기간 내 증가</p>
-              <p className="text-xl font-semibold text-green-600">
+              <p className="text-xl font-semibold text-[#2563EB] dark:text-[#38BDF8]">
                 +{(growthData[growthData.length - 1].count - growthData[0].count).toLocaleString()}명
               </p>
             </div>
@@ -317,7 +317,7 @@ export default function AnalyticsPage() {
                       <div
                         className={cn(
                           "h-full rounded-full",
-                          issue.openRate >= 40 ? "bg-green-500" : "bg-yellow-500"
+                          issue.openRate >= 40 ? "bg-[#2563EB]" : "bg-[#38BDF8]"
                         )}
                         style={{ width: `${issue.openRate}%` }}
                       />
@@ -336,12 +336,12 @@ export default function AnalyticsPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-                <EyeIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+                <EyeIcon className="h-6 w-6 text-[#2563EB] dark:text-[#38BDF8]" />
               </div>
               <p className="text-2xl font-bold">{MOCK_STATS.avgOpenRate}%</p>
               <p className="text-sm text-muted-foreground">평균 오픈율</p>
-              <p className="mt-2 text-xs text-green-600">업계 평균(21%) 대비 +{(MOCK_STATS.avgOpenRate - 21).toFixed(1)}%</p>
+              <p className="mt-2 text-xs text-[#2563EB] dark:text-[#38BDF8]">업계 평균(21%) 대비 +{(MOCK_STATS.avgOpenRate - 21).toFixed(1)}%</p>
             </div>
           </CardContent>
         </Card>

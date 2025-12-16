@@ -230,7 +230,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               {newsletters.map((newsletter) => (
                 <div
                   key={newsletter.id}
-                  className="rounded-xl border border-border p-5 transition-colors hover:border-primary/50"
+                  className="rounded-xl border border-border p-5 transition-colors hover:border-[#2563EB]/50 dark:hover:border-[#38BDF8]/50"
                 >
                   <Link href={`/@${username}/${newsletter.slug}`}>
                     <h3 className="font-semibold hover:underline">
@@ -269,7 +269,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               {issues.map((issue) => (
                 <article
                   key={issue.id}
-                  className="group rounded-lg border border-border p-5 transition-colors hover:border-primary/50"
+                  className="group rounded-lg border border-border p-5 transition-colors hover:border-[#2563EB]/50 dark:hover:border-[#38BDF8]/50"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">

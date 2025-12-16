@@ -32,8 +32,8 @@ export function MarketingHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
+      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-md shadow-sm">
+        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
           <div className="flex items-center gap-8">
             <Logo />
             <nav className="hidden items-center gap-6 md:flex">
@@ -41,22 +41,25 @@ export function MarketingHeader() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  className="text-sm text-muted-foreground transition-all duration-200 hover:text-[#2563EB] dark:hover:text-[#38BDF8] relative group"
                 >
                   {item.label}
+                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#2563EB] dark:bg-[#38BDF8] group-hover:w-full transition-all duration-200" />
                 </Link>
               ))}
             </nav>
           </div>
 
           {/* Desktop Actions */}
-          <nav className="hidden items-center gap-1 md:flex">
-            <Button size="sm" onClick={handleLoginClick} disabled={authLoading}>
+          <nav className="hidden items-center gap-2 md:flex">
+            <Button size="sm" variant="ghost" onClick={handleLoginClick} disabled={authLoading} className="hover:bg-muted/50">
               로그인
             </Button>
             {!user && (
               <Link href="/signup">
-                <Button size="sm">시작하기</Button>
+                <Button size="sm" className="bg-primary hover:bg-primary/90 shadow-sm hover:shadow-md transition-all duration-200">
+                  시작하기
+                </Button>
               </Link>
             )}
           </nav>

@@ -5,7 +5,8 @@
 
 /*
  * Vality Design System
- * 참조: Notion - 따뜻한 흑백 + 오렌지 포인트
+ * 컬러 세트: 파란색 계열
+ * Primary: #2563EB, Primary Hover: #1E40AF, Accent: #38BDF8, Background: #F8FAFC
  */
 
 @theme inline {
@@ -54,103 +55,103 @@
 
   /* ===== Light Theme (Notion 스타일) ===== */
   
-  /* 배경 - 순수 흰색 */
-  --background: #ffffff;
-  --foreground: #37352f;  /* Notion 텍스트 색상 (따뜻한 검정) */
+  /* 배경 - 연한 회색 */
+  --background: #F8FAFC;
+  --foreground: #1e293b;  /* 진한 슬레이트 */
 
   /* 카드 */
   --card: #ffffff;
-  --card-foreground: #37352f;
+  --card-foreground: #1e293b;
 
   /* 팝오버 */
   --popover: #ffffff;
-  --popover-foreground: #37352f;
+  --popover-foreground: #1e293b;
 
-  /* Primary - 검정 (Notion 버튼 스타일) */
-  --primary: #191919;
+  /* Primary - 파란색 */
+  --primary: #2563EB;
   --primary-foreground: #ffffff;
 
   /* Secondary - 연한 회색 배경 */
-  --secondary: #f7f6f3;
-  --secondary-foreground: #37352f;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #1e293b;
 
   /* Muted - 음소거 텍스트 */
-  --muted: #f7f6f3;
-  --muted-foreground: #9b9a97;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
 
-  /* Accent - 호버 등 강조 */
-  --accent: #f1f1ef;
-  --accent-foreground: #37352f;
+  /* Accent - 시안 (호버 등 강조) */
+  --accent: #38BDF8;
+  --accent-foreground: #ffffff;
 
   /* Destructive - 빨강 (Notion 스타일) */
   --destructive: #eb5757;
 
-  /* Border & Input - Notion 스타일 테두리 */
-  --border: #e3e2e0;
-  --input: #e3e2e0;
-  --ring: #37352f;
+  /* Border & Input - 연한 회색 테두리 */
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #2563EB;
 
-  /* Chart 색상 - Notion 팔레트 */
-  --chart-1: #fa8142;  /* 오렌지 */
-  --chart-2: #4dab9a;  /* 민트 */
-  --chart-3: #529cca;  /* 파랑 */
-  --chart-4: #9f6b53;  /* 브라운 */
-  --chart-5: #d9730d;  /* 진한 오렌지 */
+  /* Chart 색상 - 파란색 계열 */
+  --chart-1: #2563EB;  /* Primary Blue */
+  --chart-2: #38BDF8;  /* Accent Cyan */
+  --chart-3: #60A5FA;  /* Light Blue */
+  --chart-4: #1E40AF;  /* Primary Hover */
+  --chart-5: #0EA5E9;  /* Sky Blue */
 
   /* Sidebar */
-  --sidebar: #fbfbfa;
-  --sidebar-foreground: #37352f;
-  --sidebar-primary: #191919;
+  --sidebar: #F8FAFC;
+  --sidebar-foreground: #1e293b;
+  --sidebar-primary: #2563EB;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f1ef;
-  --sidebar-accent-foreground: #37352f;
-  --sidebar-border: #e3e2e0;
-  --sidebar-ring: #37352f;
+  --sidebar-accent: #e0f2fe;
+  --sidebar-accent-foreground: #2563EB;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #2563EB;
 }
 
 .dark {
-  /* ===== Dark Theme (Notion Dark 스타일) ===== */
+  /* ===== Dark Theme ===== */
   
-  --background: #191919;
-  --foreground: #ffffffcf;  /* Notion 다크모드 텍스트 */
+  --background: #0f172a;
+  --foreground: #f1f5f9;
 
-  --card: #202020;
-  --card-foreground: #ffffffcf;
+  --card: #1e293b;
+  --card-foreground: #f1f5f9;
 
-  --popover: #252525;
-  --popover-foreground: #ffffffcf;
+  --popover: #1e293b;
+  --popover-foreground: #f1f5f9;
 
-  /* Primary - 흰색 버튼 */
-  --primary: #ffffff;
-  --primary-foreground: #191919;
+  /* Primary - 다크모드에서도 파란색 */
+  --primary: #3B82F6;
+  --primary-foreground: #ffffff;
 
-  --secondary: #2f2f2f;
-  --secondary-foreground: #ffffffcf;
+  --secondary: #1e293b;
+  --secondary-foreground: #f1f5f9;
 
-  --muted: #2f2f2f;
-  --muted-foreground: #9b9a97;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
 
-  --accent: #2f2f2f;
-  --accent-foreground: #ffffffcf;
+  --accent: #38BDF8;
+  --accent-foreground: #ffffff;
 
   --destructive: #eb5757;
 
-  --border: #ffffff14;
-  --input: #ffffff14;
-  --ring: #ffffffcf;
+  --border: #334155;
+  --input: #334155;
+  --ring: #3B82F6;
 
-  --chart-1: #fa8142;
-  --chart-2: #4dab9a;
-  --chart-3: #529cca;
-  --chart-4: #9f6b53;
-  --chart-5: #d9730d;
+  --chart-1: #3B82F6;
+  --chart-2: #38BDF8;
+  --chart-3: #60A5FA;
+  --chart-4: #1E40AF;
+  --chart-5: #0EA5E9;
 
-  --sidebar: #202020;
-  --sidebar-foreground: #ffffffcf;
-  --sidebar-primary: #ffffff;
-  --sidebar-primary-foreground: #191919;
-  --sidebar-accent: #2f2f2f;
-  --sidebar-accent-foreground: #ffffffcf;
+  --sidebar: #1e293b;
+  --sidebar-foreground: #f1f5f9;
+  --sidebar-primary: #3B82F6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1e3a8a;
+  --sidebar-accent-foreground: #38BDF8;
   --sidebar-border: #ffffff14;
   --sidebar-ring: #ffffffcf;
 }
@@ -167,11 +168,48 @@
   }
 }
 
-/* Notion 스타일 선택 효과 */
+/* 선택 효과 - 파란색 계열 */
 ::selection {
-  background-color: #b4d5fe;
+  background-color: #bfdbfe;
 }
 
 .dark ::selection {
-  background-color: #4b6a9b;
+  background-color: #1e3a8a;
+}
+
+/* 애니메이션 */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s ease-out;
+}
+
+.animation-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animation-delay-400 {
+  animation-delay: 400ms;
 }

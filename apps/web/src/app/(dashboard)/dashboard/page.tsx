@@ -199,14 +199,18 @@ interface StatsCardProps {
 
 function StatsCard({ icon, title, value, description, className }: StatsCardProps) {
   return (
-    <Card className={className}>
+    <Card className={`group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ${className}`}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardDescription className="text-sm font-medium">{title}</CardDescription>
-        <div className="text-muted-foreground">{icon}</div>
+        <div className="text-muted-foreground group-hover:text-[#2563EB] dark:group-hover:text-[#38BDF8] transition-colors duration-300">
+          {icon}
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-semibold">{value}</div>
-        <p className="text-xs text-muted-foreground mt-1">{description}</p>
+        <div className="text-3xl font-semibold bg-gradient-to-br from-foreground to-foreground/80 bg-clip-text text-transparent">
+          {value}
+        </div>
+        <p className="text-xs text-muted-foreground mt-2">{description}</p>
       </CardContent>
     </Card>
   );
@@ -224,7 +228,7 @@ function NewsletterItem({ newsletter }: { newsletter: Newsletter }) {
   return (
     <Link
       href={`/dashboard/newsletters/${newsletter.id}/issues`}
-      className="flex items-center justify-between rounded-lg px-3 py-3 -mx-3 transition-colors hover:bg-muted/50"
+      className="group flex items-center justify-between rounded-lg px-3 py-3 -mx-3 transition-all duration-200 hover:bg-muted/50 hover:shadow-sm"
     >
       <div className="flex-1 min-w-0">
         <p className="font-medium truncate">{newsletter.title}</p>
@@ -252,13 +256,13 @@ function NewsletterItem({ newsletter }: { newsletter: Newsletter }) {
 function StatusBadge({ status }: { status: "published" | "draft" }) {
   if (status === "published") {
     return (
-      <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/20 dark:text-green-400">
+      <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
         발행됨
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center rounded-full bg-yellow-50 px-2 py-0.5 text-xs font-medium text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">
+    <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-800/50 dark:text-slate-400">
       임시저장
     </span>
   );
@@ -274,13 +278,13 @@ interface QuickActionCardProps {
 function QuickActionCard({ title, description, href, icon }: QuickActionCardProps) {
   return (
     <Link href={href}>
-      <Card className="transition-colors hover:bg-muted/50">
+      <Card className="group transition-all duration-300 hover:bg-muted/50 hover:shadow-lg hover:-translate-y-1 border-2 hover:border-blue-200 dark:hover:border-blue-800/50">
         <CardContent className="flex items-center gap-4 p-6">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 text-[#2563EB] dark:text-[#38BDF8] group-hover:scale-110 transition-transform duration-300">
             {icon}
           </div>
           <div>
-            <p className="font-medium">{title}</p>
+            <p className="font-semibold group-hover:text-[#2563EB] dark:group-hover:text-[#38BDF8] transition-colors duration-300">{title}</p>
             <p className="text-sm text-muted-foreground">{description}</p>
           </div>
         </CardContent>

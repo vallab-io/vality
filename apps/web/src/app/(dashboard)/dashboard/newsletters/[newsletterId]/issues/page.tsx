@@ -83,9 +83,9 @@ const STATUS_LABELS: Record<IssueStatus, string> = {
 };
 
 const STATUS_BADGE_COLORS: Record<string, string> = {
-  draft: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-  published: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  scheduled: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  draft: "bg-slate-100 text-slate-700 dark:bg-slate-800/50 dark:text-slate-400",
+  published: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  scheduled: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",
 };
 
 // 검색 아이콘

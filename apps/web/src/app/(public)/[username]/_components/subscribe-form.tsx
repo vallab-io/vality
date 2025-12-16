@@ -58,7 +58,7 @@ export function SubscribeForm({
           compact ? "py-2 text-sm" : "py-4",
           variant === "dark"
             ? "bg-background/10 text-background"
-            : "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+            : "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
         )}
       >
         <CheckIcon className={cn(compact ? "h-4 w-4" : "h-5 w-5")} />

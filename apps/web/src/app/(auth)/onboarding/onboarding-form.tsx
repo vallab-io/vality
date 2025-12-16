@@ -168,7 +168,7 @@ export function OnboardingForm() {
         {usernameError ? (
           <p className="text-xs text-destructive">{usernameError}</p>
         ) : formData.username.length >= 3 && !isCheckingUsername && !usernameError ? (
-          <p className="text-xs text-green-600 dark:text-green-400">
+          <p className="text-xs text-[#2563EB] dark:text-[#38BDF8]">
             사용 가능한 사용자명입니다.
           </p>
         ) : (

@@ -110,7 +110,7 @@ export default function SubscribeWidgetPage() {
                 {widgetState === "loading" ? "구독 중..." : "구독하기"}
               </Button>
               {widgetState === "success" && (
-                <p className="text-xs text-green-600">
+                <p className="text-xs text-[#2563EB] dark:text-[#38BDF8]">
                   구독이 완료되었습니다. 감사합니다!
                 </p>
               )}
