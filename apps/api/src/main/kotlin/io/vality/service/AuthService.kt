@@ -15,23 +15,24 @@ import io.vality.repository.RefreshTokenRepository
 import io.vality.repository.UserRepository
 import io.vality.repository.VerificationCodeRepository
 import io.vality.service.oauth.OAuthUserInfo
+import io.vality.service.upload.ExternalImageUploadService
+import io.vality.service.upload.ImageUrlService
 import io.vality.util.CuidGenerator
 import java.security.SecureRandom
 import java.time.Instant
 import java.util.Base64
 import java.util.Date
 
-/**
- * todo: 소셜로그인 회원가입시 이미지 url 내 서버에 저장해서 사용
- */
 class AuthService(
     private val userRepository: UserRepository,
     private val accountRepository: AccountRepository,
     private val verificationCodeRepository: VerificationCodeRepository,
     private val refreshTokenRepository: RefreshTokenRepository,
+    private val externalImageUploadService: ExternalImageUploadService,
+    private val imageUrlService: ImageUrlService,
     private val jwtSecret: String,
     private val jwtIssuer: String,
-    private val jwtAudience: String
+    private val jwtAudience: String,
 ) {
     
     suspend fun sendVerificationCode(email: String): Boolean {
@@ -106,14 +107,14 @@ class AuthService(
         return AuthResponse(
             accessToken = accessToken,
             refreshToken = refreshToken.token,
-            user = user.toUserResponse()
+            user = user.toUserResponse(imageUrlService)
         )
     }
     
     suspend fun getCurrentUser(userId: String): UserResponse {
         val user = userRepository.findById(userId)
             ?: throw IllegalStateException("User not found")
-        return user.toUserResponse()
+        return user.toUserResponse(imageUrlService)
     }
     
     suspend fun checkUsernameAvailability(username: String): Boolean {
@@ -139,7 +140,7 @@ class AuthService(
         )
         
         userRepository.update(updatedUser)
-        return updatedUser.toUserResponse()
+        return updatedUser.toUserResponse(imageUrlService)
     }
 
     suspend fun deleteAccount(userId: String) {
@@ -187,7 +188,6 @@ class AuthService(
                 // 사용자 정보 업데이트 (이름, 아바타 등)
                 val updatedUser = user.copy(
                     name = userInfo.name ?: user.name,
-                    avatarUrl = userInfo.avatarUrl ?: user.avatarUrl,
                     updatedAt = now,
                 )
                 userRepository.update(updatedUser)
@@ -197,7 +197,7 @@ class AuthService(
                 return AuthResponse(
                     accessToken = accessToken,
                     refreshToken = refreshToken.token,
-                    user = updatedUser.toUserResponse()
+                    user = updatedUser.toUserResponse(imageUrlService),
                 )
             }
 
@@ -207,7 +207,6 @@ class AuthService(
         } else {
             null
         }
-
         if (existingUser != null) {
             // 기존 User가 있으면 Account만 생성 (소셜 계정 연결)
             val account = Account(
@@ -219,31 +218,30 @@ class AuthService(
             )
             accountRepository.create(account)
 
-            // 사용자 정보 업데이트
-            val updatedUser = existingUser.copy(
-                name = userInfo.name ?: existingUser.name,
-                avatarUrl = userInfo.avatarUrl ?: existingUser.avatarUrl,
-                updatedAt = now
-            )
-            userRepository.update(updatedUser)
-
-            val accessToken = generateToken(updatedUser.id)
-            val refreshToken = generateRefreshToken(updatedUser.id)
+            val accessToken = generateToken(existingUser.id)
+            val refreshToken = generateRefreshToken(existingUser.id)
             return AuthResponse(
                 accessToken = accessToken,
                 refreshToken = refreshToken.token,
-                user = updatedUser.toUserResponse()
+                user = existingUser.toUserResponse(imageUrlService),
             )
         }
 
         // 3. 둘 다 없으면 신규 회원가입 (User + Account 생성)
+        val userId = CuidGenerator.generate()
+
+        // Google 프로필 이미지가 있으면 S3에 업로드
+        val avatarUrlKey = userInfo.avatarUrl?.let {
+            externalImageUploadService.uploadFromExternalUrl(userInfo.avatarUrl, userId) ?: throw IllegalStateException(
+                "Failed to upload Google profile image"
+            )
+        }
+
         val newUser = User(
-            id = CuidGenerator.generate(),
+            id = userId,
             email = userInfo.email ?: throw IllegalArgumentException("Email is required for new user"),
-            username = null, // 나중에 설정 가능
             name = userInfo.name,
-            bio = null,
-            avatarUrl = userInfo.avatarUrl,
+            avatarUrl = avatarUrlKey,
             createdAt = now,
             updatedAt = now,
         )
@@ -263,7 +261,7 @@ class AuthService(
         return AuthResponse(
             accessToken = accessToken,
             refreshToken = refreshToken.token,
-            user = newUser.toUserResponse()
+            user = newUser.toUserResponse(imageUrlService),
         )
     }
 
@@ -289,7 +287,7 @@ class AuthService(
         return AuthResponse(
             accessToken = accessToken,
             refreshToken = newRefreshToken.token,
-            user = user.toUserResponse()
+            user = user.toUserResponse(imageUrlService)
         )
     }
 

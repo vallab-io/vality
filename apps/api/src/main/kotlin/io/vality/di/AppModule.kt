@@ -12,8 +12,16 @@ import io.vality.repository.UserRepository
 import io.vality.repository.VerificationCodeRepository
 import io.vality.service.AuthService
 import io.vality.service.oauth.GoogleOAuthService
+import io.vality.service.upload.ExternalImageUploadService
+import io.vality.service.upload.ImageUrlService
+import io.vality.service.upload.S3Service
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
+import org.slf4j.LoggerFactory
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
+import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.s3.S3Client
 
 val appModule = module {
     // Config
@@ -29,6 +37,19 @@ val appModule = module {
     singleOf(::SubscriberRepository)
     singleOf(::EmailLogRepository)
 
+    // External Image Upload Service (S3가 설정된 경우에만 생성)
+    single<ExternalImageUploadService> {
+        val s3Service = get<S3Service>()
+        ExternalImageUploadService(s3Service)
+    }
+
+    // Image URL Service
+    single {
+        val config = get<Config>()
+        val baseUrl = config.getString("ktor.aws.resourceBaseUrl")
+        ImageUrlService(baseUrl)
+    }
+
     // Auth Services
     single {
         val config = get<Config>()
@@ -37,9 +58,11 @@ val appModule = module {
             accountRepository = get(),
             verificationCodeRepository = get(),
             refreshTokenRepository = get(),
+            externalImageUploadService = get(),
+            imageUrlService = get(),
             jwtSecret = config.getString("ktor.jwt.secret"),
             jwtIssuer = config.getString("ktor.jwt.issuer"),
-            jwtAudience = config.getString("ktor.jwt.audience")
+            jwtAudience = config.getString("ktor.jwt.audience"),
         )
     }
 
@@ -51,6 +74,50 @@ val appModule = module {
             clientSecret = config.getString("ktor.oauth.google.clientSecret")
         )
     }
-    
+
+    // AWS S3 Services
+    single {
+        val config = get<Config>()
+        val accessKeyId = config.getString("ktor.aws.s3.accessKeyId")
+        val secretAccessKey = config.getString("ktor.aws.s3.secretAccessKey")
+        val regionStr = config.getString("ktor.aws.s3.region")
+        val region = Region.of(regionStr)
+
+        // AWS 자격 증명 설정
+        val credentialsProvider = if (accessKeyId.isNotEmpty() && secretAccessKey.isNotEmpty()) {
+            StaticCredentialsProvider.create(
+                AwsBasicCredentials.create(accessKeyId, secretAccessKey)
+            )
+        } else {
+            null // 환경 변수나 시스템 프로퍼티에서 자동으로 읽음
+        }
+
+        // S3Client 빌더
+        val clientBuilder = S3Client.builder()
+            .region(region)
+
+        // 자격 증명이 있으면 설정
+        logger.info("S3Client region=$region")
+        credentialsProvider?.let {
+            logger.info("S3Client credentialsProvider configured")
+            clientBuilder.credentialsProvider(it)
+        }
+
+        clientBuilder.build()
+    }
+
+    single {
+        val config = get<Config>()
+        val s3Client = get<S3Client>()
+        val bucketName = config.getString("ktor.aws.s3.bucket")
+        val region = config.getString("ktor.aws.s3.region")
+
+        S3Service(
+            s3Client = s3Client,
+            bucketName = bucketName,
+            region = region,
+        )
+    }
+
 }
 

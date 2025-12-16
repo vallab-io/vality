@@ -18,10 +18,6 @@ import io.ktor.util.AttributeKey
 import io.ktor.utils.io.charsets.Charsets
 import org.slf4j.event.Level
 
-private const val MAX_LOG_BODY = 2048
-private fun truncate(body: String): String =
-    if (body.length <= MAX_LOG_BODY) body else body.take(MAX_LOG_BODY) + "...(truncated)"
-
 private val RequestBodyKey = AttributeKey<String>("requestBodyLog")
 
 fun Application.configureLogging() {
@@ -43,7 +39,7 @@ fun Application.configureLogging() {
     // Request body logging (safe, truncated)
     intercept(ApplicationCallPipeline.Monitoring) {
         val body = try {
-            truncate(call.receiveText())
+            call.receiveText()
         } catch (_: Exception) {
             "<unavailable>"
         }
@@ -56,11 +52,9 @@ fun Application.configureLogging() {
         val reqId = call.request.header("X-Request-Id") ?: ""
         val reqBody = call.attributes.getOrNull(RequestBodyKey) ?: ""
         val resBody = when (message) {
-            is String -> truncate(message)
-            is OutgoingContent.ByteArrayContent -> truncate(
-                message.bytes()
-                    .toString(Charsets.UTF_8)
-            )
+            is String -> message
+            is OutgoingContent.ByteArrayContent -> message.bytes()
+                .toString(Charsets.UTF_8)
 
             else -> message.toString()
         }

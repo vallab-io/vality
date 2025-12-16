@@ -2,6 +2,7 @@ package io.vality.dto.auth
 
 import kotlinx.serialization.Serializable
 import io.vality.domain.User
+import io.vality.service.upload.ImageUrlService
 
 @Serializable
 data class AuthResponse(
@@ -21,14 +22,14 @@ data class UserResponse(
     val avatarUrl: String? = null,
 )
 
-fun User.toUserResponse(): UserResponse {
+fun User.toUserResponse(imageUrlService: ImageUrlService): UserResponse {
     return UserResponse(
         id = this.id,
         email = this.email,
         username = this.username,
         name = this.name,
         bio = this.bio,
-        avatarUrl = this.avatarUrl,
+        avatarUrl = imageUrlService.getAvatarUrl(this),
     )
 }
 

@@ -157,13 +157,12 @@ apps/api/src/main/kotlin/io/vality/
 #### 1.2 S3 버킷 구조 설계
 ```
 vality-resources/
-├── avatars/              # 프로필 이미지
+├── users/              # 프로필 이미지
 │   └── {userId}/
 │       └── {timestamp}-{filename}
-└── newsletters/          # 뉴스레터 이미지
-    └── {userId}/
-        └── {newsletterId}/
-            └── {timestamp}-{filename}
+└── issues/          # 이슈 이미지
+    └── {issueId}/
+        └── {timestamp}-{filename}
 ```
 
 **예상 시간**: 30분
@@ -173,21 +172,21 @@ vality-resources/
 ### Phase 2: S3 서비스 구현 (우선순위: 높음)
 
 #### 2.1 S3Service 구현
-- [ ] AWS SDK for Kotlin 의존성 추가
-- [ ] `S3Service` 클래스 생성
-- [ ] Presigned URL 생성 메서드 (`generatePresignedUrl`)
-- [ ] 파일 삭제 메서드 (`deleteFile`)
-- [ ] 파일 존재 확인 메서드 (`fileExists`)
+- [x] AWS SDK for Java v2 의존성 추가
+- [x] `S3Service` 클래스 생성
+- [x] 파일 업로드 메서드 (`putObject`) - 서버에서 직접 업로드용
+- [x] 파일 삭제 메서드 (`deleteFile`)
+- [x] 파일 존재 확인 메서드 (`fileExists`)
+- [ ] Presigned URL 생성 메서드 (`generatePresignedUrl`) - 프론트엔드용, 나중에 구현
 
 **예상 시간**: 2-3시간
 
 #### 2.2 ImageUploadService 구현
 - [ ] `ImageUploadService` 클래스 생성
 - [ ] 이미지 타입별 Presigned URL 생성
-  - 프로필 이미지
-  - 뉴스레터 이미지
-  - 커버 이미지
-- [ ] 파일명 생성 로직 (UUID + 타임스탬프)
+  - 프로필 이미지 (users/)
+  - 이슈 이미지 (issues/)
+- [ ] 파일명 생성 로직 (타임스탬프 + 원본 파일명)
 - [ ] 파일 크기/타입 검증
 
 **예상 시간**: 2-3시간
@@ -198,7 +197,7 @@ vality-resources/
 
 #### 3.1 Presigned URL API
 - [ ] `POST /api/upload/presigned-url` 엔드포인트
-- [ ] 요청 파라미터: `type` (avatar/newsletter), `filename`, `contentType`
+- [ ] 요청 파라미터: `type` (user/issue), `filename`, `contentType`, `issueId` (issue 타입일 때만)
 - [ ] Presigned URL 생성 및 반환
 - [ ] 인증 필요 (JWT)
 
@@ -224,7 +223,7 @@ vality-resources/
 
 **예상 시간**: 3-4시간
 
-#### 4.2 뉴스레터 에디터 이미지 업로드
+#### 4.2 이슈 에디터 이미지 업로드
 - [ ] TipTap 에디터 이미지 업로드 핸들러 수정
 - [ ] Presigned URL 요청 및 S3 업로드
 - [ ] 마크다운 이미지 링크 생성
@@ -264,10 +263,10 @@ vality-resources/
 **DB에는 S3 Key (상대 경로)만 저장:**
 ```kotlin
 // User.avatarUrl
-"avatars/user123/abc123-1234567890.jpg"
+"users/user123/1234567890-image.jpg"
 
-// 뉴스레터 본문 이미지 (마크다운)
-"![alt text](newsletters/user123/newsletter456/ghi789-1234567890.jpg)"
+// 이슈 본문 이미지 (마크다운)
+"![alt text](issues/issue456/1234567890-image.jpg)"
 ```
 
 **장점:**
@@ -332,8 +331,8 @@ suspend fun migrateImageUrls() {
 }
 
 fun extractKeyFromUrl(url: String): String {
-    // https://cdn.vality.io/avatars/user123/image.jpg
-    // -> avatars/user123/image.jpg
+    // https://cdn.vality.io/users/user123/1234567890-image.jpg
+    // -> users/user123/1234567890-image.jpg
     return url.substringAfter("cdn.vality.io/")
         .substringAfter("cloudfront.net/")
         .substringAfter("s3.ap-northeast-2.amazonaws.com/")
@@ -389,29 +388,29 @@ fun extractKeyFromUrl(url: String): String {
 
 **MVP 단계 (S3 직접 URL):**
 ```
-https://vality-resources.s3.ap-northeast-2.amazonaws.com/avatars/user123/image.jpg
+https://vality-resources.s3.ap-northeast-2.amazonaws.com/users/user123/1234567890-image.jpg
 ```
 
 **성장 단계 (CloudFront 기본 도메인):**
 ```
-https://d1234567890.cloudfront.net/avatars/user123/image.jpg
+https://d1234567890.cloudfront.net/users/user123/1234567890-image.jpg
 ```
 
 **프로덕션 단계 (서브도메인 - 추천 ⭐):**
 ```
-https://cdn.vality.io/avatars/user123/image.jpg
+https://cdn.vality.io/users/user123/1234567890-image.jpg
 ```
 
 **별도 도메인 사용 (비추천):**
 ```
-https://valitecdn.com/avatars/user123/image.jpg
+https://valitecdn.com/users/user123/1234567890-image.jpg
 ```
 - 별도 도메인 구매 필요 (연간 $10-15)
 - 서브도메인으로 충분하므로 불필요한 비용
 
 **모든 경우 DB에는 동일하게 저장:**
 ```
-avatars/user123/image.jpg
+users/user123/1234567890-image.jpg
 ```
 
 ---
@@ -432,7 +431,7 @@ Google OAuth 로그인 시 프로필 이미지를 자동으로 S3에 업로드�
 1. Google OAuth 로그인 완료
 2. Google에서 프로필 이미지 URL 받음 (예: https://lh3.googleusercontent.com/...)
 3. 백엔드에서 이미지 다운로드
-4. S3에 업로드 (avatars/user123/image.jpg)
+4. S3에 업로드 (users/user123/1234567890-image.jpg)
 5. DB에 S3 Key 저장
 6. 사용자에게 일관된 이미지 URL 제공
 ```
@@ -476,8 +475,9 @@ class ExternalImageUploadService(
             // 2. 이미지 검증 및 파일명 생성
             val contentType = detectContentType(imageBytes)
             val extension = getExtensionFromContentType(contentType)
-            val uniqueFilename = "${UUID.randomUUID()}-${System.currentTimeMillis()}.$extension"
-            val key = S3Paths.avatarPath(userId, uniqueFilename)
+            val timestamp = System.currentTimeMillis()
+            val uniqueFilename = "$timestamp-image.$extension"
+            val key = S3Paths.userPath(userId, uniqueFilename)
             
             // 3. S3에 업로드
             val request = PutObjectRequest.builder()
@@ -532,15 +532,27 @@ suspend fun socialLogin(
 
 ```kotlin
 object S3Paths {
-    const val AVATARS = "avatars"
-    const val NEWSLETTERS = "newsletters"
+    const val USERS = "users"
+    const val ISSUES = "issues"
     
-    fun avatarPath(userId: String, filename: String): String {
-        return "$AVATARS/$userId/$filename"
+    /**
+     * 프로필 이미지 경로 생성
+     * @param userId 사용자 ID
+     * @param filename 파일명 (타임스탬프 포함, 예: "1234567890-image.jpg")
+     * @return S3 Key (예: "users/user123/1234567890-image.jpg")
+     */
+    fun userPath(userId: String, filename: String): String {
+        return "$USERS/$userId/$filename"
     }
     
-    fun newsletterPath(userId: String, newsletterId: String, filename: String): String {
-        return "$NEWSLETTERS/$userId/$newsletterId/$filename"
+    /**
+     * 이슈 이미지 경로 생성
+     * @param issueId 이슈 ID
+     * @param filename 파일명 (타임스탬프 포함, 예: "1234567890-image.jpg")
+     * @return S3 Key (예: "issues/issue456/1234567890-image.jpg")
+     */
+    fun issuePath(issueId: String, filename: String): String {
+        return "$ISSUES/$issueId/$filename"
     }
 }
 ```
@@ -609,8 +621,8 @@ class ImageUrlService(
     /**
      * S3 Key (상대 경로)를 절대 URL로 변환
      * 
-     * @param key S3 Key (예: "avatars/user123/image.jpg")
-     * @return 절대 URL (예: "https://cdn.vality.io/avatars/user123/image.jpg")
+     * @param key S3 Key (예: "users/user123/1234567890-image.jpg")
+     * @return 절대 URL (예: "https://cdn.vality.io/users/user123/1234567890-image.jpg")
      */
     fun getImageUrl(key: String): String {
         // 이미 절대 URL인 경우 그대로 반환 (마이그레이션 전 호환성)
@@ -645,18 +657,19 @@ class ImageUploadService(
         type: ImageType,
         filename: String,
         contentType: String,
-        newsletterId: String? = null
+        issueId: String? = null
     ): PresignedUrlResponse {
-        // 파일명 생성 (UUID + 타임스탬프)
+        // 파일명 생성 (타임스탬프 + 원본 파일명)
         val extension = filename.substringAfterLast('.', "")
-        val uniqueFilename = "${UUID.randomUUID()}-${System.currentTimeMillis()}.$extension"
+        val timestamp = System.currentTimeMillis()
+        val uniqueFilename = "$timestamp-$filename"
         
         // 경로 생성
         val key = when (type) {
-            ImageType.AVATAR -> S3Paths.avatarPath(userId, uniqueFilename)
-            ImageType.NEWSLETTER -> {
-                requireNotNull(newsletterId) { "newsletterId is required for newsletter images" }
-                S3Paths.newsletterPath(userId, newsletterId, uniqueFilename)
+            ImageType.USER -> S3Paths.userPath(userId, uniqueFilename)
+            ImageType.ISSUE -> {
+                requireNotNull(issueId) { "issueId is required for issue images" }
+                S3Paths.issuePath(issueId, uniqueFilename)
             }
         }
         
@@ -691,8 +704,8 @@ class ImageUploadService(
 }
 
 enum class ImageType {
-    AVATAR,
-    NEWSLETTER
+    USER,    // 프로필 이미지
+    ISSUE    // 이슈 이미지
 }
 ```
 
@@ -720,7 +733,7 @@ fun Route.uploadRoutes() {
                         type = request.type,
                         filename = request.filename,
                         contentType = request.contentType,
-                        newsletterId = request.newsletterId
+                        issueId = request.issueId
                     )
                     
                     call.respond(
@@ -747,8 +760,8 @@ fun Route.uploadRoutes() {
                 
                 try {
                     // User.avatarUrl 업데이트 (key만 저장)
-                    // request.url은 "https://cdn.vality.io/avatars/..." 형식이지만
-                    // DB에는 "avatars/user123/image.jpg"만 저장
+                    // request.url은 "https://cdn.vality.io/users/..." 형식이지만
+                    // DB에는 "users/user123/1234567890-image.jpg"만 저장
                     val key = extractKeyFromUrl(request.url)
                     authService.updateAvatarUrl(userId, key)
                     
@@ -773,10 +786,10 @@ fun Route.uploadRoutes() {
 ```typescript
 // lib/api/upload.ts
 export interface PresignedUrlRequest {
-  type: 'avatar' | 'newsletter';
+  type: 'user' | 'issue';
   filename: string;
   contentType: string;
-  newsletterId?: string;  // newsletter 타입일 때만 필요
+  issueId?: string;  // issue 타입일 때만 필요
 }
 
 export interface PresignedUrlResponse {
@@ -810,15 +823,15 @@ export async function uploadToS3(
 
 export async function uploadImage(
   file: File,
-  type: 'avatar' | 'newsletter',
-  newsletterId?: string  // newsletter 타입일 때만 필요
+  type: 'user' | 'issue',
+  issueId?: string  // issue 타입일 때만 필요
 ): Promise<string> {
   // 1. Presigned URL 요청
   const { presignedUrl, publicUrl, key } = await getPresignedUrl({
     type,
     filename: file.name,
     contentType: file.type,
-    newsletterId,
+    issueId,
   });
   
   // 2. S3에 직접 업로드
@@ -935,7 +948,7 @@ fun extractKeyFromUrl(url: String): String {
 
 ### 1. 파일 검증
 - **파일 타입 검증**: MIME 타입 확인 (JPEG, PNG, GIF, WebP만 허용)
-- **파일 크기 제한**: 프로필 이미지 5MB, 뉴스레터 이미지 10MB
+- **파일 크기 제한**: 프로필 이미지 5MB, 이슈 이미지 10MB
 - **파일명 검증**: 경로 탐색 공격 방지 (../ 제거)
 
 ### 2. Presigned URL 보안
@@ -959,8 +972,8 @@ fun extractKeyFromUrl(url: String): String {
 
 ### 예상 사용량 (MVP 단계)
 - 프로필 이미지: 사용자당 1개 (평균 200KB)
-- 뉴스레터 이미지: 뉴스레터당 평균 3개 (평균 500KB)
-- 월 100명 사용자, 50개 뉴스레터
+- 이슈 이미지: 이슈당 평균 3개 (평균 500KB)
+- 월 100명 사용자, 50개 이슈
   - 스토리지: 약 100MB → **$0.002/월**
   - 요청: 약 250건 → **$0.001/월**
   - **총 약 $0.01/월** (거의 무료)
@@ -998,7 +1011,7 @@ fun extractKeyFromUrl(url: String): String {
 - [ ] ImageUploadService 구현
 - [ ] Presigned URL API 구현
 - [ ] 프로필 이미지 업로드 (프론트엔드)
-- [ ] 뉴스레터 에디터 이미지 업로드 (프론트엔드)
+- [ ] 이슈 에디터 이미지 업로드 (프론트엔드)
 
 ### 선택 기능
 - [ ] 이미지 리사이징

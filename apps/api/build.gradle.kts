@@ -78,6 +78,9 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.1")
     implementation("io.ktor:ktor-server-core:2.3.12")
     implementation("io.ktor:ktor-server-double-receive:2.3.12")
+    
+    // AWS SDK for Java v2
+    implementation("software.amazon.awssdk:s3:2.17.106")
 
     // Testing
     testImplementation("io.ktor:ktor-server-tests-jvm")
