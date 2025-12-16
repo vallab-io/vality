@@ -13,9 +13,7 @@ import {
 } from "@/components/ui/card";
 import { PageHeader, EmptyState } from "@/components/common";
 import {
-  SubscribersIcon,
   NewsletterIcon,
-  PlusIcon,
   MoreIcon,
 } from "@/components/icons";
 import { useAtomValue } from "jotai";
@@ -109,10 +107,10 @@ export default function DashboardPage() {
         title="대시보드"
         description="뉴스레터 현황을 확인하세요"
       >
-        <Link href="/dashboard/newsletters/new">
+        <Link href="/dashboard/newsletters">
           <Button className="gap-2">
-            <PlusIcon className="h-4 w-4" />
-            새 뉴스레터
+            <NewsletterIcon className="h-4 w-4" />
+            뉴스레터 관리
           </Button>
         </Link>
       </PageHeader>
@@ -120,7 +118,7 @@ export default function DashboardPage() {
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatsCard
-          icon={<SubscribersIcon className="h-5 w-5" />}
+          icon={<NewsletterIcon className="h-5 w-5" />}
           title="총 구독자"
           value={stats.totalSubscribers.toLocaleString()}
           description="활성 구독자 수"
@@ -168,8 +166,8 @@ export default function DashboardPage() {
               title="아직 작성한 뉴스레터가 없습니다"
               description="첫 뉴스레터를 작성하고 구독자에게 전달하세요"
             >
-              <Link href="/dashboard/newsletters/new">
-                <Button>첫 뉴스레터 작성하기</Button>
+              <Link href="/dashboard/newsletters">
+                <Button>뉴스레터 관리하기</Button>
               </Link>
             </EmptyState>
           )}
@@ -180,16 +178,10 @@ export default function DashboardPage() {
       {newsletters.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-2">
           <QuickActionCard
-            title="새 뉴스레터 작성"
-            description="구독자에게 새로운 소식을 전달하세요"
-            href="/dashboard/newsletters/new"
-            icon={<PlusIcon className="h-5 w-5" />}
-          />
-          <QuickActionCard
-            title="구독자 관리"
-            description="구독자 목록을 확인하고 관리하세요"
-            href="/dashboard/subscribers"
-            icon={<SubscribersIcon className="h-5 w-5" />}
+            title="뉴스레터 목록"
+            description="모든 뉴스레터를 확인하고 관리하세요"
+            href="/dashboard/newsletters"
+            icon={<NewsletterIcon className="h-5 w-5" />}
           />
         </div>
       )}
@@ -231,7 +223,7 @@ interface Newsletter {
 function NewsletterItem({ newsletter }: { newsletter: Newsletter }) {
   return (
     <Link
-      href={`/dashboard/newsletters/${newsletter.id}`}
+      href={`/dashboard/newsletters/${newsletter.id}/issues`}
       className="flex items-center justify-between rounded-lg px-3 py-3 -mx-3 transition-colors hover:bg-muted/50"
     >
       <div className="flex-1 min-w-0">

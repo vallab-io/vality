@@ -28,11 +28,6 @@ export default function HomePage() {
                   무료로 시작하기
                 </Button>
               </Link>
-              <Link href="/explore">
-                <Button variant="outline" size="lg" className="h-11 px-6">
-                  둘러보기
-                </Button>
-              </Link>
             </div>
           </div>
         </section>

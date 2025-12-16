@@ -1,7 +1,6 @@
 import {
   HomeIcon,
   NewsletterIcon,
-  SubscribersIcon,
   SettingsIcon,
 } from "@/components/icons";
 
@@ -18,11 +17,6 @@ export const DASHBOARD_NAV_ITEMS = [
     label: "뉴스레터",
     href: "/dashboard/newsletters",
     icon: NewsletterIcon,
-  },
-  {
-    label: "구독자",
-    href: "/dashboard/subscribers",
-    icon: SubscribersIcon,
   },
   {
     label: "설정",
