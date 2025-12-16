@@ -198,7 +198,9 @@ fun Route.docsRoutes() {
                                     properties = mapOf(
                                         "username" to Schema<Any>().apply { type = "string"; example = "johndoe" },
                                         "name" to Schema<Any>().apply { type = "string"; nullable = true; example = "John Doe" },
-                                        "bio" to Schema<Any>().apply { type = "string"; nullable = true; example = "소개글" }
+                                        "bio" to Schema<Any>().apply { type = "string"; nullable = true; example = "소개글" },
+                                        "imageUrl" to Schema<Any>().apply { type = "string"; nullable = true; example = "1234567890-avatar.jpg" },
+                                        "removeAvatar" to Schema<Any>().apply { type = "boolean"; example = false }
                                     )
                                 }
                             })

@@ -1,7 +1,6 @@
 package io.vality.routing.auth
 
 import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.response.respond
@@ -24,6 +23,7 @@ private val logger = LoggerFactory.getLogger("OAuthRoutes")
 fun Route.oauthRoutes() {
     val googleOAuthService: GoogleOAuthService by inject()
     val authService: AuthService by inject()
+    val config: Config by inject()
 
     route("/api/auth/oauth") {
         // Google OAuth2 시작
@@ -31,7 +31,6 @@ fun Route.oauthRoutes() {
             try {
                 // 프론트엔드 콜백 URL 설정
                 val frontendUrl = try {
-                    val config: Config = ConfigFactory.load()
                     config.getStringList("ktor.cors.allowedOrigins")
                         .firstOrNull() ?: "http://localhost:3000"
                 } catch (e: Exception) {

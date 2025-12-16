@@ -61,22 +61,15 @@ class AuthService(
         return true
     }
 
-    private suspend fun verifyCode(email: String, code: String): Boolean {
-        val verificationCode = verificationCodeRepository.findValidByEmailAndCode(email, code)
-        return verificationCode != null
-    }
-
-
     /**
      * 이메일 인증으로 로그인/회원가입 처리
      * - 기존 사용자가 있으면 로그인
      * - 기존 사용자가 없으면 회원가입
      */
     suspend fun authenticateWithEmail(email: String, code: String): AuthResponse {
-        // 인증 코드 검증
-        if (!verifyCode(email, code)) {
-            throw IllegalArgumentException("Invalid verification code")
-        }
+        // 인증 코드 검증 및 조회
+        val verificationCode = verificationCodeRepository.findValidByEmailAndCode(email, code)
+            ?: throw IllegalArgumentException("Invalid or expired verification code")
 
         // 기존 사용자 확인
         val existingUser = userRepository.findByEmail(email)
@@ -99,9 +92,8 @@ class AuthService(
             newUser
         }
         
-        // 인증 코드 삭제
-        verificationCodeRepository.findByEmailAndCode(email, code)
-            ?.let { verificationCodeRepository.delete(it.id) }
+        // 인증 코드 사용 후 삭제
+        verificationCodeRepository.delete(verificationCode.id)
         
         // JWT 토큰 및 RefreshToken 생성
         val accessToken = generateToken(user.id)
