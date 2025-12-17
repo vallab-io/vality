@@ -81,6 +81,7 @@ dependencies {
     
     // AWS SDK for Java v2
     implementation("software.amazon.awssdk:s3:2.17.106")
+    implementation("software.amazon.awssdk:ses:2.17.106")
 
     // Testing
     testImplementation("io.ktor:ktor-server-tests-jvm")
