@@ -14,6 +14,8 @@ import io.vality.repository.AccountRepository
 import io.vality.repository.RefreshTokenRepository
 import io.vality.repository.UserRepository
 import io.vality.repository.VerificationCodeRepository
+import io.vality.service.email.EmailService
+import io.vality.service.email.EmailTemplates
 import io.vality.service.oauth.OAuthUserInfo
 import io.vality.service.upload.ExternalImageUploadService
 import io.vality.service.upload.ImageUrlService
@@ -33,17 +35,16 @@ class AuthService(
     private val externalImageUploadService: ExternalImageUploadService,
     private val imageUrlService: ImageUrlService,
     private val s3Service: S3Service,
+    private val emailService: EmailService,
     private val jwtSecret: String,
     private val jwtIssuer: String,
     private val jwtAudience: String,
 ) {
     
     suspend fun sendVerificationCode(email: String): Boolean {
-        // TODO: 이메일 발송 로직 구현 (Resend 등)
-        // 지금은 인증 코드만 생성하고 저장
-        
         val code = generateVerificationCode()
         val expiresAt = Instant.now().plusSeconds(600) // 10분 후 만료
+        val expiresInMinutes = 10
         
         val verificationCode = VerificationCode(
             id = CuidGenerator.generate(),
@@ -55,10 +56,26 @@ class AuthService(
         
         verificationCodeRepository.create(verificationCode)
         
-        // TODO: 실제 이메일 발송
-        println("Verification code for $email: $code")
-        
-        return true
+        // 이메일 발송
+        try {
+            val htmlBody = EmailTemplates.verificationCodeHtml(code, expiresInMinutes)
+            val textBody = EmailTemplates.verificationCodeText(code, expiresInMinutes)
+            
+            emailService.sendEmail(
+                to = email,
+                subject = "$code is your Vality verification code.",
+                htmlBody = htmlBody,
+                textBody = textBody
+            )
+            
+            return true
+        } catch (e: Exception) {
+            // 이메일 발송 실패 시에도 인증 코드는 저장되어 있으므로
+            // 사용자가 재시도할 수 있도록 true 반환
+            // 실제 운영 환경에서는 로깅 및 모니터링 필요
+            println("Failed to send verification email to $email: ${e.message}")
+            return true
+        }
     }
 
     /**

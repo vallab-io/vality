@@ -228,7 +228,7 @@ export function DashboardSidebar() {
               localStorage.removeItem("accessToken");
               localStorage.removeItem("refreshToken");
               setUser(null);
-              router.push("/login");
+              router.push("/");
             }}
           >
             로그아웃

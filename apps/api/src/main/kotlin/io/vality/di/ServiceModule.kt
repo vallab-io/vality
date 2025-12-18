@@ -62,6 +62,7 @@ val serviceModule = module {
             externalImageUploadService = get(),
             imageUrlService = get(),
             s3Service = get(),
+            emailService = get(),
             jwtSecret = config.getString("ktor.jwt.secret"),
             jwtIssuer = config.getString("ktor.jwt.issuer"),
             jwtAudience = config.getString("ktor.jwt.audience"),
