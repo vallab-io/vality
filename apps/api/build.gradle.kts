@@ -66,12 +66,6 @@ dependencies {
     implementation("io.insert-koin:koin-ktor:3.5.6")
     implementation("io.insert-koin:koin-logger-slf4j:3.5.6")
     
-    // Utilities - CUID (Collision-resistant Unique Identifier)
-    // CUID는 소문자, URL-friendly, 약 25자
-    implementation("io.github.cdimascio:java-dotenv:5.2.2")
-    // CUID는 직접 구현하거나 Java 라이브러리 사용
-    // 간단한 CUID 생성 유틸리티 구현
-    
     // OpenAPI/Swagger
     implementation("io.swagger.core.v3:swagger-core:2.2.22")
     implementation("io.swagger.core.v3:swagger-models:2.2.22")
