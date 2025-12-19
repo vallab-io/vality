@@ -1,11 +1,5 @@
 import { apiClient } from "./client";
-
-// API 응답 타입
-interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  message?: string;
-}
+import type { ApiResponse } from "./types";
 
 // AuthResponse 타입 정의
 export interface AuthResponse {

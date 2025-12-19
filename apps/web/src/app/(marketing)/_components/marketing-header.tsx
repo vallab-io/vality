@@ -10,6 +10,7 @@ import { MenuIcon, CloseIcon } from "@/components/icons";
 import { MARKETING_NAV_ITEMS } from "@/constants/navigation";
 import { useAtomValue } from "jotai";
 import { userAtom, authLoadingAtom } from "@/stores/auth.store";
+import { getMyNewsletters } from "@/lib/api/newsletter";
 
 export function MarketingHeader() {
   const router = useRouter();
@@ -20,11 +21,27 @@ export function MarketingHeader() {
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
 
-  const handleLoginClick = () => {
+  const handleLoginClick = async () => {
     if (authLoading) return;
+    
     if (user) {
-      router.push("/dashboard");
+      // 인증된 사용자인 경우 뉴스레터 확인
+      try {
+        const newsletters = await getMyNewsletters();
+        if (newsletters.length === 0) {
+          // 뉴스레터가 없으면 onboarding으로 이동
+          router.push("/onboarding");
+        } else {
+          // 뉴스레터가 있으면 대시보드로 이동
+          router.push("/dashboard");
+        }
+      } catch (error) {
+        console.error("Failed to check newsletters:", error);
+        // 에러 발생 시 onboarding으로 이동 (안전하게)
+        router.push("/onboarding");
+      }
     } else {
+      // 인증되지 않은 사용자는 로그인 페이지로
       router.push("/login");
     }
     closeMenu();

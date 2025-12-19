@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { emailAuth, sendVerificationCode } from "@/lib/api/auth";
+import { getMyNewsletters } from "@/lib/api/newsletter";
 import { userAtom } from "@/stores/auth.store";
 import { useSetAtom } from "jotai";
 import { getErrorMessage } from "@/lib/api/client";
@@ -99,15 +100,29 @@ export function VerificationCodeForm({
       }
       setUser(authResponse.user);
 
-      // username, name이 비어있으면 회원가입으로 간주하고 프로필 설정 페이지로 이동
-      const isNewUser = !authResponse.user.username || !authResponse.user.name;
+      // onboarding 상태 확인
+      const needsProfileSetup = !authResponse.user.username;
       
-      if (isNewUser) {
+      if (needsProfileSetup) {
         toast.success("회원가입 성공! 프로필을 설정해주세요.");
         router.push("/onboarding");
       } else {
-        toast.success("로그인 성공!");
-        router.push("/dashboard");
+        // username이 있으면 뉴스레터 확인
+        try {
+          const newsletters = await getMyNewsletters();
+          if (newsletters.length === 0) {
+            toast.success("로그인 성공! 뉴스레터를 만들어보세요.");
+            router.push("/onboarding");
+          } else {
+            toast.success("로그인 성공!");
+            router.push("/dashboard");
+          }
+        } catch (error) {
+          console.error("Failed to check newsletters:", error);
+          // 에러 발생 시 대시보드로 이동
+          toast.success("로그인 성공!");
+          router.push("/dashboard");
+        }
       }
     } catch (error) {
       console.error("Verification error:", error);

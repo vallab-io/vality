@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { handleOAuthCallback } from "@/lib/api/auth";
+import { getMyNewsletters } from "@/lib/api/newsletter";
 import { userAtom } from "@/stores/auth.store";
 import { useSetAtom } from "jotai";
 import { toast } from "sonner";
@@ -58,10 +59,30 @@ export default function GoogleCallbackPage() {
         }
         setUser(authResponse.user);
 
-        toast.success("로그인 성공!");
+        // onboarding 상태 확인
+        const needsProfileSetup = !authResponse.user.username;
         
-        // 대시보드로 리다이렉트
-        router.push("/dashboard");
+        if (needsProfileSetup) {
+          toast.success("회원가입 성공! 프로필을 설정해주세요.");
+          router.push("/onboarding");
+        } else {
+          // username이 있으면 뉴스레터 확인
+          try {
+            const newsletters = await getMyNewsletters();
+            if (newsletters.length === 0) {
+              toast.success("로그인 성공! 뉴스레터를 만들어보세요.");
+              router.push("/onboarding");
+            } else {
+              toast.success("로그인 성공!");
+              router.push("/dashboard");
+            }
+          } catch (error) {
+            console.error("Failed to check newsletters:", error);
+            // 에러 발생 시 대시보드로 이동
+            toast.success("로그인 성공!");
+            router.push("/dashboard");
+          }
+        }
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "인증 처리 중 오류가 발생했습니다.";

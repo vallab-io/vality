@@ -78,11 +78,16 @@ export default function DashboardPage() {
       return;
     }
 
-    // onboarding 완료 확인 (username과 name이 모두 있어야 함)
+    // onboarding 완료 확인
+    // username이 없으면 프로필 설정으로
     if (!user.username) {
       router.push("/onboarding");
       return;
     }
+
+    // username은 있지만 뉴스레터가 없으면 뉴스레터 생성으로
+    // (뉴스레터 확인은 비동기이므로 여기서는 체크하지 않음)
+    // 실제 뉴스레터가 필요한 페이지에서 체크
   }, [authLoading, isAuthenticated, user, router]);
 
   // 인증 초기화 중이거나 인증 및 onboarding 완료 확인 중

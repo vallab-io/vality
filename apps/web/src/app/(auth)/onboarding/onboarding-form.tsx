@@ -12,7 +12,11 @@ import { userAtom } from "@/stores/auth.store";
 import { useSetAtom, useAtomValue } from "jotai";
 import { getErrorMessage } from "@/lib/api/client";
 
-export function OnboardingForm() {
+interface OnboardingFormProps {
+  onComplete?: () => void;
+}
+
+export function OnboardingForm({ onComplete }: OnboardingFormProps) {
   const router = useRouter();
   const setUser = useSetAtom(userAtom);
   const user = useAtomValue(userAtom);
@@ -130,7 +134,15 @@ export function OnboardingForm() {
       setUser(updatedUser);
 
       toast.success("프로필이 저장되었습니다!");
-      router.push("/dashboard");
+      
+      // 뉴스레터가 있는지 확인 후 다음 단계로 이동
+      // 뉴스레터 확인은 부모 컴포넌트에서 처리
+      // 여기서는 완료 콜백 호출
+      if (onComplete) {
+        onComplete();
+      } else {
+        router.push("/dashboard");
+      }
     } catch (error) {
       console.error("Save error:", error);
       const errorMessage = getErrorMessage(error);
