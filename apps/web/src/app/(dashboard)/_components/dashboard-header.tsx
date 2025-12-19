@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -16,10 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/auth.store";
-
-const MOCK_NEWSLETTERS = [
-  { id: "clh1abc123def456ghi789", name: "John's Weekly", slug: "johns-weekly" },
-];
+import { getMyNewsletters, type Newsletter } from "@/lib/api/newsletter";
 
 const MAX_FREE_NEWSLETTERS = 1;
 
@@ -61,18 +58,52 @@ export function DashboardHeader() {
   const user = useAtomValue(userAtom);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
-  const [selectedNewsletter, setSelectedNewsletter] = useState(MOCK_NEWSLETTERS[0]);
+  const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedNewsletter, setSelectedNewsletter] = useState<Newsletter | null>(null);
   const [isNewsletterOpen, setIsNewsletterOpen] = useState(true);
   const [showNewsletterSwitcher, setShowNewsletterSwitcher] = useState(false);
   const pathname = usePathname();
   
   const userPlan: "free" | "pro" = "free"; // TODO: API에서 가져오기
 
+  // 뉴스레터 목록 가져오기
+  useEffect(() => {
+    const fetchNewsletters = async () => {
+      try {
+        setIsLoading(true);
+        const data = await getMyNewsletters();
+        // createdAt 기준으로 정렬 (첫 번째가 가장 오래된 것 = default)
+        const sortedData = [...data].sort((a, b) => 
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+        setNewsletters(sortedData);
+        // 첫 번째 뉴스레터를 기본값으로 설정
+        if (sortedData.length > 0) {
+          setSelectedNewsletter(sortedData[0]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch newsletters:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchNewsletters();
+  }, []);
+
+  // selectedNewsletter가 null이거나 목록에 없으면 첫 번째로 재설정
+  useEffect(() => {
+    if (newsletters.length > 0 && !selectedNewsletter) {
+      setSelectedNewsletter(newsletters[0]);
+    }
+  }, [newsletters]);
+
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
 
   const canCreateNewsletter =
-    userPlan === "pro" || MOCK_NEWSLETTERS.length < MAX_FREE_NEWSLETTERS;
+    userPlan === "pro" || newsletters.length < MAX_FREE_NEWSLETTERS;
 
   const handleCreateNewsletter = () => {
     if (!canCreateNewsletter) {
@@ -93,7 +124,9 @@ export function DashboardHeader() {
     { label: "설정", href: `/dashboard/newsletters/${newsletterId}/settings` },
   ];
 
-  const newsletterSubItems = getNewsletterSubItems(selectedNewsletter.id);
+  const newsletterSubItems = selectedNewsletter
+    ? getNewsletterSubItems(selectedNewsletter.id)
+    : [];
 
   return (
     <>
@@ -169,9 +202,16 @@ export function DashboardHeader() {
               <button
                 onClick={() => setShowNewsletterSwitcher(!showNewsletterSwitcher)}
                 className="flex flex-1 items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+                disabled={isLoading || newsletters.length === 0}
               >
                 <NewsletterIcon className="h-5 w-5" />
-                <span className="truncate">{selectedNewsletter.name}</span>
+                <span className="truncate">
+                  {isLoading
+                    ? "로딩 중..."
+                    : selectedNewsletter
+                    ? selectedNewsletter.name
+                    : "뉴스레터 없음"}
+                </span>
               </button>
               
               {/* 접기/펼치기 버튼 */}
@@ -186,7 +226,7 @@ export function DashboardHeader() {
             {/* 뉴스레터 선택 드롭다운 */}
             {showNewsletterSwitcher && (
               <div className="mx-3 mt-1 rounded-lg border border-border bg-card p-2">
-                {MOCK_NEWSLETTERS.map((newsletter) => (
+                {newsletters.map((newsletter) => (
                   <button
                     key={newsletter.id}
                     onClick={() => {
@@ -195,13 +235,13 @@ export function DashboardHeader() {
                     }}
                     className={cn(
                       "flex w-full items-center justify-between rounded px-2 py-1.5 text-sm transition-colors",
-                      selectedNewsletter.id === newsletter.id
+                      selectedNewsletter?.id === newsletter.id
                         ? "bg-muted"
                         : "hover:bg-muted/50"
                     )}
                   >
                     <span className="truncate">{newsletter.name}</span>
-                    {selectedNewsletter.id === newsletter.id && (
+                    {selectedNewsletter?.id === newsletter.id && (
                       <CheckIcon className="h-4 w-4 text-primary" />
                     )}
                   </button>
@@ -222,7 +262,7 @@ export function DashboardHeader() {
             )}
 
             {/* 뉴스레터 하위 메뉴 */}
-            {isNewsletterOpen && (
+            {isNewsletterOpen && selectedNewsletter && (
               <div className="ml-4 mt-1 space-y-1 border-l border-border pl-4">
                 {newsletterSubItems.map((item) => {
                   const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -271,9 +311,9 @@ export function DashboardHeader() {
           >
             <UserAvatar
               name={user?.name || user?.email || "사용자"}
-              email={user?.email || undefined}
+              email={undefined}
               imageUrl={user?.imageUrl || undefined}
-              showInfo
+              showInfo={false}
             />
           </Link>
         </div>

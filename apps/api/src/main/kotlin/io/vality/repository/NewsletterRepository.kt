@@ -4,6 +4,7 @@ import io.vality.domain.Newsletter
 import io.vality.domain.Newsletters
 import io.vality.plugins.dbQuery
 import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
@@ -61,6 +62,7 @@ class NewsletterRepository {
             )
         )
             .where { Newsletters.ownerId eq ownerId }
+            .orderBy(Newsletters.createdAt to SortOrder.ASC)
             .map { it.toNewsletter() }
     }
 

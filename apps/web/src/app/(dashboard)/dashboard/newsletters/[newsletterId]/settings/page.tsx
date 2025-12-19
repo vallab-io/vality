@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { PageHeader } from "@/components/common";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { getNewsletterById, updateNewsletter } from "@/lib/api/newsletter";
+import { useAtomValue } from "jotai";
+import { userAtom } from "@/stores/auth.store";
 
 // 주요 Timezone 목록 (IANA timezone format)
 const TIMEZONES = [
@@ -37,35 +40,46 @@ const TIMEZONES = [
   { value: "Pacific/Auckland", label: "Pacific/Auckland", offset: "GMT+13:00" },
 ];
 
-// 목업 데이터
-const MOCK_USER = {
-  username: "johndoe",
-};
-
-const MOCK_NEWSLETTER = {
-  name: "John's Weekly",
-  slug: "weekly",
-  description:
-    "매주 월요일, 디자인과 프로덕트에 대한 인사이트를 전달합니다.",
-  senderName: "John Doe",
-  timezone: "Asia/Seoul",
-};
-
 export default function NewsletterSettingsPage() {
   const params = useParams();
   const newsletterId = params.newsletterId as string;
-  
-  // newsletterId를 활용해 해당 뉴스레터 설정을 가져올 수 있음
-  console.log("Newsletter ID:", newsletterId);
+  const user = useAtomValue(userAtom);
   
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [formData, setFormData] = useState({
-    name: MOCK_NEWSLETTER.name,
-    slug: MOCK_NEWSLETTER.slug,
-    description: MOCK_NEWSLETTER.description,
-    senderName: MOCK_NEWSLETTER.senderName,
-    timezone: MOCK_NEWSLETTER.timezone,
+    name: "",
+    slug: "",
+    description: "",
+    senderName: "",
+    timezone: "Asia/Seoul",
   });
+
+  // 뉴스레터 데이터 가져오기
+  useEffect(() => {
+    const fetchNewsletter = async () => {
+      try {
+        setIsFetching(true);
+        const newsletter = await getNewsletterById(newsletterId);
+        setFormData({
+          name: newsletter.name,
+          slug: newsletter.slug,
+          description: newsletter.description || "",
+          senderName: newsletter.senderName || "",
+          timezone: newsletter.timezone,
+        });
+      } catch (error) {
+        console.error("Failed to fetch newsletter:", error);
+        toast.error("뉴스레터 정보를 불러오는데 실패했습니다.");
+      } finally {
+        setIsFetching(false);
+      }
+    };
+
+    if (newsletterId) {
+      fetchNewsletter();
+    }
+  }, [newsletterId]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -85,12 +99,12 @@ export default function NewsletterSettingsPage() {
   };
 
   const embedCode = `<iframe
-  src="https://vality.io/@${MOCK_USER.username}/${formData.slug}/subscribe-widget"
-  width="100%"
-  height="220"
-  style="border:1px solid #e5e5e5; border-radius:12px;"
-  title="Subscribe to ${formData.name}"
-></iframe>`;
+    src="https://vality.io/@${user?.username || "username"}/${formData.slug}/subscribe-widget"
+    width="100%"
+    height="220"
+    style="border:1px solid #e5e5e5; border-radius:12px;"
+    title="Subscribe to ${formData.name}"
+  ></iframe>`;
 
   const handleCopyEmbed = async () => {
     try {
@@ -107,16 +121,46 @@ export default function NewsletterSettingsPage() {
     setIsLoading(true);
 
     try {
-      console.log("Newsletter settings update:", formData);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const updatedNewsletter = await updateNewsletter(newsletterId, {
+        name: formData.name,
+        slug: formData.slug,
+        description: formData.description || undefined,
+        senderName: formData.senderName || undefined,
+        timezone: formData.timezone,
+      });
+      
+      // 업데이트된 데이터로 폼 데이터 갱신
+      setFormData({
+        name: updatedNewsletter.name,
+        slug: updatedNewsletter.slug,
+        description: updatedNewsletter.description || "",
+        senderName: updatedNewsletter.senderName || "",
+        timezone: updatedNewsletter.timezone,
+      });
+      
       toast.success("뉴스레터 설정이 저장되었습니다.");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Newsletter settings update error:", error);
-      toast.error("설정 저장에 실패했습니다.");
+      const errorMessage = error?.response?.data?.message || error?.message || "설정 저장에 실패했습니다.";
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (isFetching) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <PageHeader title="뉴스레터 설정" />
+        <div className="mt-8 flex items-center justify-center py-12">
+          <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
+            <p className="text-muted-foreground">로딩 중...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -139,7 +183,7 @@ export default function NewsletterSettingsPage() {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="뉴스레터 이름"
-                disabled={isLoading}
+                disabled={isLoading || isFetching}
               />
             </div>
 
@@ -148,7 +192,7 @@ export default function NewsletterSettingsPage() {
               <Label htmlFor="slug">URL 슬러그</Label>
               <div className="flex">
                 <span className="inline-flex items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground">
-                  /@{MOCK_USER.username}/
+                  /@{user?.username || "username"}/
                 </span>
                 <Input
                   id="slug"
@@ -156,12 +200,12 @@ export default function NewsletterSettingsPage() {
                   value={formData.slug}
                   onChange={handleSlugChange}
                   placeholder="newsletter-slug"
-                  disabled={isLoading}
+                  disabled={isLoading || isFetching}
                   className="rounded-l-none"
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                vality.io/@{MOCK_USER.username}/{formData.slug || "slug"}
+                vality.io/@{user?.username || "username"}/{formData.slug || "slug"}
               </p>
             </div>
 
@@ -179,7 +223,7 @@ export default function NewsletterSettingsPage() {
                 value={formData.description}
                 onChange={handleChange}
                 placeholder="뉴스레터에 대한 간단한 설명"
-                disabled={isLoading}
+                disabled={isLoading || isFetching}
                 rows={3}
                 className="resize-none"
               />
@@ -187,7 +231,7 @@ export default function NewsletterSettingsPage() {
 
             {/* Submit */}
             <div className="flex justify-end pt-2">
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading || isFetching}>
                 {isLoading ? "저장 중..." : "변경사항 저장"}
               </Button>
             </div>
@@ -210,7 +254,7 @@ export default function NewsletterSettingsPage() {
                 value={formData.senderName}
                 onChange={handleChange}
                 placeholder="발신자 이름"
-                disabled={isLoading}
+                disabled={isLoading || isFetching}
               />
               <p className="text-xs text-muted-foreground">
                 이메일 발신자로 표시되는 이름입니다.
@@ -223,7 +267,7 @@ export default function NewsletterSettingsPage() {
               <Select
                 value={formData.timezone}
                 onValueChange={handleTimezoneChange}
-                disabled={isLoading}
+                disabled={isLoading || isFetching}
               >
                 <SelectTrigger id="timezone">
                   <SelectValue placeholder="시간대를 선택하세요" />
@@ -248,7 +292,11 @@ export default function NewsletterSettingsPage() {
 
             {/* Submit */}
             <div className="flex justify-end pt-2">
-              <Button type="button" disabled={isLoading}>
+              <Button 
+                type="button" 
+                onClick={handleSubmit}
+                disabled={isLoading || isFetching}
+              >
                 {isLoading ? "저장 중..." : "변경사항 저장"}
               </Button>
             </div>

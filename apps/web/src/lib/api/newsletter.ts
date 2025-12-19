@@ -46,3 +46,40 @@ export async function getMyNewsletters(): Promise<Newsletter[]> {
   return response.data.data;
 }
 
+// 뉴스레터 조회
+export async function getNewsletterById(
+  newsletterId: string
+): Promise<Newsletter> {
+  const response = await apiClient.get<ApiResponse<Newsletter>>(
+    `/newsletters/${newsletterId}`
+  );
+  if (!response.data.data) {
+    throw new Error(response.data.message || "Failed to get newsletter");
+  }
+  return response.data.data;
+}
+
+// 뉴스레터 업데이트 요청
+export interface UpdateNewsletterRequest {
+  name: string;
+  slug: string;
+  description?: string;
+  senderName?: string;
+  timezone: string;
+}
+
+// 뉴스레터 업데이트
+export async function updateNewsletter(
+  newsletterId: string,
+  data: UpdateNewsletterRequest
+): Promise<Newsletter> {
+  const response = await apiClient.patch<ApiResponse<Newsletter>>(
+    `/newsletters/${newsletterId}`,
+    data
+  );
+  if (!response.data.data) {
+    throw new Error(response.data.message || "Failed to update newsletter");
+  }
+  return response.data.data;
+}
+

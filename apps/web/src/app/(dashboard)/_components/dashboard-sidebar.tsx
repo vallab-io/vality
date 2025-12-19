@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -23,13 +23,10 @@ import {
 } from "@/components/ui/dialog";
 import { useAtomValue, useSetAtom } from "jotai";
 import { userAtom } from "@/stores/auth.store";
+import { getMyNewsletters, type Newsletter } from "@/lib/api/newsletter";
 
 // 플랜 기본값 (향후 API 연동 시 교체)
 const DEFAULT_PLAN: "free" | "pro" = "free";
-
-const MOCK_NEWSLETTERS = [
-  { id: "clh1abc123def456ghi789", name: "John's Weekly", slug: "johns-weekly" },
-];
 
 const MAX_FREE_NEWSLETTERS = 1;
 
@@ -72,12 +69,46 @@ export function DashboardSidebar() {
   const router = useRouter();
   const setUser = useSetAtom(userAtom);
   const user = useAtomValue(userAtom);
-  const [selectedNewsletter, setSelectedNewsletter] = useState(MOCK_NEWSLETTERS[0]);
+  const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedNewsletter, setSelectedNewsletter] = useState<Newsletter | null>(null);
   const [isNewsletterOpen, setIsNewsletterOpen] = useState(true);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
+  // 뉴스레터 목록 가져오기
+  useEffect(() => {
+    const fetchNewsletters = async () => {
+      try {
+        setIsLoading(true);
+        const data = await getMyNewsletters();
+        // createdAt 기준으로 정렬 (첫 번째가 가장 오래된 것 = default)
+        const sortedData = [...data].sort((a, b) => 
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+        setNewsletters(sortedData);
+        // 첫 번째 뉴스레터를 기본값으로 설정
+        if (sortedData.length > 0) {
+          setSelectedNewsletter(sortedData[0]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch newsletters:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchNewsletters();
+  }, []);
+
+  // selectedNewsletter가 null이거나 목록에 없으면 첫 번째로 재설정
+  useEffect(() => {
+    if (newsletters.length > 0 && !selectedNewsletter) {
+      setSelectedNewsletter(newsletters[0]);
+    }
+  }, [newsletters]);
+
   const canCreateNewsletter =
-    DEFAULT_PLAN === "pro" || MOCK_NEWSLETTERS.length < MAX_FREE_NEWSLETTERS;
+    DEFAULT_PLAN === "pro" || newsletters.length < MAX_FREE_NEWSLETTERS;
 
   const handleCreateNewsletter = () => {
     if (!canCreateNewsletter) {
@@ -96,7 +127,9 @@ export function DashboardSidebar() {
     { label: "설정", href: `/dashboard/newsletters/${newsletterId}/settings` },
   ];
 
-  const newsletterSubItems = getNewsletterSubItems(selectedNewsletter.id);
+  const newsletterSubItems = selectedNewsletter
+    ? getNewsletterSubItems(selectedNewsletter.id)
+    : [];
 
   return (
     <>
@@ -128,25 +161,34 @@ export function DashboardSidebar() {
             <div className="flex items-center">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex flex-1 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground">
+                  <button 
+                    className="flex flex-1 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+                    disabled={isLoading || newsletters.length === 0}
+                  >
                     <NewsletterIcon className="h-5 w-5" />
-                    <span className="truncate">{selectedNewsletter.name}</span>
+                    <span className="truncate">
+                      {isLoading
+                        ? "로딩 중..."
+                        : selectedNewsletter
+                        ? selectedNewsletter.name
+                        : "뉴스레터 없음"}
+                    </span>
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-56">
-                  {MOCK_NEWSLETTERS.map((newsletter) => (
+                  {newsletters.map((newsletter) => (
                     <DropdownMenuItem
                       key={newsletter.id}
                       onClick={() => setSelectedNewsletter(newsletter)}
                       className="flex items-center justify-between"
                     >
                       <span className="truncate">{newsletter.name}</span>
-                      {selectedNewsletter.id === newsletter.id && (
+                      {selectedNewsletter?.id === newsletter.id && (
                         <CheckIcon className="h-4 w-4 text-primary" />
                       )}
                     </DropdownMenuItem>
                   ))}
-                  <DropdownMenuSeparator />
+                  {newsletters.length > 0 && <DropdownMenuSeparator />}
                   <DropdownMenuItem
                     onClick={handleCreateNewsletter}
                     className="flex items-center gap-2"
@@ -172,7 +214,7 @@ export function DashboardSidebar() {
             </div>
 
             {/* 뉴스레터 하위 메뉴 */}
-            {isNewsletterOpen && (
+            {isNewsletterOpen && selectedNewsletter && (
               <div className="ml-4 mt-1 space-y-1 border-l border-border pl-4">
                 {newsletterSubItems.map((item) => {
                   const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
