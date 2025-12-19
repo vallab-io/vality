@@ -2,6 +2,7 @@ package io.vality.routing.newsletter
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
+import io.ktor.server.application.log
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
@@ -16,14 +17,15 @@ import io.vality.dto.ApiResponse
 import io.vality.dto.newsletter.CreateNewsletterRequest
 import io.vality.dto.newsletter.NewsletterResponse
 import io.vality.dto.newsletter.UpdateNewsletterRequest
+import io.vality.dto.newsletter.toNewsletterResponse
 import io.vality.service.NewsletterService
 import org.koin.ktor.ext.inject
 
 fun Route.newsletterRoutes() {
     val newsletterService: NewsletterService by inject()
 
-    route("/api/newsletters") {
-        authenticate("jwt") {
+    authenticate("jwt") {
+        route("/api/newsletters") {
             /**
              * 뉴스레터 생성
              * POST /api/newsletters
@@ -65,24 +67,17 @@ fun Route.newsletterRoutes() {
                         senderName = request.senderName,
                     )
 
-                    val response = NewsletterResponse(
-                        id = newsletter.id,
-                        name = newsletter.name,
-                        slug = newsletter.slug,
-                        description = newsletter.description,
-                        senderName = newsletter.senderName,
-                        timezone = newsletter.timezone,
-                        createdAt = newsletter.createdAt,
-                        updatedAt = newsletter.updatedAt,
+                    call.respond(
+                        HttpStatusCode.Created,
+                        ApiResponse.success(data = newsletter.toNewsletterResponse())
                     )
-
-                    call.respond(HttpStatusCode.Created, ApiResponse.success(data = response))
                 } catch (e: IllegalArgumentException) {
                     call.respond(
                         HttpStatusCode.BadRequest,
                         ApiResponse.error<Nothing>(message = e.message ?: "Invalid request")
                     )
                 } catch (e: Exception) {
+                    call.application.log.error("Failed to create newsletter", e)
                     call.respond(
                         HttpStatusCode.InternalServerError,
                         ApiResponse.error<Nothing>(message = "Failed to create newsletter: ${e.message}")
@@ -105,37 +100,24 @@ fun Route.newsletterRoutes() {
 
                 try {
                     val newsletters = newsletterService.getNewslettersByOwner(userId)
-                    val responses = newsletters.map { newsletter ->
-                        NewsletterResponse(
-                            id = newsletter.id,
-                            name = newsletter.name,
-                            slug = newsletter.slug,
-                            description = newsletter.description,
-                            senderName = newsletter.senderName,
-                            timezone = newsletter.timezone,
-                            createdAt = newsletter.createdAt,
-                            updatedAt = newsletter.updatedAt,
-                        )
-                    }
-
-                    call.respond(HttpStatusCode.OK, ApiResponse.success(data = responses))
+                    call.respond(
+                        HttpStatusCode.OK,
+                        ApiResponse.success(data = newsletters.map { it.toNewsletterResponse() })
+                    )
                 } catch (e: Exception) {
+                    call.application.log.error("Failed to get newsletters", e)
                     call.respond(
                         HttpStatusCode.InternalServerError,
                         ApiResponse.error<Nothing>(message = "Failed to get newsletters: ${e.message}")
                     )
                 }
             }
-        }
-    }
 
-    route("/api/newsletters/{newsletterId}") {
-        authenticate("jwt") {
             /**
              * 뉴스레터 조회
              * GET /api/newsletters/{newsletterId}
              */
-            get {
+            get("/{newsletterId}") {
                 val principal = call.principal<JWTPrincipal>()
                     ?: return@get call.respond(
                         HttpStatusCode.Unauthorized,
@@ -156,19 +138,12 @@ fun Route.newsletterRoutes() {
                             ApiResponse.error<Nothing>(message = "Newsletter not found")
                         )
 
-                    val response = NewsletterResponse(
-                        id = newsletter.id,
-                        name = newsletter.name,
-                        slug = newsletter.slug,
-                        description = newsletter.description,
-                        senderName = newsletter.senderName,
-                        timezone = newsletter.timezone,
-                        createdAt = newsletter.createdAt,
-                        updatedAt = newsletter.updatedAt,
+                    call.respond(
+                        HttpStatusCode.OK,
+                        ApiResponse.success(data = newsletter.toNewsletterResponse())
                     )
-
-                    call.respond(HttpStatusCode.OK, ApiResponse.success(data = response))
                 } catch (e: Exception) {
+                    call.application.log.error("Failed to get newsletter", e)
                     call.respond(
                         HttpStatusCode.InternalServerError,
                         ApiResponse.error<Nothing>(message = "Failed to get newsletter: ${e.message}")
@@ -180,7 +155,7 @@ fun Route.newsletterRoutes() {
              * 뉴스레터 업데이트
              * PATCH /api/newsletters/{newsletterId}
              */
-            patch {
+            patch("/{newsletterId}") {
                 val principal = call.principal<JWTPrincipal>()
                     ?: return@patch call.respond(
                         HttpStatusCode.Unauthorized,
@@ -216,24 +191,17 @@ fun Route.newsletterRoutes() {
                         timezone = request.timezone,
                     )
 
-                    val response = NewsletterResponse(
-                        id = newsletter.id,
-                        name = newsletter.name,
-                        slug = newsletter.slug,
-                        description = newsletter.description,
-                        senderName = newsletter.senderName,
-                        timezone = newsletter.timezone,
-                        createdAt = newsletter.createdAt,
-                        updatedAt = newsletter.updatedAt,
+                    call.respond(
+                        HttpStatusCode.OK,
+                        ApiResponse.success(data = newsletter.toNewsletterResponse())
                     )
-
-                    call.respond(HttpStatusCode.OK, ApiResponse.success(data = response))
                 } catch (e: IllegalArgumentException) {
                     call.respond(
                         HttpStatusCode.BadRequest,
                         ApiResponse.error<Nothing>(message = e.message ?: "Invalid request")
                     )
                 } catch (e: Exception) {
+                    call.application.log.error("Failed to update newsletter", e)
                     call.respond(
                         HttpStatusCode.InternalServerError,
                         ApiResponse.error<Nothing>(message = "Failed to update newsletter: ${e.message}")

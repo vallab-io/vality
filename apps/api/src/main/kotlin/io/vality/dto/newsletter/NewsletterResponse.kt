@@ -1,5 +1,6 @@
 package io.vality.dto.newsletter
 
+import io.vality.domain.Newsletter
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import java.time.Instant
@@ -17,4 +18,20 @@ data class NewsletterResponse(
     @Contextual
     val updatedAt: Instant,
 )
+
+/**
+ * Newsletter 도메인 객체를 NewsletterResponse로 변환
+ */
+fun Newsletter.toNewsletterResponse(): NewsletterResponse {
+    return NewsletterResponse(
+        id = id,
+        name = name,
+        slug = slug,
+        description = description,
+        senderName = senderName,
+        timezone = timezone,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+    )
+}
 

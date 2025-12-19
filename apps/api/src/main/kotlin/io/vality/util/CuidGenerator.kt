@@ -21,7 +21,7 @@ object CuidGenerator {
     private const val DEFAULT_LENGTH = 24
     private const val ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyz"
     private const val BASE = 36
-    
+
     /**
      * 지정된 길이의 CUID2 생성
      *
