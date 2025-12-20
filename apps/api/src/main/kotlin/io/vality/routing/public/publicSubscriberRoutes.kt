@@ -10,7 +10,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.vality.dto.ApiResponse
-import io.vality.dto.subscriber.SubscriberResponse
+import io.vality.dto.subscriber.SubscriptionConfirmResponse
 import io.vality.dto.subscriber.toSubscriberResponse
 import io.vality.service.SubscriberService
 import kotlinx.serialization.Serializable
@@ -34,7 +34,7 @@ fun Route.publicSubscriberRoutes() {
             val newsletterId = call.parameters["newsletterId"]
                 ?: return@post call.respond(
                     HttpStatusCode.BadRequest,
-                    ApiResponse.error<Nothing>(message = "Newsletter ID is required")
+                    ApiResponse.error<Nothing>(message = "Newsletter ID is required"),
                 )
 
             val request = call.receive<PublicSubscribeRequest>()
@@ -44,7 +44,7 @@ fun Route.publicSubscriberRoutes() {
                 if (request.email.isBlank()) {
                     call.respond(
                         HttpStatusCode.BadRequest,
-                        ApiResponse.error<Nothing>(message = "Email is required")
+                        ApiResponse.error<Nothing>(message = "Email is required"),
                     )
                     return@post
                 }
@@ -58,19 +58,19 @@ fun Route.publicSubscriberRoutes() {
                     HttpStatusCode.Created,
                     ApiResponse.success(
                         data = subscriber.toSubscriberResponse(),
-                        message = "구독 신청이 완료되었습니다. 이메일을 확인해주세요."
+                        message = "구독 신청이 완료되었습니다. 이메일을 확인해주세요.",
                     )
                 )
             } catch (e: IllegalArgumentException) {
                 call.respond(
                     HttpStatusCode.BadRequest,
-                    ApiResponse.error<Nothing>(message = e.message ?: "Invalid request")
+                    ApiResponse.error<Nothing>(message = e.message ?: "Invalid request"),
                 )
             } catch (e: Exception) {
                 call.application.log.error("Failed to subscribe", e)
                 call.respond(
                     HttpStatusCode.InternalServerError,
-                    ApiResponse.error<Nothing>(message = "Failed to subscribe: ${e.message}")
+                    ApiResponse.error<Nothing>(message = "Failed to subscribe: ${e.message}"),
                 )
             }
         }
@@ -89,23 +89,24 @@ fun Route.publicSubscriberRoutes() {
 
             try {
                 val subscriber = subscriberService.confirmSubscription(token)
+                val confirmResponse = subscriberService.getSubscriptionConfirmResponse(subscriber)
                 call.respond(
                     HttpStatusCode.OK,
                     ApiResponse.success(
-                        data = subscriber.toSubscriberResponse(),
-                        message = "구독이 확인되었습니다."
+                        data = confirmResponse,
+                        message = "구독이 확인되었습니다.",
                     )
                 )
             } catch (e: IllegalArgumentException) {
                 call.respond(
                     HttpStatusCode.BadRequest,
-                    ApiResponse.error<Nothing>(message = e.message ?: "Invalid token")
+                    ApiResponse.error<Nothing>(message = e.message ?: "Invalid token"),
                 )
             } catch (e: Exception) {
                 call.application.log.error("Failed to confirm subscription", e)
                 call.respond(
                     HttpStatusCode.InternalServerError,
-                    ApiResponse.error<Nothing>(message = "Failed to confirm subscription: ${e.message}")
+                    ApiResponse.error<Nothing>(message = "Failed to confirm subscription: ${e.message}"),
                 )
             }
         }

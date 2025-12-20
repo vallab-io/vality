@@ -12,6 +12,16 @@ export interface Subscriber {
   newsletterId: string;
 }
 
+// 구독 확인 API 전용 응답
+export interface SubscriptionConfirmResponse {
+  id: string;
+  email: string;
+  status: "ACTIVE";
+  newsletterId: string;
+  username: string; // 뉴스레터 소유자 username
+  newsletterSlug: string; // 뉴스레터 slug
+}
+
 // 구독자 생성 요청
 export interface CreateSubscriberRequest {
   email: string;
@@ -77,8 +87,10 @@ export async function publicSubscribe(
   return response.data.data;
 }
 
-export async function confirmSubscription(token: string): Promise<Subscriber> {
-  const response = await apiClient.get<ApiResponse<Subscriber>>(
+export async function confirmSubscription(
+  token: string
+): Promise<SubscriptionConfirmResponse> {
+  const response = await apiClient.get<ApiResponse<SubscriptionConfirmResponse>>(
     `/public/subscribe/confirm?token=${token}`
   );
   if (!response.data.data) {

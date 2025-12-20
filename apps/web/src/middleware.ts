@@ -10,6 +10,8 @@ const SYSTEM_PATHS = [
   "/dashboard",
   "/pricing",
   "/blog",
+  "/newsletter", // 구독 확인 등 시스템 경로
+  "/auth",
   "/_next",
   "/favicon.ico",
 ];

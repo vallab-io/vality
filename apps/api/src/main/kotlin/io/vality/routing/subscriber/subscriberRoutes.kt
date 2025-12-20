@@ -15,7 +15,6 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.vality.dto.ApiResponse
 import io.vality.dto.subscriber.CreateSubscriberRequest
-import io.vality.dto.subscriber.SubscriberResponse
 import io.vality.dto.subscriber.toSubscriberResponse
 import io.vality.service.SubscriberService
 import org.koin.ktor.ext.inject
@@ -30,35 +29,31 @@ fun Route.subscriberRoutes() {
              * GET /api/newsletters/{newsletterId}/subscribers
              */
             get {
-                val principal = call.principal<JWTPrincipal>()
-                    ?: return@get call.respond(
-                        HttpStatusCode.Unauthorized,
-                        ApiResponse.error<Nothing>(message = "Unauthorized")
-                    )
+                val principal = call.principal<JWTPrincipal>() ?: return@get call.respond(
+                    HttpStatusCode.Unauthorized,
+                    ApiResponse.error<Nothing>(message = "Unauthorized"),
+                )
 
                 val userId = principal.payload.subject
-                val newsletterId = call.parameters["newsletterId"]
-                    ?: return@get call.respond(
-                        HttpStatusCode.BadRequest,
-                        ApiResponse.error<Nothing>(message = "Newsletter ID is required")
-                    )
+                val newsletterId = call.parameters["newsletterId"] ?: return@get call.respond(
+                    HttpStatusCode.BadRequest, ApiResponse.error<Nothing>(message = "Newsletter ID is required")
+                )
 
                 try {
                     val subscribers = subscriberService.getSubscribersByNewsletter(newsletterId, userId)
                     call.respond(
                         HttpStatusCode.OK,
-                        ApiResponse.success(data = subscribers.map { it.toSubscriberResponse() })
+                        ApiResponse.success(data = subscribers.map { it.toSubscriberResponse() }),
                     )
                 } catch (e: IllegalArgumentException) {
                     call.respond(
-                        HttpStatusCode.BadRequest,
-                        ApiResponse.error<Nothing>(message = e.message ?: "Invalid request")
+                        HttpStatusCode.BadRequest, ApiResponse.error<Nothing>(message = e.message ?: "Invalid request")
                     )
                 } catch (e: Exception) {
                     call.application.log.error("Failed to get subscribers", e)
                     call.respond(
                         HttpStatusCode.InternalServerError,
-                        ApiResponse.error<Nothing>(message = "Failed to get subscribers: ${e.message}")
+                        ApiResponse.error<Nothing>(message = "Failed to get subscribers: ${e.message}"),
                     )
                 }
             }
@@ -68,18 +63,15 @@ fun Route.subscriberRoutes() {
              * POST /api/newsletters/{newsletterId}/subscribers
              */
             post {
-                val principal = call.principal<JWTPrincipal>()
-                    ?: return@post call.respond(
-                        HttpStatusCode.Unauthorized,
-                        ApiResponse.error<Nothing>(message = "Unauthorized")
-                    )
+                val principal = call.principal<JWTPrincipal>() ?: return@post call.respond(
+                    HttpStatusCode.Unauthorized,
+                    ApiResponse.error<Nothing>(message = "Unauthorized"),
+                )
 
-                val userId = principal.payload.subject
-                val newsletterId = call.parameters["newsletterId"]
-                    ?: return@post call.respond(
-                        HttpStatusCode.BadRequest,
-                        ApiResponse.error<Nothing>(message = "Newsletter ID is required")
-                    )
+                principal.payload.subject
+                val newsletterId = call.parameters["newsletterId"] ?: return@post call.respond(
+                    HttpStatusCode.BadRequest, ApiResponse.error<Nothing>(message = "Newsletter ID is required")
+                )
 
                 val request = call.receive<CreateSubscriberRequest>()
 
@@ -87,8 +79,7 @@ fun Route.subscriberRoutes() {
                     // 이메일 유효성 검증
                     if (request.email.isBlank()) {
                         call.respond(
-                            HttpStatusCode.BadRequest,
-                            ApiResponse.error<Nothing>(message = "Email is required")
+                            HttpStatusCode.BadRequest, ApiResponse.error<Nothing>(message = "Email is required")
                         )
                         return@post
                     }
@@ -101,13 +92,11 @@ fun Route.subscriberRoutes() {
                     )
 
                     call.respond(
-                        HttpStatusCode.Created,
-                        ApiResponse.success(data = subscriber.toSubscriberResponse())
+                        HttpStatusCode.Created, ApiResponse.success(data = subscriber.toSubscriberResponse())
                     )
                 } catch (e: IllegalArgumentException) {
                     call.respond(
-                        HttpStatusCode.BadRequest,
-                        ApiResponse.error<Nothing>(message = e.message ?: "Invalid request")
+                        HttpStatusCode.BadRequest, ApiResponse.error<Nothing>(message = e.message ?: "Invalid request")
                     )
                 } catch (e: Exception) {
                     call.application.log.error("Failed to create subscriber", e)
@@ -123,41 +112,38 @@ fun Route.subscriberRoutes() {
              * DELETE /api/newsletters/{newsletterId}/subscribers/{subscriberId}
              */
             delete("/{subscriberId}") {
-                val principal = call.principal<JWTPrincipal>()
-                    ?: return@delete call.respond(
-                        HttpStatusCode.Unauthorized,
-                        ApiResponse.error<Nothing>(message = "Unauthorized")
-                    )
+                val principal = call.principal<JWTPrincipal>() ?: return@delete call.respond(
+                    HttpStatusCode.Unauthorized,
+                    ApiResponse.error<Nothing>(message = "Unauthorized"),
+                )
 
                 val userId = principal.payload.subject
-                val newsletterId = call.parameters["newsletterId"]
-                    ?: return@delete call.respond(
-                        HttpStatusCode.BadRequest,
-                        ApiResponse.error<Nothing>(message = "Newsletter ID is required")
-                    )
+                val newsletterId = call.parameters["newsletterId"] ?: return@delete call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiResponse.error<Nothing>(message = "Newsletter ID is required"),
+                )
 
-                val subscriberId = call.parameters["subscriberId"]
-                    ?: return@delete call.respond(
-                        HttpStatusCode.BadRequest,
-                        ApiResponse.error<Nothing>(message = "Subscriber ID is required")
-                    )
+                val subscriberId = call.parameters["subscriberId"] ?: return@delete call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiResponse.error<Nothing>(message = "Subscriber ID is required"),
+                )
 
                 try {
                     subscriberService.deleteSubscriber(subscriberId, newsletterId, userId)
                     call.respond(
                         HttpStatusCode.OK,
-                        ApiResponse.success(data = Unit, message = "Subscriber deleted")
+                        ApiResponse.success(data = Unit, message = "Subscriber deleted"),
                     )
                 } catch (e: IllegalArgumentException) {
                     call.respond(
                         HttpStatusCode.BadRequest,
-                        ApiResponse.error<Nothing>(message = e.message ?: "Invalid request")
+                        ApiResponse.error<Nothing>(message = e.message ?: "Invalid request"),
                     )
                 } catch (e: Exception) {
                     call.application.log.error("Failed to delete subscriber", e)
                     call.respond(
                         HttpStatusCode.InternalServerError,
-                        ApiResponse.error<Nothing>(message = "Failed to delete subscriber: ${e.message}")
+                        ApiResponse.error<Nothing>(message = "Failed to delete subscriber: ${e.message}"),
                     )
                 }
             }

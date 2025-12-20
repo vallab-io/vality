@@ -2,6 +2,8 @@ package io.vality.service
 
 import io.vality.domain.SubStatus
 import io.vality.domain.Subscriber
+import io.vality.dto.subscriber.SubscriberResponse
+import io.vality.dto.subscriber.SubscriptionConfirmResponse
 import io.vality.repository.NewsletterRepository
 import io.vality.repository.SubscriberRepository
 import io.vality.repository.SubscriberVerificationTokenRepository
@@ -338,6 +340,30 @@ class SubscriberService(
     }
 
     /**
+     * 구독 확인 API 전용 응답 생성
+     * username과 newsletterSlug를 포함하여 프론트엔드에서 리다이렉트할 수 있도록 함
+     */
+    suspend fun getSubscriptionConfirmResponse(subscriber: Subscriber): SubscriptionConfirmResponse {
+        val newsletter = newsletterRepository.findById(subscriber.newsletterId)
+            ?: throw IllegalArgumentException("Newsletter not found")
+        
+        val user = userRepository.findById(newsletter.ownerId)
+            ?: throw IllegalArgumentException("User not found")
+        
+        val username = user.username
+            ?: throw IllegalArgumentException("User username is required")
+        
+        return SubscriptionConfirmResponse(
+            id = subscriber.id,
+            email = subscriber.email,
+            status = subscriber.status.name,
+            newsletterId = subscriber.newsletterId,
+            username = username,
+            newsletterSlug = newsletter.slug,
+        )
+    }
+
+    /**
      * 구독 취소 (이메일 주소로 바로 취소)
      * ACTIVE → UNSUBSCRIBED로 변경
      * 토큰 인증 없이 이메일 주소만으로 처리
@@ -376,24 +402,15 @@ class SubscriberService(
         username: String,
         confirmationToken: String,
     ) {
-        // 구독 취소는 토큰 없이 이메일 주소만으로 처리
-        val verificationUrl = "$frontendUrl/$username/${newsletter.slug}/confirm?token=$confirmationToken"
-        val unsubscribeUrl = "$frontendUrl/$username/${newsletter.slug}/unsubscribe?email=${
-            java.net.URLEncoder.encode(
-                subscriber.email,
-                "UTF-8"
-            )
-        }"
+        val verificationUrl = "$frontendUrl/newsletter/subscribe/confirm?token=$confirmationToken"
 
         val htmlBody = EmailTemplates.subscriptionConfirmationHtml(
             newsletterName = newsletter.name,
             confirmationUrl = verificationUrl,
-            unsubscribeUrl = unsubscribeUrl,
         )
         val textBody = EmailTemplates.subscriptionConfirmationText(
             newsletterName = newsletter.name,
             confirmationUrl = verificationUrl,
-            unsubscribeUrl = unsubscribeUrl,
         )
 
         emailService.sendEmail(

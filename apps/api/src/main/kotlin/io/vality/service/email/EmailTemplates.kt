@@ -100,7 +100,6 @@ Vality 인증 코드
     fun subscriptionConfirmationHtml(
         newsletterName: String,
         confirmationUrl: String,
-        unsubscribeUrl: String,
     ): String {
         return """
 <!DOCTYPE html>
@@ -141,10 +140,6 @@ Vality 인증 코드
                                     구독 확인하기
                                 </a>
                             </div>
-                            
-                            <p style="margin: 32px 0 0 0; font-size: 13px; line-height: 1.5; color: #64748b; text-align: center;">
-                                구독을 원하지 않으시면 <a href="$unsubscribeUrl" style="color: #64748b; text-decoration: underline;">여기</a>를 클릭하세요.
-                            </p>
                         </td>
                     </tr>
                     
@@ -171,7 +166,6 @@ Vality 인증 코드
     fun subscriptionConfirmationText(
         newsletterName: String,
         confirmationUrl: String,
-        unsubscribeUrl: String,
     ): String {
         return """
 Vality 구독 확인
@@ -180,9 +174,6 @@ $newsletterName 구독을 확인해주세요.
 
 아래 링크를 클릭하여 구독을 완료하세요:
 $confirmationUrl
-
-구독을 원하지 않으시면 아래 링크를 클릭하세요:
-$unsubscribeUrl
 
 © ${java.time.Year.now()} Vality
         """.trimIndent()
