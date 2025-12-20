@@ -5,10 +5,10 @@ import kotlinx.serialization.Serializable
 import java.time.Instant
 
 @Serializable
-data class CreateIssueRequest(
-    val title: String? = null, // nullable, 발행 시 필수
-    val slug: String? = null, // nullable, 자동 생성 가능
-    val content: String = "", // 기본값: 빈 문자열
+data class UpdateIssueRequest(
+    val title: String? = null,
+    val slug: String? = null,
+    val content: String? = null,
     val excerpt: String? = null,
     val coverImageUrl: String? = null,
     val status: String? = null, // "DRAFT", "SCHEDULED", "PUBLISHED"

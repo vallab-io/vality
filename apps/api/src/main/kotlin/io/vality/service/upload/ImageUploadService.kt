@@ -23,8 +23,8 @@ class ImageUploadService(
         "image/webp"
     )
 
-    // 최대 파일 크기 (2MB)
-    private val maxFileSize = 2 * 1024 * 1024 // 2MB
+    // 최대 파일 크기 (5MB)
+    private val maxFileSize = 5 * 1024 * 1024 // 5MB
 
     /**
      * 프로필 이미지용 Presigned URL 생성
@@ -64,6 +64,82 @@ class ImageUploadService(
             filename = finalFilename, // DB에 저장할 파일명
             key = key,
         )
+    }
+
+    /**
+     * 이슈 이미지용 Presigned URL 생성
+     * 
+     * @param issueId 이슈 ID
+     * @param filename 원본 파일명
+     * @param contentType 파일 MIME 타입
+     * @param fileSize 파일 크기 (바이트)
+     * @return Presigned URL과 파일명 (DB에 저장할 파일명)
+     */
+    suspend fun generateIssueImagePresignedUrl(
+        issueId: String,
+        filename: String,
+        contentType: String,
+        fileSize: Long,
+    ): PresignedUrlResult {
+        // 파일 검증
+        validateImageFile(contentType, fileSize)
+
+        // 파일명 생성 (타임스탬프 + 원본 파일명)
+        val sanitizedFilename = sanitizeFilename(filename)
+        val timestamp = System.currentTimeMillis()
+        val finalFilename = "$timestamp-$sanitizedFilename"
+        val key = S3Paths.issuePath(issueId, finalFilename)
+
+        // Presigned URL 생성
+        val presignedUrl = s3Service.generatePresignedUrl(
+            key = key,
+            contentType = contentType,
+            expiresIn = 3600 // 1시간
+        )
+
+        logger.info("Generated presigned URL for issue image: issueId=$issueId, filename=$finalFilename")
+
+        return PresignedUrlResult(
+            presignedUrl = presignedUrl,
+            filename = finalFilename, // DB에 저장할 파일명
+            key = key,
+        )
+    }
+
+    /**
+     * 이슈 이미지 업로드 (서버에서 직접 처리)
+     * 
+     * @param issueId 이슈 ID
+     * @param filename 원본 파일명
+     * @param content 파일 내용 (ByteArray)
+     * @param contentType 파일 MIME 타입
+     * @return S3 Key (경로)
+     */
+    suspend fun uploadIssueImage(
+        issueId: String,
+        filename: String,
+        content: ByteArray,
+        contentType: String,
+    ): String {
+        // 파일 검증
+        validateImageFile(contentType, content.size.toLong())
+
+        // 파일명 생성 (타임스탬프 + 원본 파일명)
+        val sanitizedFilename = sanitizeFilename(filename)
+        val timestamp = System.currentTimeMillis()
+        val finalFilename = "$timestamp-$sanitizedFilename"
+        val key = S3Paths.issuePath(issueId, finalFilename)
+
+        // S3에 업로드
+        s3Service.putObject(
+            key = key,
+            content = content,
+            contentType = contentType,
+        )
+
+        logger.info("Uploaded issue image: issueId=$issueId, filename=$finalFilename, key=$key")
+
+        return key
     }
 
     /**

@@ -22,11 +22,13 @@ import {
   ListOrdered,
   Quote,
   Image as ImageIcon,
-  Link as LinkIcon,
   Minus,
 } from "lucide-react";
 import { DividerNode } from "./divider-node";
 import { cn } from "@/lib/utils";
+import { $createImageNode } from "./image-node";
+import { uploadIssueImage } from "@/lib/api/upload";
+import { toast } from "sonner";
 
 interface CommandItem {
   title: string;
@@ -35,7 +37,11 @@ interface CommandItem {
   command: () => void;
 }
 
-export function SlashCommandPlugin() {
+interface SlashCommandPluginProps {
+  issueId?: string;
+}
+
+export function SlashCommandPlugin({ issueId }: SlashCommandPluginProps = {}) {
   const [editor] = useLexicalComposerContext();
   const [showMenu, setShowMenu] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -211,22 +217,90 @@ export function SlashCommandPlugin() {
       description: "이미지 삽입",
       icon: ImageIcon,
       command: () => {
-        // 이미지 업로드는 나중에 구현
         setShowMenu(false);
         setQuery("");
-      },
-    },
-    {
-      title: "링크",
-      description: "링크 삽입",
-      icon: LinkIcon,
-      command: () => {
-        const url = window.prompt("링크 URL을 입력하세요:");
-        if (url) {
-          // TODO: 링크 노드 삽입 구현
+        
+        // issueId가 없으면 에러 메시지
+        if (!issueId) {
+          toast.error("이미지 업로드를 위해서는 먼저 이슈를 저장해주세요.");
+          return;
         }
-        setShowMenu(false);
-        setQuery("");
+        
+        // 파일 입력 엘리먼트 생성
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = "image/jpeg,image/jpg,image/png,image/gif,image/webp";
+        fileInput.style.display = "none";
+        
+        const handleFileSelect = async (e: Event) => {
+          const target = e.target as HTMLInputElement;
+          const file = target.files?.[0];
+          if (!file) {
+            document.body.removeChild(fileInput);
+            return;
+          }
+
+          // 파일 검증
+          const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+          if (!validTypes.includes(file.type)) {
+            toast.error("JPG, PNG, GIF, WEBP 형식만 업로드 가능합니다.");
+            document.body.removeChild(fileInput);
+            return;
+          }
+
+          const maxSize = 5 * 1024 * 1024; // 5MB
+          if (file.size > maxSize) {
+            toast.error("이미지 크기는 5MB 이하여야 합니다.");
+            document.body.removeChild(fileInput);
+            return;
+          }
+
+          try {
+            // 업로드 시작 토스트
+            const uploadToast = toast.loading("이미지 업로드 중...");
+
+            // 이미지 업로드
+            const imageUrl = await uploadIssueImage(issueId, file);
+
+            // 업로드 완료 토스트
+            toast.dismiss(uploadToast);
+            toast.success("이미지가 업로드되었습니다.");
+
+            // 에디터에 이미지 삽입
+            editor.update(() => {
+              const selection = $getSelection();
+              if ($isRangeSelection(selection)) {
+                const anchorNode = selection.anchor.getNode();
+                const paragraph = anchorNode.getParent();
+
+                if ($isParagraphNode(paragraph)) {
+                  // 이미지 노드 생성
+                  const imageNode = $createImageNode(imageUrl, file.name);
+
+                  // 현재 paragraph를 이미지로 교체
+                  paragraph.replace(imageNode);
+
+                  // 이미지 다음에 새 paragraph 추가
+                  const newParagraph = $createParagraphNode();
+                  imageNode.insertAfter(newParagraph);
+                  newParagraph.select();
+                }
+              }
+            });
+          } catch (error: any) {
+            console.error("Image upload error:", error);
+            toast.error(error.message || "이미지 업로드에 실패했습니다.");
+          } finally {
+            // 파일 입력 제거
+            document.body.removeChild(fileInput);
+          }
+        };
+
+        fileInput.addEventListener("change", handleFileSelect);
+        document.body.appendChild(fileInput);
+        
+        // 파일 선택 다이얼로그 열기
+        fileInput.click();
       },
     },
   ];

@@ -39,7 +39,7 @@ data class PublicNewsletterResponse(
 data class PublicIssueResponse(
     val id: String,
     val slug: String,
-    val title: String,
+    val title: String?,
     val excerpt: String?,
     val publishedAt: String,
     val newsletterId: String,

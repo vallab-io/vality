@@ -14,7 +14,7 @@ enum class IssueStatus {
 @Serializable
 data class Issue(
     val id: String,
-    val title: String,
+    val title: String?, // nullable, 발행 시 필수
     val slug: String,
     val content: String,
     val excerpt: String? = null,

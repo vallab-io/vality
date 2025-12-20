@@ -13,6 +13,7 @@ import { ListItemNode, ListNode } from "@lexical/list";
 import { LinkNode } from "@lexical/link";
 import { MarkNode } from "@lexical/mark";
 import { DividerNode } from "./divider-node";
+import { ImageNode, $createImageNode } from "./image-node";
 import { $createParagraphNode } from "lexical";
 import { $generateHtmlFromNodes, $generateNodesFromDOM } from "@lexical/html";
 import { $getRoot } from "lexical";
@@ -20,12 +21,14 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { SlashCommandPlugin } from "./slash-command-plugin";
 import { ListPatternPlugin } from "./list-pattern-plugin";
+import { ImageUploadPlugin } from "./image-upload-plugin";
 
 interface ValityEditorProps {
   content: string;
   onChange: (content: string) => void;
   placeholder?: string;
   className?: string;
+  issueId?: string; // 이미지 업로드를 위한 이슈 ID
 }
 
 // Placeholder 컴포넌트
@@ -77,10 +80,106 @@ function InitialContentPlugin({content}: { content: string }) {
       editor.update(() => {
         const parser = new DOMParser();
         const dom = parser.parseFromString(content, "text/html");
+        
+        // img 태그를 찾아서 ImageNode로 변환
+        const images = dom.querySelectorAll("img");
+        if (images.length > 0) {
+          // 이미지가 있으면 DOM을 수정하여 ImageNode로 변환
+          images.forEach((img) => {
+            const src = img.getAttribute("src");
+            const alt = img.getAttribute("alt") || "";
+            const width = img.getAttribute("width") ? parseInt(img.getAttribute("width")!) : undefined;
+            const height = img.getAttribute("height") ? parseInt(img.getAttribute("height")!) : undefined;
+            
+            if (src) {
+              // img 태그를 data-lexical-image 속성을 가진 span으로 변환
+              const span = document.createElement("span");
+              span.setAttribute("data-lexical-image", "true");
+              span.setAttribute("data-src", src);
+              span.setAttribute("data-alt", alt);
+              if (width) span.setAttribute("data-width", width.toString());
+              if (height) span.setAttribute("data-height", height.toString());
+              img.parentNode?.replaceChild(span, img);
+            }
+          });
+        }
+        
         const nodes = $generateNodesFromDOM(editor, dom);
         const root = $getRoot();
         root.clear();
-        root.append(...nodes);
+        
+        // data-lexical-image 속성을 가진 span을 ImageNode로 변환
+        const processedNodes: any[] = [];
+        for (const node of nodes) {
+          if (node.getType() === "text") {
+            const textNode = node as any;
+            const textContent = textNode.getTextContent();
+            // HTML에서 이미지 추출
+            if (textContent.includes("data-lexical-image")) {
+              const imgRegex = /data-src="([^"]+)"/g;
+              let match;
+              while ((match = imgRegex.exec(textContent)) !== null) {
+                const src = match[1];
+                const altMatch = textContent.match(/data-alt="([^"]*)"/);
+                const alt = altMatch ? altMatch[1] : "";
+                const widthMatch = textContent.match(/data-width="(\d+)"/);
+                const heightMatch = textContent.match(/data-height="(\d+)"/);
+                const width = widthMatch ? parseInt(widthMatch[1]) : undefined;
+                const height = heightMatch ? parseInt(heightMatch[1]) : undefined;
+                processedNodes.push($createImageNode(src, alt, width, height));
+                processedNodes.push($createParagraphNode());
+              }
+            } else {
+              processedNodes.push(node);
+            }
+          } else {
+            processedNodes.push(node);
+          }
+        }
+        
+        // 이미지가 HTML에 직접 포함된 경우 처리
+        if (content.includes("<img")) {
+          const imgRegex = /<img[^>]+src="([^"]+)"[^>]*>/g;
+          let match;
+          const imageNodes: any[] = [];
+          while ((match = imgRegex.exec(content)) !== null) {
+            const src = match[1];
+            const altMatch = content.substring(match.index).match(/alt="([^"]*)"/);
+            const alt = altMatch ? altMatch[1] : "";
+            const widthMatch = content.substring(match.index).match(/width="(\d+)"/);
+            const heightMatch = content.substring(match.index).match(/height="(\d+)"/);
+            const width = widthMatch ? parseInt(widthMatch[1]) : undefined;
+            const height = heightMatch ? parseInt(heightMatch[1]) : undefined;
+            imageNodes.push($createImageNode(src, alt, width, height));
+          }
+          
+          if (imageNodes.length > 0) {
+            // 이미지가 있으면 이미지 노드와 기존 노드를 병합
+            const finalNodes: any[] = [];
+            let contentIndex = 0;
+            
+            for (const imageNode of imageNodes) {
+              // 이미지 앞의 텍스트 노드 추가
+              if (contentIndex < processedNodes.length) {
+                finalNodes.push(...processedNodes.slice(contentIndex));
+              }
+              finalNodes.push(imageNode);
+              finalNodes.push($createParagraphNode());
+              contentIndex++;
+            }
+            
+            // 남은 노드 추가
+            if (contentIndex < processedNodes.length) {
+              finalNodes.push(...processedNodes.slice(contentIndex));
+            }
+            
+            root.append(...finalNodes);
+          } else {
+            root.append(...processedNodes);
+          }
+        } else {
+          root.append(...processedNodes);
+        }
       });
       setIsInitialized(true);
     }
@@ -111,11 +210,11 @@ const theme = {
 const initialConfig = {
   namespace: "ValityEditor", theme, onError: (error: Error) => {
     console.error("Lexical error:", error);
-  }, nodes: [HeadingNode, ListNode, ListItemNode, QuoteNode, LinkNode, MarkNode, DividerNode,],
+  }, nodes: [HeadingNode, ListNode, ListItemNode, QuoteNode, LinkNode, MarkNode, DividerNode, ImageNode,],
 };
 
 export function ValityEditor({
-                               content, onChange, placeholder = "'/'를 눌러주세요", className,
+                               content, onChange, placeholder = "'/'를 눌러주세요", className, issueId,
                              }: ValityEditorProps) {
   return (<LexicalComposer initialConfig={initialConfig}>
       <div className={cn("relative", className)}>
@@ -131,8 +230,9 @@ export function ValityEditor({
         <LinkPlugin/>
         <OnChange onChange={onChange}/>
         <InitialContentPlugin content={content}/>
-        <SlashCommandPlugin/>
+        <SlashCommandPlugin issueId={issueId} />
         <ListPatternPlugin/>
+        {issueId && <ImageUploadPlugin issueId={issueId} />}
       </div>
     </LexicalComposer>);
 }

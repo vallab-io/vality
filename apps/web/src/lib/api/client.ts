@@ -52,6 +52,11 @@ apiClient.interceptors.request.use(
           config.headers.Authorization = `Bearer ${cleanToken}`;
         }
       }
+
+      // FormData인 경우 Content-Type을 제거하여 브라우저가 자동으로 boundary를 추가하도록 함
+      if (config.data instanceof FormData) {
+        delete config.headers?.["Content-Type"];
+      }
     }
     return config;
   },

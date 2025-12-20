@@ -23,7 +23,7 @@ export interface PublicNewsletter {
 export interface PublicIssue {
   id: string;
   slug: string;
-  title: string;
+  title: string | null;
   excerpt: string | null;
   publishedAt: string;
   newsletterId: string;

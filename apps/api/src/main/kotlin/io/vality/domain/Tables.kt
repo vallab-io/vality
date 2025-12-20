@@ -81,7 +81,7 @@ object Newsletters : Table("newsletters") {
 // ============================================
 object Issues : Table("issues") {
     val id = varchar("id", 24)
-    val title = varchar("title", 500)
+    val title = varchar("title", 500).nullable()
     val slug = varchar("slug", 255)
     val content = text("content")
     val excerpt = text("excerpt").nullable()

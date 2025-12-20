@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { PageHeader } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { PlusIcon, MoreIcon, EditIcon, TrashIcon } from "@/components/icons";
-import { getIssues, deleteIssue, type Issue } from "@/lib/api/issue";
+import { getIssues, deleteIssue, createIssue, type Issue } from "@/lib/api/issue";
 import { getNewsletterById, type Newsletter } from "@/lib/api/newsletter";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/auth.store";
@@ -72,12 +72,14 @@ function SearchIcon({ className }: { className?: string }) {
 
 export default function IssuesPage() {
   const params = useParams();
+  const router = useRouter();
   const newsletterId = params.newsletterId as string;
   const user = useAtomValue(userAtom);
   
   const [issues, setIssues] = useState<Issue[]>([]);
   const [newsletter, setNewsletter] = useState<Newsletter | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<IssueStatus>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
@@ -106,12 +108,33 @@ export default function IssuesPage() {
     }
   }, [newsletterId]);
 
+  // 새 이슈 생성 핸들러
+  const handleCreateNewIssue = async () => {
+    setIsCreating(true);
+    try {
+      // 즉시 DRAFT 이슈 생성
+      const newIssue = await createIssue(newsletterId, {
+        status: "DRAFT",
+        content: "",
+      });
+      
+      // 생성된 이슈의 페이지로 이동
+      router.push(`/dashboard/newsletters/${newsletterId}/issues/${newIssue.id}`);
+    } catch (error: any) {
+      console.error("Failed to create issue:", error);
+      toast.error(error.message || "이슈 생성에 실패했습니다.");
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   // 필터링 및 정렬
   const filteredIssues = issues
     .filter((issue) => {
-      const matchesSearch = issue.title
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
+      // 검색어가 비어있으면 모든 이슈 매치, 아니면 title에서 검색
+      const matchesSearch = searchQuery.trim() === "" 
+        ? true 
+        : (issue.title?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
       const matchesStatus =
         statusFilter === "all" ||
         (statusFilter === "draft" && issue.status === "DRAFT") ||
@@ -131,8 +154,9 @@ export default function IssuesPage() {
     published: issues.filter((i) => i.status === "PUBLISHED").length,
   };
 
-  const handleDelete = async (id: string, title: string) => {
-    if (!confirm(`"${title}" 이슈를 삭제하시겠습니까?`)) return;
+  const handleDelete = async (id: string, title: string | null) => {
+    const issueTitle = title || "제목 없음";
+    if (!confirm(`"${issueTitle}" 이슈를 삭제하시겠습니까?`)) return;
 
     try {
       await deleteIssue(newsletterId, id);
@@ -176,12 +200,14 @@ export default function IssuesPage() {
     <div className="mx-auto max-w-4xl">
       <div className="flex items-center justify-between">
         <PageHeader title="이슈" />
-        <Link href={`/dashboard/newsletters/${newsletterId}/issues/new`}>
-          <Button size="sm">
-            <PlusIcon className="mr-2 h-4 w-4" />
-            새 이슈 작성
-          </Button>
-        </Link>
+        <Button 
+          size="sm" 
+          onClick={handleCreateNewIssue}
+          disabled={isCreating}
+        >
+          <PlusIcon className="mr-2 h-4 w-4" />
+          {isCreating ? "생성 중..." : "새 이슈 작성"}
+        </Button>
       </div>
 
       {/* Stats */}
@@ -271,12 +297,15 @@ export default function IssuesPage() {
                 : "첫 번째 이슈를 작성해보세요."}
             </p>
             {!searchQuery && statusFilter === "all" && (
-              <Link href={`/dashboard/newsletters/${newsletterId}/issues/new`}>
-                <Button className="mt-4" size="sm">
-                  <PlusIcon className="mr-2 h-4 w-4" />
-                  새 이슈 작성
-                </Button>
-              </Link>
+              <Button 
+                className="mt-4" 
+                size="sm"
+                onClick={handleCreateNewIssue}
+                disabled={isCreating}
+              >
+                <PlusIcon className="mr-2 h-4 w-4" />
+                {isCreating ? "생성 중..." : "새 이슈 작성"}
+              </Button>
             )}
           </div>
         ) : (
@@ -290,10 +319,13 @@ export default function IssuesPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <Link
-                        href={`/dashboard/newsletters/${newsletterId}/issues/${issue.id}/edit`}
-                        className="font-medium hover:underline truncate"
+                        href={`/dashboard/newsletters/${newsletterId}/issues/${issue.id}`}
+                        className={cn(
+                          "font-medium hover:underline truncate",
+                          !issue.title && "text-muted-foreground italic"
+                        )}
                       >
-                        {issue.title}
+                        {issue.title || "Untitled"}
                       </Link>
                       <span
                         className={cn(
@@ -333,7 +365,7 @@ export default function IssuesPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild>
-                        <Link href={`/dashboard/newsletters/${newsletterId}/issues/${issue.id}/edit`}>
+                        <Link href={`/dashboard/newsletters/${newsletterId}/issues/${issue.id}`}>
                           <EditIcon className="mr-2 h-4 w-4" />
                           편집
                         </Link>

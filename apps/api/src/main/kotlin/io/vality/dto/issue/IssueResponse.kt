@@ -9,8 +9,9 @@ import java.time.Instant
 @Serializable
 data class IssueResponse(
     val id: String,
-    val title: String,
+    val title: String?,
     val slug: String,
+    val content: String,
     val excerpt: String?,
     val coverImageUrl: String?,
     val status: String, // "DRAFT", "SCHEDULED", "PUBLISHED", "ARCHIVED"
@@ -33,6 +34,7 @@ fun Issue.toIssueResponse(): IssueResponse {
         id = id,
         title = title,
         slug = slug,
+        content = content,
         excerpt = excerpt,
         coverImageUrl = coverImageUrl,
         status = status.name,
