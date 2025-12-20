@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { PageHeader } from "@/components/common";
 import { Button } from "@/components/ui/button";
@@ -24,45 +24,12 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { PlusIcon, TrashIcon } from "@/components/icons";
-
-// 목업 구독자 데이터
-const MOCK_SUBSCRIBERS = [
-  {
-    id: "clh3sub001abc123def789",
-    email: "alice@example.com",
-    status: "active" as const,
-    subscribedAt: "2025-01-15",
-    confirmedAt: "2025-01-15",
-  },
-  {
-    id: "clh3sub002abc123def789",
-    email: "bob@example.com",
-    status: "active" as const,
-    subscribedAt: "2025-01-10",
-    confirmedAt: "2025-01-10",
-  },
-  {
-    id: "clh3sub003abc123def789",
-    email: "charlie@example.com",
-    status: "pending" as const,
-    subscribedAt: "2025-01-08",
-    confirmedAt: null,
-  },
-  {
-    id: "clh3sub004abc123def789",
-    email: "diana@example.com",
-    status: "active" as const,
-    subscribedAt: "2025-01-05",
-    confirmedAt: "2025-01-05",
-  },
-  {
-    id: "clh3sub005abc123def789",
-    email: "eve@example.com",
-    status: "unsubscribed" as const,
-    subscribedAt: "2024-12-20",
-    confirmedAt: "2024-12-20",
-  },
-];
+import {
+  getSubscribers,
+  createSubscriber,
+  deleteSubscriber,
+  type Subscriber,
+} from "@/lib/api/subscriber";
 
 type SubscriberStatus = "all" | "active" | "pending" | "unsubscribed";
 
@@ -121,15 +88,33 @@ export default function SubscribersPage() {
   const params = useParams();
   const newsletterId = params.newsletterId as string;
   
-  // newsletterId를 활용해 해당 뉴스레터의 구독자만 필터링 가능
-  console.log("Newsletter ID:", newsletterId);
-  
-  const [subscribers] = useState(MOCK_SUBSCRIBERS);
+  const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<SubscriberStatus>("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+
+  // 구독자 목록 가져오기
+  useEffect(() => {
+    const fetchSubscribers = async () => {
+      try {
+        setIsLoading(true);
+        const data = await getSubscribers(newsletterId);
+        setSubscribers(data);
+      } catch (error) {
+        console.error("Failed to fetch subscribers:", error);
+        toast.error("구독자 목록을 가져오는데 실패했습니다.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (newsletterId) {
+      fetchSubscribers();
+    }
+  }, [newsletterId]);
 
   // 필터링된 구독자 목록
   const filteredSubscribers = subscribers.filter((subscriber) => {
@@ -137,16 +122,19 @@ export default function SubscribersPage() {
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const matchesStatus =
-      statusFilter === "all" || subscriber.status === statusFilter;
+      statusFilter === "all" || 
+      (statusFilter === "active" && subscriber.status === "ACTIVE") ||
+      (statusFilter === "pending" && subscriber.status === "PENDING") ||
+      (statusFilter === "unsubscribed" && subscriber.status === "UNSUBSCRIBED");
     return matchesSearch && matchesStatus;
   });
 
   // 상태별 카운트
   const statusCounts = {
     all: subscribers.length,
-    active: subscribers.filter((s) => s.status === "active").length,
-    pending: subscribers.filter((s) => s.status === "pending").length,
-    unsubscribed: subscribers.filter((s) => s.status === "unsubscribed").length,
+    active: subscribers.filter((s) => s.status === "ACTIVE").length,
+    pending: subscribers.filter((s) => s.status === "PENDING").length,
+    unsubscribed: subscribers.filter((s) => s.status === "UNSUBSCRIBED").length,
   };
 
   const handleAddSubscriber = async () => {
@@ -157,15 +145,18 @@ export default function SubscribersPage() {
 
     setIsAdding(true);
     try {
-      // TODO: API 연동
-      console.log("Add subscriber:", newEmail, "to newsletter:", newsletterId);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const newSubscriber = await createSubscriber(newsletterId, {
+        email: newEmail,
+      });
+      setSubscribers([...subscribers, newSubscriber]);
       toast.success("구독자가 추가되었습니다.");
       setNewEmail("");
       setIsAddDialogOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Add subscriber error:", error);
-      toast.error("구독자 추가에 실패했습니다.");
+      toast.error(
+        error?.response?.data?.message || "구독자 추가에 실패했습니다."
+      );
     } finally {
       setIsAdding(false);
     }
@@ -175,13 +166,14 @@ export default function SubscribersPage() {
     if (!confirm(`${email} 구독자를 삭제하시겠습니까?`)) return;
 
     try {
-      // TODO: API 연동
-      console.log("Delete subscriber:", id);
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await deleteSubscriber(newsletterId, id);
+      setSubscribers(subscribers.filter((s) => s.id !== id));
       toast.success("구독자가 삭제되었습니다.");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Delete subscriber error:", error);
-      toast.error("구독자 삭제에 실패했습니다.");
+      toast.error(
+        error?.response?.data?.message || "구독자 삭제에 실패했습니다."
+      );
     }
   };
 
@@ -308,7 +300,11 @@ export default function SubscribersPage() {
         </div>
 
         {/* Table Body */}
-        {filteredSubscribers.length === 0 ? (
+        {isLoading ? (
+          <div className="px-4 py-12 text-center text-muted-foreground">
+            로딩 중...
+          </div>
+        ) : filteredSubscribers.length === 0 ? (
           <div className="px-4 py-12 text-center text-muted-foreground">
             {searchQuery || statusFilter !== "all"
               ? "검색 결과가 없습니다."
@@ -328,10 +324,14 @@ export default function SubscribersPage() {
                   <span
                     className={cn(
                       "inline-flex rounded-full px-2 py-0.5 text-xs font-medium",
-                      STATUS_COLORS[subscriber.status]
+                      subscriber.status === "ACTIVE" && STATUS_COLORS.active,
+                      subscriber.status === "PENDING" && STATUS_COLORS.pending,
+                      subscriber.status === "UNSUBSCRIBED" && STATUS_COLORS.unsubscribed
                     )}
                   >
-                    {STATUS_LABELS[subscriber.status]}
+                    {subscriber.status === "ACTIVE" && STATUS_LABELS.active}
+                    {subscriber.status === "PENDING" && STATUS_LABELS.pending}
+                    {subscriber.status === "UNSUBSCRIBED" && STATUS_LABELS.unsubscribed}
                   </span>
                 </div>
                 <div className="col-span-3 text-muted-foreground">

@@ -6,17 +6,16 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { CheckIcon } from "@/components/icons";
 import { cn } from "@/lib/utils";
+import { publicSubscribe } from "@/lib/api/subscriber";
 
 interface SubscribeFormProps {
-  username: string;
-  newsletterSlug?: string;
+  newsletterId: string;
   variant?: "light" | "dark";
   compact?: boolean;
 }
 
 export function SubscribeForm({
-  username,
-  newsletterSlug,
+  newsletterId,
   variant = "light",
   compact = false,
 }: SubscribeFormProps) {
@@ -35,16 +34,12 @@ export function SubscribeForm({
     setIsLoading(true);
 
     try {
-      // TODO: API 연동
-      console.log("Subscribe:", { email, username, newsletterSlug });
-
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
+      await publicSubscribe(newsletterId, { email });
       setIsSubscribed(true);
       toast.success("구독 신청이 완료되었습니다! 이메일을 확인해주세요.");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Subscribe error:", error);
-      toast.error("구독 신청에 실패했습니다. 다시 시도해주세요.");
+      toast.error(error.message || "구독 신청에 실패했습니다. 다시 시도해주세요.");
     } finally {
       setIsLoading(false);
     }

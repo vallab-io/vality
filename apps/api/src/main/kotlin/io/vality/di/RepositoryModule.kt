@@ -6,6 +6,7 @@ import io.vality.repository.IssueRepository
 import io.vality.repository.NewsletterRepository
 import io.vality.repository.RefreshTokenRepository
 import io.vality.repository.SubscriberRepository
+import io.vality.repository.SubscriberVerificationTokenRepository
 import io.vality.repository.UserRepository
 import io.vality.repository.VerificationCodeRepository
 import org.koin.core.module.dsl.singleOf
@@ -20,6 +21,7 @@ val repositoryModule = module {
     singleOf(::NewsletterRepository)
     singleOf(::IssueRepository)
     singleOf(::SubscriberRepository)
+    singleOf(::SubscriberVerificationTokenRepository)
     singleOf(::EmailLogRepository)
 }
 

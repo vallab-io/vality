@@ -240,7 +240,7 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
             새로운 글이 발행되면 이메일로 알려드립니다.
           </p>
           <div className="mt-4">
-            <SubscribeForm username={username} newsletterSlug={newsletterSlug} />
+            <SubscribeForm newsletterId={newsletter.id} />
           </div>
         </section>
 

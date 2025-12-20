@@ -3,6 +3,7 @@ package io.vality.di
 import com.typesafe.config.Config
 import io.vality.service.AuthService
 import io.vality.service.NewsletterService
+import io.vality.service.SubscriberService
 import io.vality.service.email.EmailService
 import io.vality.service.oauth.GoogleOAuthService
 import io.vality.service.upload.ExternalImageUploadService
@@ -74,6 +75,19 @@ val serviceModule = module {
     single<NewsletterService> {
         NewsletterService(
             newsletterRepository = get(),
+        )
+    }
+
+    // Subscriber Service
+    single<SubscriberService> {
+        val config = get<Config>()
+        SubscriberService(
+            subscriberRepository = get(),
+            newsletterRepository = get(),
+            subscriberVerificationTokenRepository = get(),
+            userRepository = get(),
+            emailService = get(),
+            frontendUrl = config.getString("ktor.web.url"),
         )
     }
 }

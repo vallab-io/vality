@@ -147,3 +147,17 @@ object RefreshTokens : Table("refresh_tokens") {
 
     override val primaryKey = PrimaryKey(id)
 }
+
+// ============================================
+// SubscriberVerificationToken - 구독 확인 토큰
+// ============================================
+object SubscriberVerificationTokens : Table("subscriber_verification_tokens") {
+    val id = varchar("id", 24)
+    val subscriberId = varchar("subscriber_id", 24).references(Subscribers.id, onDelete = ReferenceOption.CASCADE)
+    val token = varchar("token", 255).uniqueIndex()
+    val expiresAt = timestamp("expires_at")
+    val usedAt = timestamp("used_at").nullable()
+    val createdAt = timestamp("created_at")
+
+    override val primaryKey = PrimaryKey(id)
+}

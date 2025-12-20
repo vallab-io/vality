@@ -2,6 +2,7 @@ package io.vality.repository
 
 import io.vality.domain.Newsletter
 import io.vality.domain.Newsletters
+import io.vality.domain.Users
 import io.vality.plugins.dbQuery
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -90,6 +91,40 @@ class NewsletterRepository {
             .where { (Newsletters.ownerId eq ownerId) and (Newsletters.slug eq slug) }
             .limit(1)
             .firstOrNull() != null
+    }
+
+    /**
+     * username과 slug로 뉴스레터 조회 (공개 구독용)
+     * 
+     * @param username 사용자 username
+     * @param slug 뉴스레터 slug
+     * @return 뉴스레터 (없으면 null)
+     */
+    suspend fun findByUsernameAndSlug(username: String, slug: String): Newsletter? = dbQuery {
+        // Users와 Newsletters를 조인하여 username으로 조회
+        val userId = Users.select(listOf(Users.id))
+            .where { Users.username eq username }
+            .limit(1)
+            .firstOrNull()
+            ?.get(Users.id)
+            ?: return@dbQuery null
+
+        Newsletters.select(
+            listOf(
+                Newsletters.id,
+                Newsletters.name,
+                Newsletters.slug,
+                Newsletters.description,
+                Newsletters.senderName,
+                Newsletters.timezone,
+                Newsletters.ownerId,
+                Newsletters.createdAt,
+                Newsletters.updatedAt
+            )
+        )
+            .where { (Newsletters.ownerId eq userId) and (Newsletters.slug eq slug) }
+            .map { it.toNewsletter() }
+            .singleOrNull()
     }
 
     suspend fun create(newsletter: Newsletter): Newsletter = dbQuery {

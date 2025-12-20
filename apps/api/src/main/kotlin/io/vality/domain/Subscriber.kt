@@ -7,7 +7,7 @@ import java.time.Instant
 enum class SubStatus {
     PENDING,
     ACTIVE,
-    UNSUBSCRIBED
+    UNSUBSCRIBED,
 }
 
 @Serializable
@@ -18,5 +18,5 @@ data class Subscriber(
     @Contextual val subscribedAt: Instant,
     @Contextual val confirmedAt: Instant? = null,
     @Contextual val unsubscribedAt: Instant? = null,
-    val newsletterId: String
+    val newsletterId: String,
 )

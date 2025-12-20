@@ -245,8 +245,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                   </p>
                   <div className="mt-4">
                     <SubscribeForm
-                      username={username}
-                      newsletterSlug={newsletter.slug}
+                      newsletterId={newsletter.id}
                       compact
                     />
                   </div>

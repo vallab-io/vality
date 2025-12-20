@@ -30,15 +30,14 @@ fun Route.oauthRoutes() {
         get("/google") {
             try {
                 // 프론트엔드 콜백 URL 설정
-                val frontendUrl = try {
-                    config.getStringList("ktor.cors.allowedOrigins")
-                        .firstOrNull() ?: "http://localhost:3000"
+                val webUrl = try {
+                    config.getString("ktor.web.url")
                 } catch (e: Exception) {
-                    logger.warn("ktor.cors.allowedOrigins not found in config, using default frontendUrl", e)
+                    logger.warn("ktor.web.url not found in config, using default frontendUrl", e)
                     "http://localhost:3000"
                 }
                 
-                val redirectUri = "$frontendUrl/auth/google/callback"
+                val redirectUri = "$webUrl/auth/google/callback"
                 
                 // State 생성 (CSRF 방지용)
                 val state = UUID.randomUUID()

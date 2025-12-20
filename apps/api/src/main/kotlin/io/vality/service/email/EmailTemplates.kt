@@ -93,5 +93,99 @@ Vality 인증 코드
 © ${java.time.Year.now()} Vality
         """.trimIndent()
     }
+
+    /**
+     * 구독 확인 이메일 HTML 템플릿
+     */
+    fun subscriptionConfirmationHtml(
+        newsletterName: String,
+        confirmationUrl: String,
+        unsubscribeUrl: String,
+    ): String {
+        return """
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>구독 확인</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #F8FAFC;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #F8FAFC;">
+        <tr>
+            <td align="center" style="padding: 48px 20px;">
+                <table role="presentation" style="width: 100%; max-width: 560px; border-collapse: collapse; background-color: #ffffff; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 32px 32px 24px 32px;">
+                            <h1 style="margin: 0; font-size: 20px; font-weight: 600; color: #1e293b; letter-spacing: -0.02em;">
+                                Vality
+                            </h1>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 0 32px 32px 32px;">
+                            <p style="margin: 0 0 24px 0; font-size: 15px; line-height: 1.6; color: #1e293b;">
+                                <strong>$newsletterName</strong> 구독을 확인해주세요.
+                            </p>
+                            
+                            <p style="margin: 0 0 32px 0; font-size: 15px; line-height: 1.6; color: #64748b;">
+                                아래 버튼을 클릭하여 구독을 완료하세요.
+                            </p>
+                            
+                            <!-- Confirmation Button -->
+                            <div style="text-align: center; margin: 32px 0;">
+                                <a href="$confirmationUrl" style="display: inline-block; padding: 12px 24px; background-color: #2563EB; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 15px; font-weight: 500;">
+                                    구독 확인하기
+                                </a>
+                            </div>
+                            
+                            <p style="margin: 32px 0 0 0; font-size: 13px; line-height: 1.5; color: #64748b; text-align: center;">
+                                구독을 원하지 않으시면 <a href="$unsubscribeUrl" style="color: #64748b; text-decoration: underline;">여기</a>를 클릭하세요.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 24px 32px; background-color: #f8f9fa; border-top: 1px solid #e2e8f0; border-radius: 0 0 6px 6px;">
+                            <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #94a3b8; text-align: center;">
+                                © ${java.time.Year.now()} Vality
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+        """.trimIndent()
+    }
+
+    /**
+     * 구독 확인 이메일 텍스트 템플릿
+     */
+    fun subscriptionConfirmationText(
+        newsletterName: String,
+        confirmationUrl: String,
+        unsubscribeUrl: String,
+    ): String {
+        return """
+Vality 구독 확인
+
+$newsletterName 구독을 확인해주세요.
+
+아래 링크를 클릭하여 구독을 완료하세요:
+$confirmationUrl
+
+구독을 원하지 않으시면 아래 링크를 클릭하세요:
+$unsubscribeUrl
+
+© ${java.time.Year.now()} Vality
+        """.trimIndent()
+    }
 }
 
