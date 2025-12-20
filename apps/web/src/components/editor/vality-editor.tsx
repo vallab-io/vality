@@ -115,7 +115,7 @@ const initialConfig = {
 };
 
 export function ValityEditor({
-                               content, onChange, placeholder = "/를 눌러주세요", className,
+                               content, onChange, placeholder = "'/'를 눌러주세요", className,
                              }: ValityEditorProps) {
   return (<LexicalComposer initialConfig={initialConfig}>
       <div className={cn("relative", className)}>

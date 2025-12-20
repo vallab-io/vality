@@ -263,7 +263,7 @@ export default function NewIssuePage() {
             <ValityEditor
               content={formData.content}
               onChange={handleContentChange}
-              placeholder="/를 눌러주세요"
+              placeholder="'/'를 눌러주세요"
             />
           </div>
         </div>
