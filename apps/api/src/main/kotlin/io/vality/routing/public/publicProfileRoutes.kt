@@ -214,6 +214,112 @@ fun Route.publicProfileRoutes() {
                 )
             }
         }
+
+        /**
+         * 특정 뉴스레터 조회 (username + slug)
+         * GET /api/public/users/{username}/newsletters/{newsletterSlug}
+         * JWT 인증 불필요
+         */
+        get("/{username}/newsletters/{newsletterSlug}") {
+            val username = call.parameters["username"]
+                ?: return@get call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiResponse.error<Nothing>(message = "Username is required")
+                )
+
+            val newsletterSlug = call.parameters["newsletterSlug"]
+                ?: return@get call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiResponse.error<Nothing>(message = "Newsletter slug is required")
+                )
+
+            try {
+                val newsletter = newsletterRepository.findByUsernameAndSlug(username, newsletterSlug)
+                    ?: return@get call.respond(
+                        HttpStatusCode.NotFound,
+                        ApiResponse.error<Nothing>(message = "Newsletter not found")
+                    )
+
+                val subscriberCount = subscriberRepository.countActiveByNewsletterId(newsletter.id)
+                val response = PublicNewsletterResponse(
+                    id = newsletter.id,
+                    slug = newsletter.slug,
+                    name = newsletter.name,
+                    description = newsletter.description,
+                    subscriberCount = subscriberCount,
+                )
+
+                call.respond(
+                    HttpStatusCode.OK,
+                    ApiResponse.success(data = response)
+                )
+            } catch (e: Exception) {
+                call.application.log.error("Failed to get newsletter", e)
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    ApiResponse.error<Nothing>(message = "Failed to get newsletter: ${e.message}")
+                )
+            }
+        }
+
+        /**
+         * 특정 뉴스레터의 발행된 이슈 목록 조회 (최신순)
+         * GET /api/public/users/{username}/newsletters/{newsletterSlug}/issues?limit=20&offset=0
+         * JWT 인증 불필요
+         */
+        get("/{username}/newsletters/{newsletterSlug}/issues") {
+            val username = call.parameters["username"]
+                ?: return@get call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiResponse.error<Nothing>(message = "Username is required")
+                )
+
+            val newsletterSlug = call.parameters["newsletterSlug"]
+                ?: return@get call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiResponse.error<Nothing>(message = "Newsletter slug is required")
+                )
+
+            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
+            val offset = call.request.queryParameters["offset"]?.toIntOrNull() ?: 0
+
+            try {
+                val newsletter = newsletterRepository.findByUsernameAndSlug(username, newsletterSlug)
+                    ?: return@get call.respond(
+                        HttpStatusCode.NotFound,
+                        ApiResponse.error<Nothing>(message = "Newsletter not found")
+                    )
+
+                // 발행된 이슈만 가져오기
+                val issues = issueRepository.findPublishedByNewsletterId(newsletter.id)
+                    .sortedByDescending { it.publishedAt }
+                    .drop(offset)
+                    .take(limit)
+                    .map { issue ->
+                        PublicIssueResponse(
+                            id = issue.id,
+                            slug = issue.slug,
+                            title = issue.title,
+                            excerpt = issue.excerpt,
+                            publishedAt = issue.publishedAt?.toString() ?: "",
+                            newsletterId = newsletter.id,
+                            newsletterSlug = newsletter.slug,
+                            newsletterName = newsletter.name,
+                        )
+                    }
+
+                call.respond(
+                    HttpStatusCode.OK,
+                    ApiResponse.success(data = issues)
+                )
+            } catch (e: Exception) {
+                call.application.log.error("Failed to get newsletter issues", e)
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    ApiResponse.error<Nothing>(message = "Failed to get newsletter issues: ${e.message}")
+                )
+            }
+        }
     }
 }
 

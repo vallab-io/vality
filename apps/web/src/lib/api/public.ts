@@ -76,3 +76,37 @@ export async function getPublicUserIssues(
   return response.data.data;
 }
 
+// 특정 뉴스레터 조회 (username + slug)
+export async function getPublicNewsletter(
+  username: string,
+  newsletterSlug: string
+): Promise<PublicNewsletter> {
+  const response = await apiClient.get<ApiResponse<PublicNewsletter>>(
+    `/public/users/${username}/newsletters/${newsletterSlug}`
+  );
+  if (!response.data.data) {
+    throw new Error(response.data.message || "Failed to get newsletter");
+  }
+  return response.data.data;
+}
+
+// 특정 뉴스레터의 발행된 이슈 목록 조회
+export async function getPublicNewsletterIssues(
+  username: string,
+  newsletterSlug: string,
+  options?: { limit?: number; offset?: number }
+): Promise<PublicIssue[]> {
+  const params = new URLSearchParams();
+  if (options?.limit) params.append("limit", options.limit.toString());
+  if (options?.offset) params.append("offset", options.offset.toString());
+
+  const queryString = params.toString();
+  const url = `/public/users/${username}/newsletters/${newsletterSlug}/issues${queryString ? `?${queryString}` : ""}`;
+
+  const response = await apiClient.get<ApiResponse<PublicIssue[]>>(url);
+  if (!response.data.data) {
+    throw new Error(response.data.message || "Failed to get newsletter issues");
+  }
+  return response.data.data;
+}
+
