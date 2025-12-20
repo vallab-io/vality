@@ -69,15 +69,21 @@ export function MarketingHeader() {
 
           {/* Desktop Actions */}
           <nav className="hidden items-center gap-2 md:flex">
-            <Button size="sm" variant="ghost" onClick={handleLoginClick} disabled={authLoading} className="hover:bg-muted/50">
-              로그인
-            </Button>
-            {!user && (
-              <Link href="/signup">
-                <Button size="sm" className="bg-primary hover:bg-primary/90 shadow-sm hover:shadow-md transition-all duration-200">
-                  시작하기
+            {user ? (
+              <Button size="sm" onClick={handleLoginClick} disabled={authLoading} className="bg-primary hover:bg-primary/90 shadow-sm hover:shadow-md transition-all duration-200">
+                대시보드
+              </Button>
+            ) : (
+              <>
+                <Button size="sm" variant="ghost" onClick={handleLoginClick} disabled={authLoading} className="hover:bg-muted/50">
+                  로그인
                 </Button>
-              </Link>
+                <Link href="/signup">
+                  <Button size="sm" className="bg-primary hover:bg-primary/90 shadow-sm hover:shadow-md transition-all duration-200">
+                    시작하기
+                  </Button>
+                </Link>
+              </>
             )}
           </nav>
 
@@ -143,13 +149,19 @@ export function MarketingHeader() {
 
         {/* Actions */}
         <div className="border-t border-border p-4 space-y-2">
-          <Button className="w-full" onClick={handleLoginClick} disabled={authLoading}>
-            로그인
-          </Button>
-          {!user && (
-            <Link href="/signup" onClick={closeMenu}>
-              <Button className="w-full">시작하기</Button>
-            </Link>
+          {user ? (
+            <Button className="w-full bg-primary hover:bg-primary/90" onClick={handleLoginClick} disabled={authLoading}>
+              대시보드
+            </Button>
+          ) : (
+            <>
+              <Button className="w-full" onClick={handleLoginClick} disabled={authLoading}>
+                로그인
+              </Button>
+              <Link href="/signup" onClick={closeMenu}>
+                <Button className="w-full bg-primary hover:bg-primary/90">시작하기</Button>
+              </Link>
+            </>
           )}
         </div>
       </div>
