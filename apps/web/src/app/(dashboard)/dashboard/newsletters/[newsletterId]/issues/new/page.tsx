@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,10 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ArrowLeftIcon } from "@/components/icons";
+import { createIssue, type CreateIssueRequest } from "@/lib/api/issue";
+import { getNewsletterById, type Newsletter } from "@/lib/api/newsletter";
+import { useAtomValue } from "jotai";
+import { userAtom } from "@/stores/auth.store";
 
 // 목업 뉴스레터 데이터
 const MOCK_NEWSLETTER = {
@@ -28,15 +32,6 @@ const MOCK_USER = {
   username: "johndoe",
 };
 
-// 목업 구독자 데이터
-const MOCK_SUBSCRIBERS = [
-  { id: "1", email: "alice@example.com", status: "active" },
-  { id: "2", email: "bob@example.com", status: "active" },
-  { id: "3", email: "charlie@example.com", status: "active" },
-  { id: "4", email: "diana@example.com", status: "active" },
-  { id: "5", email: "eve@example.com", status: "active" },
-];
-
 type PreviewMode = "blog" | "email";
 type RecipientOption = "everyone" | "nobody";
 type SendOption = "now" | "scheduled";
@@ -45,9 +40,11 @@ export default function NewIssuePage() {
   const params = useParams();
   const router = useRouter();
   const newsletterId = params.newsletterId as string;
+  const user = useAtomValue(userAtom);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [newsletter, setNewsletter] = useState<Newsletter | null>(null);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("email");
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -67,9 +64,22 @@ export default function NewIssuePage() {
 
   const [publishSlug, setPublishSlug] = useState("");
 
-  const activeSubscribers = MOCK_SUBSCRIBERS.filter(
-    (s) => s.status === "active"
-  );
+  // 뉴스레터 정보 로드
+  useEffect(() => {
+    const loadNewsletter = async () => {
+      try {
+        const data = await getNewsletterById(newsletterId);
+        setNewsletter(data);
+      } catch (error: any) {
+        console.error("Failed to load newsletter:", error);
+        toast.error(error.message || "뉴스레터 정보를 불러오는데 실패했습니다.");
+      }
+    };
+
+    if (newsletterId) {
+      loadNewsletter();
+    }
+  }, [newsletterId]);
 
   const generateSlug = (title: string) => {
     // 한글/기타 문자는 제거하고 영문 소문자, 숫자, 하이픈만 허용
@@ -251,14 +261,29 @@ export default function NewIssuePage() {
       return;
     }
 
+    if (!formData.content.trim()) {
+      toast.error("본문을 입력해주세요.");
+      return;
+    }
+
     setIsSaving(true);
     try {
-      console.log("Save draft:", { newsletterId, ...formData });
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const slug = publishSlug.trim() || generateSlug(formData.title);
+      
+      const request: CreateIssueRequest = {
+        title: formData.title.trim(),
+        slug: slug,
+        content: formData.content,
+        status: "DRAFT",
+      };
+
+      await createIssue(newsletterId, request);
       toast.success("임시저장되었습니다.");
-    } catch (error) {
+      router.push(`/dashboard/newsletters/${newsletterId}/issues`);
+    } catch (error: any) {
       console.error("Save draft error:", error);
-      toast.error("저장에 실패했습니다.");
+      const errorMessage = error.response?.data?.message || error.message || "저장에 실패했습니다.";
+      toast.error(errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -283,48 +308,45 @@ export default function NewIssuePage() {
       return;
     }
 
-    if (sendOption === "scheduled") {
-      if (!scheduledDate || !scheduledTime) {
-        toast.error("예약 날짜와 시간을 입력해주세요.");
-        return;
-      }
-    }
-
     setIsPublishing(true);
     try {
-      const publishData = {
-        newsletterId,
-        ...formData,
-        slug: publishSlug,
-        recipientOption,
-        sendOption,
-        scheduledAt:
-          sendOption === "scheduled"
-            ? new Date(`${scheduledDate}T${scheduledTime}`).toISOString()
-            : null,
-        recipientCount:
-          recipientOption === "everyone" ? activeSubscribers.length : 0,
+      let status: "PUBLISHED" | "SCHEDULED" = "PUBLISHED";
+      let scheduledAt: string | null = null;
+
+      // 이메일 발송은 아직 구현하지 않으므로, recipientOption은 무시하고 상태만 결정
+      if (sendOption === "scheduled") {
+        if (!scheduledDate || !scheduledTime) {
+          toast.error("예약 날짜와 시간을 입력해주세요.");
+          setIsPublishing(false);
+          return;
+        }
+        status = "SCHEDULED";
+        scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
+      }
+
+      const request: CreateIssueRequest = {
+        title: formData.title.trim(),
+        slug: publishSlug.trim(),
+        content: formData.content,
+        status: status,
+        scheduledAt: scheduledAt,
       };
 
-      console.log("Publish:", publishData);
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await createIssue(newsletterId, request);
 
-      if (sendOption === "scheduled") {
+      if (status === "SCHEDULED") {
         toast.success(
           `발행 예약 완료! ${scheduledDate} ${scheduledTime}에 발행됩니다.`
         );
-      } else if (recipientOption === "everyone") {
-        toast.success(
-          `발행 완료! ${activeSubscribers.length}명에게 이메일을 발송했습니다.`
-        );
       } else {
-        toast.success("발행되었습니다! (이메일 발송 없음)");
+        toast.success("발행되었습니다!");
       }
 
       router.push(`/dashboard/newsletters/${newsletterId}/issues`);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Publish error:", error);
-      toast.error("발행에 실패했습니다.");
+      const errorMessage = error.response?.data?.message || error.message || "발행에 실패했습니다.";
+      toast.error(errorMessage);
     } finally {
       setIsPublishing(false);
     }
@@ -498,13 +520,13 @@ export default function NewIssuePage() {
                 <BlogPreview
                   title={formData.title}
                   content={formData.content}
-                  author={MOCK_USER.username}
+                  author={user?.username || "username"}
                 />
               ) : (
                 <EmailPreview
                   title={formData.title}
                   content={formData.content}
-                  newsletterName={MOCK_NEWSLETTER.name}
+                  newsletterName={newsletter?.name || "Newsletter"}
                 />
               )
             ) : (
@@ -532,7 +554,7 @@ export default function NewIssuePage() {
               <Label htmlFor="slug">URL 슬러그</Label>
               <div className="flex items-center gap-2">
                 <span className="shrink-0 text-sm text-muted-foreground">
-                  /@{MOCK_USER.username}/{MOCK_NEWSLETTER.slug}/
+                  /@{user?.username || "username"}/{newsletter?.slug || "slug"}/
                 </span>
                 <Input
                   id="slug"
@@ -547,122 +569,77 @@ export default function NewIssuePage() {
               </p>
             </div>
 
-            {/* Recipient Options */}
+            {/* Send Timing */}
             <div className="space-y-3">
-              <Label>이메일 발송 대상</Label>
+              <Label>발행 시점</Label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => setRecipientOption("everyone")}
+                  onClick={() => setSendOption("now")}
                   className={cn(
                     "rounded-lg border p-3 text-left transition-colors",
-                    recipientOption === "everyone"
+                    sendOption === "now"
                       ? "border-primary bg-primary/5"
                       : "border-border hover:border-muted-foreground/50"
                   )}
                 >
                   <div className="flex items-center gap-2">
-                    <UsersIcon className="h-4 w-4" />
-                    <span className="font-medium">모든 구독자</span>
+                    <SendIcon className="h-4 w-4" />
+                    <span className="font-medium">바로 발행</span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {activeSubscribers.length}명에게 발송
+                    즉시 발행 (PUBLISHED)
                   </p>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setRecipientOption("nobody")}
+                  onClick={() => setSendOption("scheduled")}
                   className={cn(
                     "rounded-lg border p-3 text-left transition-colors",
-                    recipientOption === "nobody"
+                    sendOption === "scheduled"
                       ? "border-primary bg-primary/5"
                       : "border-border hover:border-muted-foreground/50"
                   )}
                 >
                   <div className="flex items-center gap-2">
-                    <NoMailIcon className="h-4 w-4" />
-                    <span className="font-medium">발송 안함</span>
+                    <ClockIcon className="h-4 w-4" />
+                    <span className="font-medium">예약 발행</span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    아카이브만 게시
+                    날짜와 시간 지정 (SCHEDULED)
                   </p>
                 </button>
               </div>
-            </div>
 
-            {/* Send Timing (only if sending emails) */}
-            {recipientOption === "everyone" && (
-              <div className="space-y-3">
-                <Label>발송 시점</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setSendOption("now")}
-                    className={cn(
-                      "rounded-lg border p-3 text-left transition-colors",
-                      sendOption === "now"
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-muted-foreground/50"
-                    )}
-                  >
-                    <div className="flex items-center gap-2">
-                      <SendIcon className="h-4 w-4" />
-                      <span className="font-medium">바로 발송</span>
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      즉시 이메일 발송
-                    </p>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSendOption("scheduled")}
-                    className={cn(
-                      "rounded-lg border p-3 text-left transition-colors",
-                      sendOption === "scheduled"
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-muted-foreground/50"
-                    )}
-                  >
-                    <div className="flex items-center gap-2">
-                      <ClockIcon className="h-4 w-4" />
-                      <span className="font-medium">예약 발송</span>
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      날짜와 시간 지정
-                    </p>
-                  </button>
-                </div>
-
-                {/* Scheduled Date/Time */}
-                {sendOption === "scheduled" && (
-                  <div className="mt-3 grid grid-cols-2 gap-3 rounded-lg border border-border p-3">
-                    <div className="space-y-1">
-                      <Label htmlFor="date" className="text-xs">
-                        날짜
-                      </Label>
-                      <Input
-                        id="date"
-                        type="date"
-                        min={today}
-                        value={scheduledDate}
-                        onChange={(e) => setScheduledDate(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="time" className="text-xs">
-                        시간
-                      </Label>
-                      <Input
-                        id="time"
-                        type="time"
-                        value={scheduledTime}
-                        onChange={(e) => setScheduledTime(e.target.value)}
-                      />
-                    </div>
+              {/* Scheduled Date/Time */}
+              {sendOption === "scheduled" && (
+                <div className="mt-3 grid grid-cols-2 gap-3 rounded-lg border border-border p-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="date" className="text-xs">
+                      날짜
+                    </Label>
+                    <Input
+                      id="date"
+                      type="date"
+                      min={today}
+                      value={scheduledDate}
+                      onChange={(e) => setScheduledDate(e.target.value)}
+                    />
                   </div>
-                )}
-              </div>
-            )}
+                  <div className="space-y-1">
+                    <Label htmlFor="time" className="text-xs">
+                      시간
+                    </Label>
+                    <Input
+                      id="time"
+                      type="time"
+                      value={scheduledTime}
+                      onChange={(e) => setScheduledTime(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex justify-end gap-2">
@@ -676,10 +653,8 @@ export default function NewIssuePage() {
             <Button onClick={handlePublish} disabled={isPublishing}>
               {isPublishing
                 ? "발행 중..."
-                : sendOption === "scheduled" && recipientOption === "everyone"
+                : sendOption === "scheduled"
                 ? "예약 발행"
-                : recipientOption === "everyone"
-                ? "발행 및 발송"
                 : "발행하기"}
             </Button>
           </div>
