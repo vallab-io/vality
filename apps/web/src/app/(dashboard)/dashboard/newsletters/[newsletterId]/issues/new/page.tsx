@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import { createIssue, type CreateIssueRequest } from "@/lib/api/issue";
 import { getNewsletterById, type Newsletter } from "@/lib/api/newsletter";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/auth.store";
+import { ValityEditor } from "@/components/editor/vality-editor";
 
 // 목업 뉴스레터 데이터
 const MOCK_NEWSLETTER = {
@@ -41,14 +42,11 @@ export default function NewIssuePage() {
   const router = useRouter();
   const newsletterId = params.newsletterId as string;
   const user = useAtomValue(userAtom);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [newsletter, setNewsletter] = useState<Newsletter | null>(null);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("email");
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
 
   // 발행 옵션 상태
@@ -59,7 +57,7 @@ export default function NewIssuePage() {
 
   const [formData, setFormData] = useState({
     title: "",
-    content: "",
+    content: "", // HTML 형식으로 저장
   });
 
   const [publishSlug, setPublishSlug] = useState("");
@@ -101,8 +99,8 @@ export default function NewIssuePage() {
     setFormData((prev) => ({ ...prev, title: e.target.value }));
   };
 
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setFormData((prev) => ({ ...prev, content: e.target.value }));
+  const handleContentChange = (htmlContent: string) => {
+    setFormData((prev) => ({ ...prev, content: htmlContent }));
   };
 
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,147 +111,6 @@ export default function NewIssuePage() {
     setPublishSlug(value);
   };
 
-  // 툴바 기능: 선택된 텍스트에 포맷 적용
-  const insertFormat = (prefix: string, suffix: string = prefix) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = formData.content.substring(start, end);
-    const beforeText = formData.content.substring(0, start);
-    const afterText = formData.content.substring(end);
-
-    const newContent = beforeText + prefix + selectedText + suffix + afterText;
-    setFormData((prev) => ({ ...prev, content: newContent }));
-
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + prefix.length, end + prefix.length);
-    }, 0);
-  };
-
-  // 툴바 기능: 줄 시작에 포맷 적용
-  const insertLineFormat = (prefix: string) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const content = formData.content;
-
-    let lineStart = start;
-    while (lineStart > 0 && content[lineStart - 1] !== "\n") {
-      lineStart--;
-    }
-
-    const beforeLine = content.substring(0, lineStart);
-    const afterStart = content.substring(lineStart);
-
-    const newContent = beforeLine + prefix + afterStart;
-    setFormData((prev) => ({ ...prev, content: newContent }));
-
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + prefix.length, start + prefix.length);
-    }, 0);
-  };
-
-  // 이미지 업로드 핸들러
-  const handleImageUpload = useCallback(
-    async (file: File) => {
-      const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-      if (!validTypes.includes(file.type)) {
-        toast.error("JPG, PNG, GIF, WEBP 형식만 업로드 가능합니다.");
-        return;
-      }
-
-      const maxSize = 5 * 1024 * 1024; // 5MB
-      if (file.size > maxSize) {
-        toast.error("이미지 크기는 5MB 이하여야 합니다.");
-        return;
-      }
-
-      setIsUploading(true);
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        const mockUrl = URL.createObjectURL(file);
-
-        const textarea = textareaRef.current;
-        if (textarea) {
-          const start = textarea.selectionStart;
-          const beforeText = formData.content.substring(0, start);
-          const afterText = formData.content.substring(start);
-          const imageMarkdown = `![${file.name}](${mockUrl})`;
-
-          setFormData((prev) => ({
-            ...prev,
-            content: beforeText + imageMarkdown + afterText,
-          }));
-
-          setTimeout(() => {
-            textarea.focus();
-            const newPosition = start + imageMarkdown.length;
-            textarea.setSelectionRange(newPosition, newPosition);
-          }, 0);
-        }
-
-        toast.success("이미지가 업로드되었습니다.");
-      } catch (error) {
-        console.error("Image upload error:", error);
-        toast.error("이미지 업로드에 실패했습니다.");
-      } finally {
-        setIsUploading(false);
-      }
-    },
-    [formData.content]
-  );
-
-  const handleImageButtonClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleImageUpload(file);
-    }
-    e.target.value = "";
-  };
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const file = e.dataTransfer.files?.[0];
-      if (file && file.type.startsWith("image/")) {
-        handleImageUpload(file);
-      }
-    },
-    [handleImageUpload]
-  );
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handlePaste = useCallback(
-    (e: React.ClipboardEvent) => {
-      const items = e.clipboardData.items;
-      for (let i = 0; i < items.length; i++) {
-        if (items[i].type.startsWith("image/")) {
-          e.preventDefault();
-          const file = items[i].getAsFile();
-          if (file) {
-            handleImageUpload(file);
-          }
-          break;
-        }
-      }
-    },
-    [handleImageUpload]
-  );
 
   const handleSaveDraft = async () => {
     if (!formData.title.trim()) {
@@ -261,7 +118,7 @@ export default function NewIssuePage() {
       return;
     }
 
-    if (!formData.content.trim()) {
+    if (!formData.content.trim() || formData.content === "<p></p>") {
       toast.error("본문을 입력해주세요.");
       return;
     }
@@ -294,7 +151,7 @@ export default function NewIssuePage() {
       toast.error("제목을 입력해주세요.");
       return;
     }
-    if (!formData.content.trim()) {
+    if (!formData.content.trim() || formData.content === "<p></p>") {
       toast.error("본문을 입력해주세요.");
       return;
     }
@@ -401,83 +258,12 @@ export default function NewIssuePage() {
             <div className="mt-2 h-1 w-12 bg-primary" />
           </div>
 
-          {/* Toolbar */}
-          <div className="flex flex-wrap items-center gap-1 border-b border-border px-4 py-2">
-            <ToolbarButton onClick={() => insertLineFormat("# ")} title="제목 1">
-              H<sub>1</sub>
-            </ToolbarButton>
-            <ToolbarButton onClick={() => insertLineFormat("## ")} title="제목 2">
-              H<sub>2</sub>
-            </ToolbarButton>
-            <ToolbarButton onClick={() => insertLineFormat("### ")} title="제목 3">
-              H<sub>3</sub>
-            </ToolbarButton>
-            <ToolbarButton onClick={() => insertLineFormat("#### ")} title="제목 4">
-              H<sub>4</sub>
-            </ToolbarButton>
-
-            <div className="mx-2 h-5 w-px bg-border" />
-
-            <ToolbarButton onClick={() => insertFormat("**")} title="굵게">
-              <span className="font-bold">B</span>
-            </ToolbarButton>
-            <ToolbarButton onClick={() => insertFormat("*")} title="기울임">
-              <span className="italic">I</span>
-            </ToolbarButton>
-            <ToolbarButton onClick={() => insertFormat("~~")} title="취소선">
-              <span className="line-through">S</span>
-            </ToolbarButton>
-
-            <div className="mx-2 h-5 w-px bg-border" />
-
-            <ToolbarButton onClick={() => insertLineFormat("> ")} title="인용">
-              <QuoteIcon className="h-4 w-4" />
-            </ToolbarButton>
-            <ToolbarButton onClick={() => insertLineFormat("- ")} title="목록">
-              <ListIcon className="h-4 w-4" />
-            </ToolbarButton>
-
-            <div className="mx-2 h-5 w-px bg-border" />
-
-            <ToolbarButton onClick={() => insertFormat("[", "](url)")} title="링크">
-              <LinkIcon className="h-4 w-4" />
-            </ToolbarButton>
-            <ToolbarButton
-              onClick={handleImageButtonClick}
-              title="이미지 업로드"
-              disabled={isUploading}
-            >
-              {isUploading ? (
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-              ) : (
-                <ImageIcon className="h-4 w-4" />
-              )}
-            </ToolbarButton>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/gif,image/webp"
-              onChange={handleFileInputChange}
-              className="hidden"
-            />
-            <ToolbarButton onClick={() => insertFormat("`")} title="인라인 코드">
-              <CodeIcon className="h-4 w-4" />
-            </ToolbarButton>
-          </div>
-
           {/* Content Editor */}
-          <div
-            className="flex-1 overflow-auto p-4"
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-          >
-            <textarea
-              ref={textareaRef}
-              value={formData.content}
+          <div className="flex-1 overflow-auto">
+            <ValityEditor
+              content={formData.content}
               onChange={handleContentChange}
-              onPaste={handlePaste}
-              placeholder="내용을 입력하세요... (이미지를 드래그하거나 붙여넣기 가능)"
-              className="h-full w-full resize-none bg-transparent text-base leading-relaxed outline-none placeholder:text-muted-foreground/50"
+              placeholder="/를 눌러주세요"
             />
           </div>
         </div>
@@ -515,7 +301,7 @@ export default function NewIssuePage() {
           </div>
 
           <div className="flex-1 overflow-auto p-6">
-            {formData.content ? (
+            {formData.content && formData.content !== "<p></p>" ? (
               previewMode === "blog" ? (
                 <BlogPreview
                   title={formData.title}
@@ -664,85 +450,6 @@ export default function NewIssuePage() {
   );
 }
 
-// 툴바 버튼 컴포넌트
-function ToolbarButton({
-  children,
-  onClick,
-  title,
-  disabled = false,
-}: {
-  children: React.ReactNode;
-  onClick: () => void;
-  title: string;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      disabled={disabled}
-      className={cn(
-        "flex h-8 w-8 items-center justify-center rounded text-muted-foreground transition-colors",
-        disabled
-          ? "cursor-not-allowed opacity-50"
-          : "hover:bg-muted hover:text-foreground"
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
-// 아이콘 컴포넌트들
-function QuoteIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M4.583 17.321C3.553 16.227 3 15 3 13.011c0-3.5 2.457-6.637 6.03-8.188l.893 1.378c-3.335 1.804-3.987 4.145-4.247 5.621.537-.278 1.24-.375 1.929-.311 1.804.167 3.226 1.648 3.226 3.489a3.5 3.5 0 01-3.5 3.5 3.871 3.871 0 01-2.748-1.179zm10 0C13.553 16.227 13 15 13 13.011c0-3.5 2.457-6.637 6.03-8.188l.893 1.378c-3.335 1.804-3.987 4.145-4.247 5.621.537-.278 1.24-.375 1.929-.311 1.804.167 3.226 1.648 3.226 3.489a3.5 3.5 0 01-3.5 3.5 3.871 3.871 0 01-2.748-1.179z" />
-    </svg>
-  );
-}
-
-function ListIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <line x1="8" y1="6" x2="21" y2="6" />
-      <line x1="8" y1="12" x2="21" y2="12" />
-      <line x1="8" y1="18" x2="21" y2="18" />
-      <line x1="3" y1="6" x2="3.01" y2="6" />
-      <line x1="3" y1="12" x2="3.01" y2="12" />
-      <line x1="3" y1="18" x2="3.01" y2="18" />
-    </svg>
-  );
-}
-
-function LinkIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
-      <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
-    </svg>
-  );
-}
-
-function ImageIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-      <circle cx="8.5" cy="8.5" r="1.5" />
-      <polyline points="21,15 16,10 5,21" />
-    </svg>
-  );
-}
-
-function CodeIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <polyline points="16,18 22,12 16,6" />
-      <polyline points="8,6 2,12 8,18" />
-    </svg>
-  );
-}
 
 function UsersIcon({ className }: { className?: string }) {
   return (
@@ -810,9 +517,10 @@ function BlogPreview({
           <time>{today}</time>
         </div>
       </header>
-      <article className="prose prose-neutral max-w-none dark:prose-invert">
-        {renderMarkdown(content)}
-      </article>
+      <article
+        className="prose prose-neutral max-w-none dark:prose-invert"
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
     </div>
   );
 }
@@ -857,9 +565,10 @@ function EmailPreview({
         </div>
 
         <div className="p-6">
-          <article className="prose prose-sm prose-neutral max-w-none dark:prose-invert">
-            {renderMarkdown(content)}
-          </article>
+          <article
+            className="prose prose-sm prose-neutral max-w-none dark:prose-invert"
+            dangerouslySetInnerHTML={{ __html: content }}
+          />
         </div>
 
         <div className="border-t border-border bg-muted/30 p-4 text-center">
@@ -876,181 +585,3 @@ function EmailPreview({
   );
 }
 
-// 마크다운 렌더러
-function renderMarkdown(content: string) {
-  return content.split("\n").map((line, index) => {
-    const trimmed = line.trim();
-
-    if (!trimmed) return <br key={index} />;
-
-    if (trimmed.startsWith("# ")) {
-      return (
-        <h1 key={index} className="mt-8 mb-4 text-3xl font-bold">
-          {trimmed.replace("# ", "")}
-        </h1>
-      );
-    }
-
-    if (trimmed.startsWith("## ")) {
-      return (
-        <h2 key={index} className="mt-8 mb-4 text-2xl font-semibold">
-          {trimmed.replace("## ", "")}
-        </h2>
-      );
-    }
-
-    if (trimmed.startsWith("### ")) {
-      return (
-        <h3 key={index} className="mt-6 mb-3 text-xl font-semibold">
-          {trimmed.replace("### ", "")}
-        </h3>
-      );
-    }
-
-    if (trimmed.startsWith("#### ")) {
-      return (
-        <h4 key={index} className="mt-4 mb-2 text-lg font-semibold">
-          {trimmed.replace("#### ", "")}
-        </h4>
-      );
-    }
-
-    if (trimmed.startsWith("- **")) {
-      const match = trimmed.match(/- \*\*(.+?)\*\*:?\s*(.*)$/);
-      if (match) {
-        return (
-          <li key={index} className="ml-4 my-1">
-            <strong>{match[1]}</strong>
-            {match[2] && `: ${match[2]}`}
-          </li>
-        );
-      }
-    }
-
-    if (trimmed.startsWith("- ")) {
-      return (
-        <li key={index} className="ml-4 my-1">
-          {renderInlineMarkdown(trimmed.replace("- ", ""))}
-        </li>
-      );
-    }
-
-    const numberedMatch = trimmed.match(/^(\d+)\.\s+(.+)$/);
-    if (numberedMatch) {
-      return (
-        <li key={index} className="ml-4 my-1 list-decimal">
-          {renderInlineMarkdown(numberedMatch[2])}
-        </li>
-      );
-    }
-
-    if (trimmed.startsWith("> ")) {
-      return (
-        <blockquote
-          key={index}
-          className="border-l-4 border-primary/30 pl-4 my-4 italic text-muted-foreground"
-        >
-          {trimmed.replace("> ", "")}
-        </blockquote>
-      );
-    }
-
-    return (
-      <p key={index} className="my-4 leading-relaxed">
-        {renderInlineMarkdown(trimmed)}
-      </p>
-    );
-  });
-}
-
-function renderInlineMarkdown(text: string) {
-  let parts: (string | React.ReactNode)[] = [text];
-
-  parts = parts.flatMap((part, i) => {
-    if (typeof part !== "string") return part;
-    return part.split(/(\[[^\]]+\]\([^)]+\))/g).map((segment, j) => {
-      const linkMatch = segment.match(/\[([^\]]+)\]\(([^)]+)\)/);
-      if (linkMatch) {
-        return (
-          <a
-            key={`${i}-link-${j}`}
-            href={linkMatch[2]}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary underline hover:text-primary/80"
-          >
-            {linkMatch[1]}
-          </a>
-        );
-      }
-      return segment;
-    });
-  });
-
-  parts = parts.flatMap((part, i) => {
-    if (typeof part !== "string") return part;
-    return part.split(/(!\[[^\]]*\]\([^)]+\))/g).map((segment, j) => {
-      const imgMatch = segment.match(/!\[([^\]]*)\]\(([^)]+)\)/);
-      if (imgMatch) {
-        return (
-          <img
-            key={`${i}-img-${j}`}
-            src={imgMatch[2]}
-            alt={imgMatch[1] || "이미지"}
-            className="my-4 max-w-full rounded-lg"
-          />
-        );
-      }
-      return segment;
-    });
-  });
-
-  parts = parts.flatMap((part, i) => {
-    if (typeof part !== "string") return part;
-    return part.split(/(~~[^~]+~~)/g).map((segment, j) => {
-      if (segment.startsWith("~~") && segment.endsWith("~~")) {
-        return <del key={`${i}-s-${j}`}>{segment.slice(2, -2)}</del>;
-      }
-      return segment;
-    });
-  });
-
-  parts = parts.flatMap((part, i) => {
-    if (typeof part !== "string") return part;
-    return part.split(/(\*\*[^*]+\*\*)/g).map((segment, j) => {
-      if (segment.startsWith("**") && segment.endsWith("**")) {
-        return <strong key={`${i}-b-${j}`}>{segment.slice(2, -2)}</strong>;
-      }
-      return segment;
-    });
-  });
-
-  parts = parts.flatMap((part, i) => {
-    if (typeof part !== "string") return part;
-    return part.split(/(\*[^*]+\*)/g).map((segment, j) => {
-      if (segment.startsWith("*") && segment.endsWith("*") && !segment.startsWith("**")) {
-        return <em key={`${i}-i-${j}`}>{segment.slice(1, -1)}</em>;
-      }
-      return segment;
-    });
-  });
-
-  parts = parts.flatMap((part, i) => {
-    if (typeof part !== "string") return part;
-    return part.split(/(`[^`]+`)/g).map((segment, j) => {
-      if (segment.startsWith("`") && segment.endsWith("`")) {
-        return (
-          <code
-            key={`${i}-c-${j}`}
-            className="rounded bg-muted px-1.5 py-0.5 text-sm font-mono"
-          >
-            {segment.slice(1, -1)}
-          </code>
-        );
-      }
-      return segment;
-    });
-  });
-
-  return parts;
-}
