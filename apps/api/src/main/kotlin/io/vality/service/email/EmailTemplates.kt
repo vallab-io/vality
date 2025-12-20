@@ -96,6 +96,8 @@ Vality 인증 코드
 
     /**
      * 구독 확인 이메일 HTML 템플릿
+     * 
+     * Vality 사이트 디자인과 일치하는 단순하고 심플한 디자인
      */
     fun subscribeConfirmationHtml(
         newsletterName: String,
@@ -136,16 +138,26 @@ Vality 인증 코드
                             
                             <!-- Confirmation Button -->
                             <div style="text-align: center; margin: 32px 0;">
-                                <a href="$confirmationUrl" style="display: inline-block; padding: 12px 24px; background-color: #2563EB; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 15px; font-weight: 500;">
+                                <a href="$confirmationUrl" style="display: inline-block; padding: 12px 24px; background-color: #2563EB; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 15px; font-weight: 500; transition: background-color 0.2s;">
                                     구독 확인하기
                                 </a>
                             </div>
+                            
+                            <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.5; color: #64748b; text-align: center;">
+                                버튼이 작동하지 않으면 아래 링크를 복사하여 브라우저에 붙여넣으세요:
+                            </p>
+                            <p style="margin: 8px 0 0 0; font-size: 12px; line-height: 1.5; color: #94a3b8; text-align: center; word-break: break-all;">
+                                <a href="$confirmationUrl" style="color: #2563EB; text-decoration: none;">$confirmationUrl</a>
+                            </p>
                         </td>
                     </tr>
                     
                     <!-- Footer -->
                     <tr>
                         <td style="padding: 24px 32px; background-color: #f8f9fa; border-top: 1px solid #e2e8f0; border-radius: 0 0 6px 6px;">
+                            <p style="margin: 0 0 8px 0; font-size: 12px; line-height: 1.5; color: #64748b;">
+                                이 요청을 하지 않으셨다면 이 이메일을 무시하시기 바랍니다.
+                            </p>
                             <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #94a3b8; text-align: center;">
                                 © ${java.time.Year.now()} Vality
                             </p>

@@ -6,6 +6,7 @@ import io.vality.routing.auth.authRoutes
 import io.vality.routing.auth.oauthRoutes
 import io.vality.routing.docs.docsRoutes
 import io.vality.routing.health.healthRoutes
+import io.vality.routing.issue.issueRoutes
 import io.vality.routing.newsletter.newsletterRoutes
 import io.vality.routing.public.publicProfileRoutes
 import io.vality.routing.public.publicSubscriberRoutes
@@ -21,6 +22,7 @@ fun Application.configureRouting() {
         oauthRoutes()
         uploadRoutes()
         newsletterRoutes()
+        issueRoutes()
         subscriberRoutes()
         publicProfileRoutes()
         publicSubscriberRoutes()

@@ -253,35 +253,37 @@ class SubscriberService(
         // 중복 구독 확인
         val existingSubscriber = subscriberRepository.findByNewsletterIdAndEmail(newsletter.id, email)
         if (existingSubscriber != null) {
-            // 기존 구독자가 UNSUBSCRIBED 상태인 경우 재구독 가능
-            if (existingSubscriber.status == SubStatus.UNSUBSCRIBED) {
-                // 재구독: PENDING 상태로 변경
-                val now = Instant.now()
-                val reactivatedSubscriber = existingSubscriber.copy(
-                    status = SubStatus.PENDING,
-                    subscribedAt = now,
-                    confirmedAt = null,
-                    unsubscribedAt = null,
-                )
-                val updatedSubscriber = subscriberRepository.update(reactivatedSubscriber)
+            when (existingSubscriber.status) {
+                SubStatus.ACTIVE -> {
+                    // ACTIVE 상태: 이미 구독 중이므로 예외 발생
+                    throw IllegalArgumentException("이미 구독 중인 이메일입니다.")
+                }
+                SubStatus.PENDING -> {
+                    // PENDING 상태: 토큰 재발급 및 이메일 재발송
+                    val confirmationToken = createSubscribeToken(existingSubscriber.id)
+                    val username = user.username ?: throw IllegalArgumentException("User username is required")
+                    sendVerificationEmail(existingSubscriber, newsletter, username, confirmationToken)
+                    return existingSubscriber
+                }
+                SubStatus.UNSUBSCRIBED -> {
+                    // UNSUBSCRIBED 상태: 재구독 처리 (PENDING으로 변경)
+                    val now = Instant.now()
+                    val reactivatedSubscriber = existingSubscriber.copy(
+                        status = SubStatus.PENDING,
+                        subscribedAt = now,
+                        confirmedAt = null,
+                        unsubscribedAt = null,
+                    )
+                    val updatedSubscriber = subscriberRepository.update(reactivatedSubscriber)
 
-                       // 구독 확인 토큰 생성 (별도 테이블에 저장)
-                       val confirmationToken = createSubscribeToken(updatedSubscriber.id)
+                    // 구독 확인 토큰 생성 (별도 테이블에 저장)
+                    val confirmationToken = createSubscribeToken(updatedSubscriber.id)
 
-                // 인증 이메일 발송
-                val username = user.username ?: throw IllegalArgumentException("User username is required")
-                sendVerificationEmail(updatedSubscriber, newsletter, username, confirmationToken)
-                return updatedSubscriber
-                   } else if (existingSubscriber.status == SubStatus.PENDING) {
-                       // 이미 PENDING 상태인 경우 토큰 재발급 및 이메일 재발송
-                       val confirmationToken = createSubscribeToken(existingSubscriber.id)
-
-                // 인증 이메일 재발송
-                val username = user.username ?: throw IllegalArgumentException("User username is required")
-                sendVerificationEmail(existingSubscriber, newsletter, username, confirmationToken)
-                return existingSubscriber
-            } else if (existingSubscriber.status == SubStatus.ACTIVE) {
-                throw IllegalArgumentException("You are already subscribed to this newsletter")
+                    // 인증 이메일 발송
+                    val username = user.username ?: throw IllegalArgumentException("User username is required")
+                    sendVerificationEmail(updatedSubscriber, newsletter, username, confirmationToken)
+                    return updatedSubscriber
+                }
             }
         }
 

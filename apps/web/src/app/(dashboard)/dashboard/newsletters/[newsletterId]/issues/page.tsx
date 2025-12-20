@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { PageHeader } from "@/components/common";
@@ -23,55 +23,10 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { PlusIcon, MoreIcon, EditIcon, TrashIcon } from "@/components/icons";
-
-// 목업 이슈 데이터
-const MOCK_ISSUES = [
-  {
-    id: "clh2issue001abc123def",
-    title: "2025년 주목할 디자인 트렌드",
-    slug: "design-trends-2025",
-    status: "published" as const,
-    publishedAt: "2025-01-15",
-    createdAt: "2025-01-14",
-    excerpt: "새해를 맞아 올해 주목할 만한 디자인 트렌드를 정리해 보았습니다.",
-  },
-  {
-    id: "clh2issue002abc123def",
-    title: "디자이너를 위한 생산성 팁 10가지",
-    slug: "productivity-tips",
-    status: "published" as const,
-    publishedAt: "2025-01-08",
-    createdAt: "2025-01-07",
-    excerpt: "바쁜 일상 속에서 효율적으로 일하는 방법을 공유합니다.",
-  },
-  {
-    id: "clh2issue003abc123def",
-    title: "리모트 워크 가이드 (작성중)",
-    slug: "remote-work-guide",
-    status: "draft" as const,
-    publishedAt: null,
-    createdAt: "2025-01-10",
-    excerpt: "재택근무를 시작하는 분들을 위한 가이드입니다.",
-  },
-  {
-    id: "clh2issue004abc123def",
-    title: "2024년 회고: 성장과 변화의 한 해",
-    slug: "year-in-review-2024",
-    status: "published" as const,
-    publishedAt: "2024-12-28",
-    createdAt: "2024-12-27",
-    excerpt: "한 해를 돌아보며 배운 것들과 새해 목표를 공유합니다.",
-  },
-  {
-    id: "clh2issue005abc123def",
-    title: "AI 도구 활용법 정리",
-    slug: "ai-tools",
-    status: "draft" as const,
-    publishedAt: null,
-    createdAt: "2025-01-12",
-    excerpt: "업무에 활용할 수 있는 AI 도구들을 정리해 보았습니다.",
-  },
-];
+import { getIssues, deleteIssue, type Issue } from "@/lib/api/issue";
+import { getNewsletterById, type Newsletter } from "@/lib/api/newsletter";
+import { useAtomValue } from "jotai";
+import { userAtom } from "@/stores/auth.store";
 
 type IssueStatus = "all" | "draft" | "published";
 type SortOrder = "newest" | "oldest";
@@ -83,9 +38,17 @@ const STATUS_LABELS: Record<IssueStatus, string> = {
 };
 
 const STATUS_BADGE_COLORS: Record<string, string> = {
-  draft: "bg-slate-100 text-slate-700 dark:bg-slate-800/50 dark:text-slate-400",
-  published: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  scheduled: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",
+  DRAFT: "bg-slate-100 text-slate-700 dark:bg-slate-800/50 dark:text-slate-400",
+  PUBLISHED: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  SCHEDULED: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",
+  ARCHIVED: "bg-slate-100 text-slate-700 dark:bg-slate-800/50 dark:text-slate-400",
+};
+
+const STATUS_DISPLAY: Record<string, string> = {
+  DRAFT: "초안",
+  PUBLISHED: "발행됨",
+  SCHEDULED: "예약됨",
+  ARCHIVED: "보관됨",
 };
 
 // 검색 아이콘
@@ -110,11 +73,38 @@ function SearchIcon({ className }: { className?: string }) {
 export default function IssuesPage() {
   const params = useParams();
   const newsletterId = params.newsletterId as string;
+  const user = useAtomValue(userAtom);
   
-  const [issues] = useState(MOCK_ISSUES);
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [newsletter, setNewsletter] = useState<Newsletter | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<IssueStatus>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
+
+  // 데이터 로드
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        const [issuesData, newsletterData] = await Promise.all([
+          getIssues(newsletterId),
+          getNewsletterById(newsletterId),
+        ]);
+        setIssues(issuesData);
+        setNewsletter(newsletterData);
+      } catch (error: any) {
+        console.error("Failed to load issues:", error);
+        toast.error(error.message || "이슈 목록을 불러오는데 실패했습니다.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (newsletterId) {
+      loadData();
+    }
+  }, [newsletterId]);
 
   // 필터링 및 정렬
   const filteredIssues = issues
@@ -123,7 +113,9 @@ export default function IssuesPage() {
         .toLowerCase()
         .includes(searchQuery.toLowerCase());
       const matchesStatus =
-        statusFilter === "all" || issue.status === statusFilter;
+        statusFilter === "all" ||
+        (statusFilter === "draft" && issue.status === "DRAFT") ||
+        (statusFilter === "published" && issue.status === "PUBLISHED");
       return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
@@ -135,20 +127,20 @@ export default function IssuesPage() {
   // 상태별 카운트
   const statusCounts = {
     all: issues.length,
-    draft: issues.filter((i) => i.status === "draft").length,
-    published: issues.filter((i) => i.status === "published").length,
+    draft: issues.filter((i) => i.status === "DRAFT").length,
+    published: issues.filter((i) => i.status === "PUBLISHED").length,
   };
 
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`"${title}" 이슈를 삭제하시겠습니까?`)) return;
 
     try {
-      console.log("Delete issue:", id);
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await deleteIssue(newsletterId, id);
+      setIssues(issues.filter((issue) => issue.id !== id));
       toast.success("이슈가 삭제되었습니다.");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Delete issue error:", error);
-      toast.error("이슈 삭제에 실패했습니다.");
+      toast.error(error.message || "이슈 삭제에 실패했습니다.");
     }
   };
 
@@ -160,6 +152,25 @@ export default function IssuesPage() {
       day: "numeric",
     });
   };
+
+  // 공개 URL 생성
+  const getPublicIssueUrl = (issue: Issue) => {
+    if (!user?.username || !newsletter) return null;
+    return `/@${user.username}/${newsletter.slug}/${issue.slug}`;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-4xl">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center space-y-4">
+            <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-muted-foreground">이슈 목록을 불러오는 중...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -287,10 +298,10 @@ export default function IssuesPage() {
                       <span
                         className={cn(
                           "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
-                          STATUS_BADGE_COLORS[issue.status]
+                          STATUS_BADGE_COLORS[issue.status] || STATUS_BADGE_COLORS.DRAFT
                         )}
                       >
-                        {issue.status === "draft" ? "초안" : "발행됨"}
+                        {STATUS_DISPLAY[issue.status] || issue.status}
                       </span>
                     </div>
                     {issue.excerpt && (
@@ -299,8 +310,10 @@ export default function IssuesPage() {
                       </p>
                     )}
                     <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
-                      {issue.status === "published" ? (
+                      {issue.status === "PUBLISHED" && issue.publishedAt ? (
                         <span>발행일: {formatDate(issue.publishedAt)}</span>
+                      ) : issue.scheduledAt ? (
+                        <span>예약일: {formatDate(issue.scheduledAt)}</span>
                       ) : (
                         <span>작성일: {formatDate(issue.createdAt)}</span>
                       )}
@@ -325,9 +338,9 @@ export default function IssuesPage() {
                           편집
                         </Link>
                       </DropdownMenuItem>
-                      {issue.status === "published" && (
+                      {issue.status === "PUBLISHED" && getPublicIssueUrl(issue) && (
                         <DropdownMenuItem asChild>
-                          <Link href={`/@johndoe/${issue.slug}`} target="_blank">
+                          <Link href={getPublicIssueUrl(issue)!} target="_blank">
                             <svg
                               className="mr-2 h-4 w-4"
                               fill="none"

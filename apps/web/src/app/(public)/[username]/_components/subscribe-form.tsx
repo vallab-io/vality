@@ -34,12 +34,26 @@ export function SubscribeForm({
     setIsLoading(true);
 
     try {
-      await publicSubscribe(newsletterId, { email });
+      const subscriber = await publicSubscribe(newsletterId, { email });
+      
+      // 성공: PENDING 또는 UNSUBSCRIBED 상태인 경우 이메일 검증 시작
       setIsSubscribed(true);
       toast.success("구독 신청이 완료되었습니다! 이메일을 확인해주세요.");
     } catch (error: any) {
       console.error("Subscribe error:", error);
-      toast.error(error.message || "구독 신청에 실패했습니다. 다시 시도해주세요.");
+      
+      // ACTIVE 상태인 경우: 이미 구독 중 알림
+      const errorMessage = error?.response?.data?.message || error.message || "";
+      if (
+        errorMessage.includes("이미 구독 중") ||
+        errorMessage.includes("already subscribed") ||
+        errorMessage.includes("You are already subscribed")
+      ) {
+        toast.error("이미 구독 중인 이메일입니다.");
+      } else {
+        // 기타 에러
+        toast.error(errorMessage || "구독 신청에 실패했습니다. 다시 시도해주세요.");
+      }
     } finally {
       setIsLoading(false);
     }

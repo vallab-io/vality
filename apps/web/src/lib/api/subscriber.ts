@@ -82,7 +82,9 @@ export async function publicSubscribe(
     data
   );
   if (!response.data.data) {
-    throw new Error(response.data.message || "Failed to subscribe");
+    const error = new Error(response.data.message || "Failed to subscribe");
+    (error as any).response = response;
+    throw error;
   }
   return response.data.data;
 }

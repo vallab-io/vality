@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { SubscribeForm } from "./_components/subscribe-form";
-import { UserAvatar } from "@/components/common";
+import { UserAvatar, Logo } from "@/components/common";
 import {
   getPublicUserProfile,
   getPublicUserNewsletters,
@@ -63,18 +63,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
       {/* Header */}
       <header className="border-b border-border">
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-6">
-          <Link
-            href="/"
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            Vality
-          </Link>
-          <Link
-            href="/login"
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            로그인
-          </Link>
+          <Logo href="/" className="text-sm" />
         </div>
       </header>
 

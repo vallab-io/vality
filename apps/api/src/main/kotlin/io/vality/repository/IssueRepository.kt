@@ -70,6 +70,7 @@ class IssueRepository {
             )
         )
             .where { Issues.newsletterId eq newsletterId }
+            .orderBy(Issues.createdAt to org.jetbrains.exposed.v1.core.SortOrder.DESC)
             .map { it.toIssue() }
     }
 
