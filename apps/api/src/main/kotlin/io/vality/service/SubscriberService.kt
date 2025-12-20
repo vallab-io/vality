@@ -3,7 +3,7 @@ package io.vality.service
 import io.vality.domain.SubStatus
 import io.vality.domain.Subscriber
 import io.vality.dto.subscriber.SubscriberResponse
-import io.vality.dto.subscriber.SubscriptionConfirmResponse
+import io.vality.dto.subscriber.SubscribeConfirmResponse
 import io.vality.repository.NewsletterRepository
 import io.vality.repository.SubscriberRepository
 import io.vality.repository.SubscriberVerificationTokenRepository
@@ -39,7 +39,7 @@ class SubscriberService(
     /**
      * 구독 확인 토큰 생성
      */
-    private suspend fun createSubscriptionToken(
+    private suspend fun createSubscribeToken(
         subscriberId: String,
         expiresInDays: Int = 7,
     ): String {
@@ -265,16 +265,16 @@ class SubscriberService(
                 )
                 val updatedSubscriber = subscriberRepository.update(reactivatedSubscriber)
 
-                // 구독 확인 토큰 생성 (별도 테이블에 저장)
-                val confirmationToken = createSubscriptionToken(updatedSubscriber.id)
+                       // 구독 확인 토큰 생성 (별도 테이블에 저장)
+                       val confirmationToken = createSubscribeToken(updatedSubscriber.id)
 
                 // 인증 이메일 발송
                 val username = user.username ?: throw IllegalArgumentException("User username is required")
                 sendVerificationEmail(updatedSubscriber, newsletter, username, confirmationToken)
                 return updatedSubscriber
-            } else if (existingSubscriber.status == SubStatus.PENDING) {
-                // 이미 PENDING 상태인 경우 토큰 재발급 및 이메일 재발송
-                val confirmationToken = createSubscriptionToken(existingSubscriber.id)
+                   } else if (existingSubscriber.status == SubStatus.PENDING) {
+                       // 이미 PENDING 상태인 경우 토큰 재발급 및 이메일 재발송
+                       val confirmationToken = createSubscribeToken(existingSubscriber.id)
 
                 // 인증 이메일 재발송
                 val username = user.username ?: throw IllegalArgumentException("User username is required")
@@ -299,8 +299,8 @@ class SubscriberService(
 
         val createdSubscriber = subscriberRepository.create(subscriber)
 
-        // 구독 확인 토큰 생성 (별도 테이블에 저장)
-        val confirmationToken = createSubscriptionToken(createdSubscriber.id)
+               // 구독 확인 토큰 생성 (별도 테이블에 저장)
+               val confirmationToken = createSubscribeToken(createdSubscriber.id)
 
         // 인증 이메일 발송
         val username = user.username ?: throw IllegalArgumentException("User username is required")
@@ -316,19 +316,19 @@ class SubscriberService(
      * @param token 인증 토큰
      * @return 업데이트된 구독자
      */
-    suspend fun confirmSubscription(token: String): Subscriber {
-        val subscriptionToken = subscriberVerificationTokenRepository.findValidByToken(token)
+    suspend fun confirmSubscribe(token: String): Subscriber {
+        val subscribeToken = subscriberVerificationTokenRepository.findValidByToken(token)
             ?: throw IllegalArgumentException("Invalid or expired verification token")
 
-        val subscriber = subscriberRepository.findById(subscriptionToken.subscriberId)
+        val subscriber = subscriberRepository.findById(subscribeToken.subscriberId)
             ?: throw IllegalArgumentException("Subscriber not found")
 
         if (subscriber.status != SubStatus.PENDING) {
-            throw IllegalArgumentException("Subscription is already confirmed or cancelled")
+            throw IllegalArgumentException("Subscribe is already confirmed or cancelled")
         }
 
         // 토큰 사용 처리
-        subscriberVerificationTokenRepository.markAsUsed(subscriptionToken.id)
+        subscriberVerificationTokenRepository.markAsUsed(subscribeToken.id)
 
         val now = Instant.now()
         val updatedSubscriber = subscriber.copy(
@@ -343,7 +343,7 @@ class SubscriberService(
      * 구독 확인 API 전용 응답 생성
      * username과 newsletterSlug를 포함하여 프론트엔드에서 리다이렉트할 수 있도록 함
      */
-    suspend fun getSubscriptionConfirmResponse(subscriber: Subscriber): SubscriptionConfirmResponse {
+    suspend fun getSubscribeConfirmResponse(subscriber: Subscriber): SubscribeConfirmResponse {
         val newsletter = newsletterRepository.findById(subscriber.newsletterId)
             ?: throw IllegalArgumentException("Newsletter not found")
         
@@ -353,7 +353,7 @@ class SubscriberService(
         val username = user.username
             ?: throw IllegalArgumentException("User username is required")
         
-        return SubscriptionConfirmResponse(
+        return SubscribeConfirmResponse(
             id = subscriber.id,
             email = subscriber.email,
             status = subscriber.status.name,
@@ -404,11 +404,11 @@ class SubscriberService(
     ) {
         val verificationUrl = "$frontendUrl/newsletter/subscribe/confirm?token=$confirmationToken"
 
-        val htmlBody = EmailTemplates.subscriptionConfirmationHtml(
+        val htmlBody = EmailTemplates.subscribeConfirmationHtml(
             newsletterName = newsletter.name,
             confirmationUrl = verificationUrl,
         )
-        val textBody = EmailTemplates.subscriptionConfirmationText(
+        val textBody = EmailTemplates.subscribeConfirmationText(
             newsletterName = newsletter.name,
             confirmationUrl = verificationUrl,
         )

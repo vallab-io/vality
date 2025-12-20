@@ -1,5 +1,5 @@
--- Flyway Migration: V5__Create_subscription_tokens_table.sql
--- 구독 확인 토큰을 위한 별도 테이블 생성
+-- Flyway Migration: V5__Create_subscriber_tokens_table.sql
+-- 구독 확인 토큰을 위한 별도 테이블 생성 (subscriber_verification_tokens)
 
 CREATE TABLE IF NOT EXISTS subscriber_verification_tokens (
     id VARCHAR(24) PRIMARY KEY,

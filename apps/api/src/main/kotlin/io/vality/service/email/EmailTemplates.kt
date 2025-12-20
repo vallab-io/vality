@@ -97,7 +97,7 @@ Vality 인증 코드
     /**
      * 구독 확인 이메일 HTML 템플릿
      */
-    fun subscriptionConfirmationHtml(
+    fun subscribeConfirmationHtml(
         newsletterName: String,
         confirmationUrl: String,
     ): String {
@@ -163,7 +163,7 @@ Vality 인증 코드
     /**
      * 구독 확인 이메일 텍스트 템플릿
      */
-    fun subscriptionConfirmationText(
+    fun subscribeConfirmationText(
         newsletterName: String,
         confirmationUrl: String,
     ): String {

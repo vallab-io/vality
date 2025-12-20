@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
  * username과 newsletterSlug를 포함하여 프론트엔드에서 리다이렉트할 수 있도록 함
  */
 @Serializable
-data class SubscriptionConfirmResponse(
+data class SubscribeConfirmResponse(
     val id: String,
     val email: String,
     val status: String, // "ACTIVE"

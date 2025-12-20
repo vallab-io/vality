@@ -4,21 +4,21 @@ import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
-  confirmSubscription,
-  type SubscriptionConfirmResponse,
+  confirmSubscribe,
+  type SubscribeConfirmResponse,
 } from "@/lib/api/subscriber";
 import { CheckIcon, CloseIcon } from "@/components/icons";
 import { toast } from "sonner";
 
 type ConfirmStatus = "loading" | "success" | "error";
 
-export default function SubscriptionConfirmPage() {
+export default function SubscribeConfirmPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<ConfirmStatus>("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [confirmResponse, setConfirmResponse] =
-    useState<SubscriptionConfirmResponse | null>(null);
+    useState<SubscribeConfirmResponse | null>(null);
   const hasCalledRef = useRef(false);
 
   useEffect(() => {
@@ -37,7 +37,7 @@ export default function SubscriptionConfirmPage() {
     hasCalledRef.current = true;
 
     // API 호출
-    confirmSubscription(token)
+    confirmSubscribe(token)
       .then((result) => {
         setStatus("success");
         setConfirmResponse(result);

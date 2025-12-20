@@ -10,7 +10,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.vality.dto.ApiResponse
-import io.vality.dto.subscriber.SubscriptionConfirmResponse
+import io.vality.dto.subscriber.SubscribeConfirmResponse
 import io.vality.dto.subscriber.toSubscriberResponse
 import io.vality.service.SubscriberService
 import kotlinx.serialization.Serializable
@@ -88,8 +88,8 @@ fun Route.publicSubscriberRoutes() {
                 )
 
             try {
-                val subscriber = subscriberService.confirmSubscription(token)
-                val confirmResponse = subscriberService.getSubscriptionConfirmResponse(subscriber)
+                val subscriber = subscriberService.confirmSubscribe(token)
+                val confirmResponse = subscriberService.getSubscribeConfirmResponse(subscriber)
                 call.respond(
                     HttpStatusCode.OK,
                     ApiResponse.success(
@@ -103,10 +103,10 @@ fun Route.publicSubscriberRoutes() {
                     ApiResponse.error<Nothing>(message = e.message ?: "Invalid token"),
                 )
             } catch (e: Exception) {
-                call.application.log.error("Failed to confirm subscription", e)
+                call.application.log.error("Failed to confirm subscribe", e)
                 call.respond(
                     HttpStatusCode.InternalServerError,
-                    ApiResponse.error<Nothing>(message = "Failed to confirm subscription: ${e.message}"),
+                    ApiResponse.error<Nothing>(message = "Failed to confirm subscribe: ${e.message}"),
                 )
             }
         }

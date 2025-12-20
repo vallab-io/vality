@@ -13,7 +13,7 @@ export interface Subscriber {
 }
 
 // 구독 확인 API 전용 응답
-export interface SubscriptionConfirmResponse {
+export interface SubscribeConfirmResponse {
   id: string;
   email: string;
   status: "ACTIVE";
@@ -68,7 +68,7 @@ export async function deleteSubscriber(
   }
 }
 
-// Public API for subscription (no JWT required)
+// Public API for subscribe (no JWT required)
 export interface PublicSubscribeRequest {
   email: string;
 }
@@ -87,14 +87,14 @@ export async function publicSubscribe(
   return response.data.data;
 }
 
-export async function confirmSubscription(
+export async function confirmSubscribe(
   token: string
-): Promise<SubscriptionConfirmResponse> {
-  const response = await apiClient.get<ApiResponse<SubscriptionConfirmResponse>>(
+): Promise<SubscribeConfirmResponse> {
+  const response = await apiClient.get<ApiResponse<SubscribeConfirmResponse>>(
     `/public/subscribe/confirm?token=${token}`
   );
   if (!response.data.data) {
-    throw new Error(response.data.message || "Failed to confirm subscription");
+    throw new Error(response.data.message || "Failed to confirm subscribe");
   }
   return response.data.data;
 }
