@@ -1,5 +1,17 @@
-import { apiClient } from "./client";
+import axios from "axios";
 import type { ApiResponse } from "./types";
+
+// API 기본 URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
+// 공개 API 클라이언트 (인증 불필요)
+const publicApiClient = axios.create({
+  baseURL: `${API_BASE_URL}/api/public`,
+  timeout: 10000,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
 // 공개 사용자 프로필
 export interface PublicUserProfile {
@@ -10,7 +22,7 @@ export interface PublicUserProfile {
   imageUrl: string | null;
 }
 
-// 공개 뉴스레터 정보
+// 공개 뉴스레터
 export interface PublicNewsletter {
   id: string;
   slug: string;
@@ -19,7 +31,7 @@ export interface PublicNewsletter {
   subscriberCount: number;
 }
 
-// 공개 이슈 정보
+// 공개 이슈 (목록용)
 export interface PublicIssue {
   id: string;
   slug: string;
@@ -31,12 +43,24 @@ export interface PublicIssue {
   newsletterName: string;
 }
 
+// 공개 이슈 상세
+export interface PublicIssueDetail extends PublicIssue {
+  content: string;
+  coverImageUrl: string | null;
+  authorId: string;
+  authorUsername: string | null;
+  authorName: string | null;
+  authorImageUrl: string | null;
+  prevIssue: PublicIssue | null;
+  nextIssue: PublicIssue | null;
+}
+
 // 공개 사용자 프로필 조회
 export async function getPublicUserProfile(
   username: string
 ): Promise<PublicUserProfile> {
-  const response = await apiClient.get<ApiResponse<PublicUserProfile>>(
-    `/public/users/${username}`
+  const response = await publicApiClient.get<ApiResponse<PublicUserProfile>>(
+    `/users/${username}`
   );
   if (!response.data.data) {
     throw new Error(response.data.message || "Failed to get user profile");
@@ -44,12 +68,12 @@ export async function getPublicUserProfile(
   return response.data.data;
 }
 
-// 사용자의 뉴스레터 목록 조회
-export async function getPublicUserNewsletters(
+// 공개 뉴스레터 목록 조회
+export async function getPublicNewsletters(
   username: string
 ): Promise<PublicNewsletter[]> {
-  const response = await apiClient.get<ApiResponse<PublicNewsletter[]>>(
-    `/public/users/${username}/newsletters`
+  const response = await publicApiClient.get<ApiResponse<PublicNewsletter[]>>(
+    `/users/${username}/newsletters`
   );
   if (!response.data.data) {
     throw new Error(response.data.message || "Failed to get newsletters");
@@ -57,32 +81,13 @@ export async function getPublicUserNewsletters(
   return response.data.data;
 }
 
-// 사용자의 발행된 이슈 목록 조회
-export async function getPublicUserIssues(
-  username: string,
-  options?: { limit?: number; offset?: number }
-): Promise<PublicIssue[]> {
-  const params = new URLSearchParams();
-  if (options?.limit) params.append("limit", options.limit.toString());
-  if (options?.offset) params.append("offset", options.offset.toString());
-
-  const queryString = params.toString();
-  const url = `/public/users/${username}/issues${queryString ? `?${queryString}` : ""}`;
-
-  const response = await apiClient.get<ApiResponse<PublicIssue[]>>(url);
-  if (!response.data.data) {
-    throw new Error(response.data.message || "Failed to get issues");
-  }
-  return response.data.data;
-}
-
-// 특정 뉴스레터 조회 (username + slug)
+// 공개 뉴스레터 조회
 export async function getPublicNewsletter(
   username: string,
   newsletterSlug: string
 ): Promise<PublicNewsletter> {
-  const response = await apiClient.get<ApiResponse<PublicNewsletter>>(
-    `/public/users/${username}/newsletters/${newsletterSlug}`
+  const response = await publicApiClient.get<ApiResponse<PublicNewsletter>>(
+    `/users/${username}/newsletters/${newsletterSlug}`
   );
   if (!response.data.data) {
     throw new Error(response.data.message || "Failed to get newsletter");
@@ -90,23 +95,46 @@ export async function getPublicNewsletter(
   return response.data.data;
 }
 
-// 특정 뉴스레터의 발행된 이슈 목록 조회
-export async function getPublicNewsletterIssues(
+// 공개 이슈 목록 조회
+export async function getPublicIssues(
   username: string,
-  newsletterSlug: string,
-  options?: { limit?: number; offset?: number }
+  newsletterSlug?: string,
+  limit: number = 20,
+  offset: number = 0
 ): Promise<PublicIssue[]> {
-  const params = new URLSearchParams();
-  if (options?.limit) params.append("limit", options.limit.toString());
-  if (options?.offset) params.append("offset", options.offset.toString());
-
-  const queryString = params.toString();
-  const url = `/public/users/${username}/newsletters/${newsletterSlug}/issues${queryString ? `?${queryString}` : ""}`;
-
-  const response = await apiClient.get<ApiResponse<PublicIssue[]>>(url);
+  const url = newsletterSlug
+    ? `/users/${username}/newsletters/${newsletterSlug}/issues`
+    : `/users/${username}/issues`;
+  const response = await publicApiClient.get<ApiResponse<PublicIssue[]>>(url, {
+    params: { limit, offset },
+  });
   if (!response.data.data) {
-    throw new Error(response.data.message || "Failed to get newsletter issues");
+    throw new Error(response.data.message || "Failed to get issues");
   }
   return response.data.data;
 }
 
+// 공개 뉴스레터의 이슈 목록 조회 (별칭)
+export async function getPublicNewsletterIssues(
+  username: string,
+  newsletterSlug: string,
+  limit: number = 20,
+  offset: number = 0
+): Promise<PublicIssue[]> {
+  return getPublicIssues(username, newsletterSlug, limit, offset);
+}
+
+// 공개 이슈 상세 조회
+export async function getPublicIssueDetail(
+  username: string,
+  newsletterSlug: string,
+  issueSlug: string
+): Promise<PublicIssueDetail> {
+  const response = await publicApiClient.get<ApiResponse<PublicIssueDetail>>(
+    `/users/${username}/newsletters/${newsletterSlug}/issues/${issueSlug}`
+  );
+  if (!response.data.data) {
+    throw new Error(response.data.message || "Failed to get issue");
+  }
+  return response.data.data;
+}

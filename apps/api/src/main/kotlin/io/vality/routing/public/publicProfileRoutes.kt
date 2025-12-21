@@ -47,6 +47,26 @@ data class PublicIssueResponse(
     val newsletterName: String,
 )
 
+@Serializable
+data class PublicIssueDetailResponse(
+    val id: String,
+    val slug: String,
+    val title: String?,
+    val content: String,
+    val excerpt: String?,
+    val coverImageUrl: String?,
+    val publishedAt: String,
+    val newsletterId: String,
+    val newsletterSlug: String,
+    val newsletterName: String,
+    val authorId: String,
+    val authorUsername: String?,
+    val authorName: String?,
+    val authorImageUrl: String?,
+    val prevIssue: PublicIssueResponse?,
+    val nextIssue: PublicIssueResponse?,
+)
+
 fun Route.publicProfileRoutes() {
     val userRepository: UserRepository by inject()
     val newsletterRepository: NewsletterRepository by inject()
@@ -317,6 +337,119 @@ fun Route.publicProfileRoutes() {
                 call.respond(
                     HttpStatusCode.InternalServerError,
                     ApiResponse.error<Nothing>(message = "Failed to get newsletter issues: ${e.message}")
+                )
+            }
+        }
+
+        /**
+         * 특정 이슈 조회 (username + newsletterSlug + issueSlug)
+         * GET /api/public/users/{username}/newsletters/{newsletterSlug}/issues/{issueSlug}
+         * JWT 인증 불필요
+         */
+        get("/{username}/newsletters/{newsletterSlug}/issues/{issueSlug}") {
+            val username = call.parameters["username"]
+                ?: return@get call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiResponse.error<Nothing>(message = "Username is required")
+                )
+
+            val newsletterSlug = call.parameters["newsletterSlug"]
+                ?: return@get call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiResponse.error<Nothing>(message = "Newsletter slug is required")
+                )
+
+            val issueSlug = call.parameters["issueSlug"]
+                ?: return@get call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiResponse.error<Nothing>(message = "Issue slug is required")
+                )
+
+            try {
+                val newsletter = newsletterRepository.findByUsernameAndSlug(username, newsletterSlug)
+                    ?: return@get call.respond(
+                        HttpStatusCode.NotFound,
+                        ApiResponse.error<Nothing>(message = "Newsletter not found")
+                    )
+
+                // 이슈 조회 (발행된 것만)
+                val issue = issueRepository.findByNewsletterIdAndSlug(newsletter.id, issueSlug)
+                    ?: return@get call.respond(
+                        HttpStatusCode.NotFound,
+                        ApiResponse.error<Nothing>(message = "Issue not found")
+                    )
+
+                // 발행된 이슈만 조회 가능
+                if (issue.status != IssueStatus.PUBLISHED) {
+                    return@get call.respond(
+                        HttpStatusCode.NotFound,
+                        ApiResponse.error<Nothing>(message = "Issue not found")
+                    )
+                }
+
+                // 이전/다음 이슈 찾기
+                val allIssues = issueRepository.findPublishedByNewsletterId(newsletter.id)
+                    .sortedByDescending { it.publishedAt }
+                val currentIndex = allIssues.indexOfFirst { it.id == issue.id }
+                val prevIssue = if (currentIndex > 0) allIssues[currentIndex - 1] else null
+                val nextIssue = if (currentIndex < allIssues.size - 1 && currentIndex >= 0) allIssues[currentIndex + 1] else null
+
+                val user = userRepository.findById(newsletter.ownerId)
+                    ?: return@get call.respond(
+                        HttpStatusCode.InternalServerError,
+                        ApiResponse.error<Nothing>(message = "User not found")
+                    )
+
+                val response = PublicIssueDetailResponse(
+                    id = issue.id,
+                    slug = issue.slug,
+                    title = issue.title,
+                    content = issue.content,
+                    excerpt = issue.excerpt,
+                    coverImageUrl = issue.coverImageUrl?.let { imageUrlService.getImageUrl(it) },
+                    publishedAt = issue.publishedAt?.toString() ?: "",
+                    newsletterId = newsletter.id,
+                    newsletterSlug = newsletter.slug,
+                    newsletterName = newsletter.name,
+                    authorId = user.id,
+                    authorUsername = user.username,
+                    authorName = user.name,
+                    authorImageUrl = imageUrlService.getImageUrl(user),
+                    prevIssue = prevIssue?.let {
+                        PublicIssueResponse(
+                            id = it.id,
+                            slug = it.slug,
+                            title = it.title,
+                            excerpt = it.excerpt,
+                            publishedAt = it.publishedAt?.toString() ?: "",
+                            newsletterId = newsletter.id,
+                            newsletterSlug = newsletter.slug,
+                            newsletterName = newsletter.name,
+                        )
+                    },
+                    nextIssue = nextIssue?.let {
+                        PublicIssueResponse(
+                            id = it.id,
+                            slug = it.slug,
+                            title = it.title,
+                            excerpt = it.excerpt,
+                            publishedAt = it.publishedAt?.toString() ?: "",
+                            newsletterId = newsletter.id,
+                            newsletterSlug = newsletter.slug,
+                            newsletterName = newsletter.name,
+                        )
+                    },
+                )
+
+                call.respond(
+                    HttpStatusCode.OK,
+                    ApiResponse.success(data = response)
+                )
+            } catch (e: Exception) {
+                call.application.log.error("Failed to get issue", e)
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    ApiResponse.error<Nothing>(message = "Failed to get issue: ${e.message}")
                 )
             }
         }
