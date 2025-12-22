@@ -1,0 +1,1911 @@
+openapi: 3.0.3
+info:
+  title: Vality API
+  description: |
+    Vality 뉴스레터 플랫폼 API 문서
+    
+    ## 인증
+    - 대부분의 API는 JWT 인증이 필요합니다
+    - 인증이 필요 없는 API는 각 엔드포인트에 **🔓 인증 불필요** 표시가 있습니다
+    - JWT 토큰은 `Authorization: Bearer {token}` 헤더로 전송합니다
+    
+    ## 공개 API (인증 불필요)
+    - `/api/public/*` - 공개 프로필, 이슈 조회
+    - `/api/auth/*` - 인증 관련 (일부)
+    - `/api/health` - 헬스 체크
+    - `/api/docs/*` - 문서 조회
+  version: 1.0.0
+  contact:
+    name: Vality Support
+    email: support@vality.io
+
+servers:
+  - url: http://localhost:4000
+    description: 로컬 개발 서버
+  - url: https://api.vality.io
+    description: 프로덕션 서버
+
+tags:
+  - name: Health
+    description: 헬스 체크
+  - name: Auth
+    description: 인증 관련 API
+  - name: OAuth
+    description: OAuth 소셜 로그인
+  - name: Public Profile
+    description: 🔓 공개 프로필 및 이슈 조회 (인증 불필요)
+  - name: Public Subscriber
+    description: 🔓 공개 구독 (인증 불필요)
+  - name: Newsletter
+    description: 뉴스레터 관리 (인증 필요)
+  - name: Issue
+    description: 이슈 관리 (인증 필요)
+  - name: Subscriber
+    description: 구독자 관리 (인증 필요)
+  - name: Upload
+    description: 파일 업로드 (인증 필요)
+  - name: Test
+    description: 테스트용 API
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ============================================
+  # Health Check
+  # ============================================
+  /api/health:
+    get:
+      tags:
+        - Health
+      summary: 헬스 체크
+      description: 🔓 서버 상태 확인 (인증 불필요)
+      security: []
+      responses:
+        '200':
+          description: 서버가 정상 작동 중
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+
+  # ============================================
+  # Auth
+  # ============================================
+  /api/auth/send-verification-code:
+    post:
+      tags:
+        - Auth
+      summary: 이메일 인증 코드 발송
+      description: 🔓 이메일로 인증 코드를 발송합니다 (인증 불필요)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendVerificationCodeRequest'
+      responses:
+        '200':
+          description: 인증 코드 발송 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_SendVerificationCodeResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  /api/auth/email-auth:
+    post:
+      tags:
+        - Auth
+      summary: 이메일 인증 로그인/회원가입
+      description: 🔓 이메일과 인증 코드로 로그인 또는 회원가입합니다 (인증 불필요)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailAuthRequest'
+      responses:
+        '200':
+          description: 인증 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_AuthResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  /api/auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: 토큰 갱신
+      description: 🔓 리프레시 토큰으로 새로운 액세스 토큰을 발급합니다 (인증 불필요)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: 토큰 갱신 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_AuthResponse'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  /api/auth/check-username:
+    get:
+      tags:
+        - Auth
+      summary: 사용자명 중복 확인
+      description: 🔓 사용자명이 사용 가능한지 확인합니다 (인증 불필요)
+      security: []
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 확인할 사용자명
+      responses:
+        '200':
+          description: 사용 가능 여부
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  available:
+                    type: boolean
+                    description: 사용 가능 여부
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  /api/auth/me:
+    get:
+      tags:
+        - Auth
+      summary: 내 프로필 조회
+      description: 현재 로그인한 사용자의 프로필을 조회합니다
+      responses:
+        '200':
+          description: 프로필 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_UserResponse'
+        '401':
+          description: 인증 필요
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+    patch:
+      tags:
+        - Auth
+      summary: 내 프로필 수정
+      description: 현재 로그인한 사용자의 프로필을 수정합니다
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: 프로필 수정 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_UserResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+        '401':
+          description: 인증 필요
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+    delete:
+      tags:
+        - Auth
+      summary: 계정 삭제
+      description: 현재 로그인한 사용자의 계정을 삭제합니다
+      responses:
+        '200':
+          description: 계정 삭제 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Message'
+        '401':
+          description: 인증 필요
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  # ============================================
+  # OAuth
+  # ============================================
+  /api/auth/oauth/google:
+    get:
+      tags:
+        - OAuth
+      summary: Google OAuth 로그인 시작
+      description: 🔓 Google OAuth 로그인을 시작합니다 (인증 불필요)
+      security: []
+      responses:
+        '302':
+          description: Google 로그인 페이지로 리다이렉트
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  /api/auth/oauth/google/complete:
+    post:
+      tags:
+        - OAuth
+      summary: Google OAuth 로그인 완료
+      description: 🔓 Google OAuth 콜백을 처리하고 토큰을 발급합니다 (인증 불필요)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  description: Google OAuth 인증 코드
+      responses:
+        '200':
+          description: 로그인 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_AuthResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  # ============================================
+  # Public Profile (인증 불필요)
+  # ============================================
+  /api/public/issues:
+    get:
+      tags:
+        - Public Profile
+      summary: 모든 사용자의 발행된 이슈 목록 조회
+      description: |
+        🔓 모든 사용자의 발행된 이슈를 최신순으로 조회합니다 (인증 불필요)
+        
+        페이징을 지원하며, 각 이슈에는 뉴스레터 정보와 작성자 정보가 포함됩니다.
+      security: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+          description: 조회할 이슈 개수
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+          description: 건너뛸 이슈 개수
+      responses:
+        '200':
+          description: 이슈 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_PublicIssueList'
+        '500':
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  /api/public/users/{username}:
+    get:
+      tags:
+        - Public Profile
+      summary: 공개 사용자 프로필 조회
+      description: 🔓 특정 사용자의 공개 프로필을 조회합니다 (인증 불필요)
+      security: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 사용자명
+      responses:
+        '200':
+          description: 프로필 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_PublicUserProfile'
+        '404':
+          description: 사용자를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  /api/public/users/{username}/newsletters:
+    get:
+      tags:
+        - Public Profile
+      summary: 사용자의 뉴스레터 목록 조회
+      description: 🔓 특정 사용자가 보유한 뉴스레터 목록을 조회합니다 (인증 불필요)
+      security: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 사용자명
+      responses:
+        '200':
+          description: 뉴스레터 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_PublicNewsletterList'
+        '404':
+          description: 사용자를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  /api/public/users/{username}/issues:
+    get:
+      tags:
+        - Public Profile
+      summary: 사용자의 발행된 이슈 목록 조회
+      description: |
+        🔓 특정 사용자의 모든 뉴스레터에서 발행된 이슈를 최신순으로 조회합니다 (인증 불필요)
+        
+        페이징을 지원합니다.
+      security: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 사용자명
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+          description: 조회할 이슈 개수
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+          description: 건너뛸 이슈 개수
+      responses:
+        '200':
+          description: 이슈 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_PublicIssueList'
+        '404':
+          description: 사용자를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  /api/public/users/{username}/newsletters/{newsletterSlug}:
+    get:
+      tags:
+        - Public Profile
+      summary: 특정 뉴스레터 조회
+      description: 🔓 사용자명과 뉴스레터 slug로 뉴스레터 정보를 조회합니다 (인증 불필요)
+      security: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 사용자명
+        - name: newsletterSlug
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 뉴스레터 slug
+      responses:
+        '200':
+          description: 뉴스레터 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_PublicNewsletter'
+        '404':
+          description: 뉴스레터를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  /api/public/users/{username}/newsletters/{newsletterSlug}/issues:
+    get:
+      tags:
+        - Public Profile
+      summary: 특정 뉴스레터의 발행된 이슈 목록 조회
+      description: |
+        🔓 특정 뉴스레터의 발행된 이슈를 최신순으로 조회합니다 (인증 불필요)
+        
+        페이징을 지원합니다.
+      security: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 사용자명
+        - name: newsletterSlug
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 뉴스레터 slug
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+          description: 조회할 이슈 개수
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+          description: 건너뛸 이슈 개수
+      responses:
+        '200':
+          description: 이슈 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_PublicIssueList'
+        '404':
+          description: 뉴스레터를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  /api/public/users/{username}/newsletters/{newsletterSlug}/issues/{issueSlug}:
+    get:
+      tags:
+        - Public Profile
+      summary: 특정 이슈 상세 조회
+      description: |
+        🔓 특정 이슈의 상세 정보를 조회합니다 (인증 불필요)
+        
+        이슈, 뉴스레터, 작성자에 대한 모든 정보가 포함됩니다.
+        발행된 이슈만 조회 가능합니다.
+      security: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 사용자명
+        - name: newsletterSlug
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 뉴스레터 slug
+        - name: issueSlug
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 이슈 slug
+      responses:
+        '200':
+          description: 이슈 상세 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_PublicIssueDetail'
+        '404':
+          description: 이슈를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  # ============================================
+  # Public Subscriber (인증 불필요)
+  # ============================================
+  /api/public/newsletter/{newsletterId}/subscribe:
+    post:
+      tags:
+        - Public Subscriber
+      summary: 뉴스레터 구독 신청
+      description: |
+        🔓 뉴스레터 구독을 신청합니다 (인증 불필요)
+        
+        이메일로 확인 링크가 발송되며, 확인 후 구독이 완료됩니다.
+      security: []
+      parameters:
+        - name: newsletterId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 뉴스레터 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: 구독할 이메일 주소
+      responses:
+        '201':
+          description: 구독 신청 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_SubscriberResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  /api/public/subscribe/confirm:
+    get:
+      tags:
+        - Public Subscriber
+      summary: 구독 확인
+      description: |
+        🔓 이메일로 받은 토큰으로 구독을 확인합니다 (인증 불필요)
+        
+        이메일의 확인 링크를 클릭하면 이 엔드포인트로 리다이렉트됩니다.
+      security: []
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 구독 확인 토큰
+      responses:
+        '200':
+          description: 구독 확인 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_SubscribeConfirmResponse'
+        '400':
+          description: 잘못된 토큰
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  # ============================================
+  # Newsletter (인증 필요)
+  # ============================================
+  /api/newsletters:
+    post:
+      tags:
+        - Newsletter
+      summary: 뉴스레터 생성
+      description: 새로운 뉴스레터를 생성합니다
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNewsletterRequest'
+      responses:
+        '201':
+          description: 뉴스레터 생성 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_NewsletterResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+        '401':
+          description: 인증 필요
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+    get:
+      tags:
+        - Newsletter
+      summary: 내 뉴스레터 목록 조회
+      description: 현재 로그인한 사용자가 보유한 뉴스레터 목록을 조회합니다
+      responses:
+        '200':
+          description: 뉴스레터 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_NewsletterList'
+        '401':
+          description: 인증 필요
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  /api/newsletters/{newsletterId}:
+    get:
+      tags:
+        - Newsletter
+      summary: 뉴스레터 조회
+      description: 특정 뉴스레터의 정보를 조회합니다 (소유자만 조회 가능)
+      parameters:
+        - name: newsletterId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 뉴스레터 ID
+      responses:
+        '200':
+          description: 뉴스레터 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_NewsletterResponse'
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+        '404':
+          description: 뉴스레터를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+    patch:
+      tags:
+        - Newsletter
+      summary: 뉴스레터 수정
+      description: 뉴스레터 정보를 수정합니다 (소유자만 수정 가능)
+      parameters:
+        - name: newsletterId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 뉴스레터 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNewsletterRequest'
+      responses:
+        '200':
+          description: 뉴스레터 수정 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_NewsletterResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  # ============================================
+  # Issue (인증 필요)
+  # ============================================
+  /api/newsletters/{newsletterId}/issues:
+    post:
+      tags:
+        - Issue
+      summary: 이슈 생성
+      description: |
+        새로운 이슈를 생성합니다.
+        
+        DRAFT 상태로 생성되며, title은 nullable입니다.
+        PUBLISHED 또는 SCHEDULED 상태로 변경하려면 title이 필수입니다.
+      parameters:
+        - name: newsletterId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 뉴스레터 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIssueRequest'
+      responses:
+        '201':
+          description: 이슈 생성 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_IssueResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+    get:
+      tags:
+        - Issue
+      summary: 이슈 목록 조회
+      description: 특정 뉴스레터의 이슈 목록을 조회합니다 (소유자만 조회 가능)
+      parameters:
+        - name: newsletterId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 뉴스레터 ID
+      responses:
+        '200':
+          description: 이슈 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_IssueList'
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  /api/newsletters/{newsletterId}/issues/{issueId}:
+    get:
+      tags:
+        - Issue
+      summary: 이슈 조회
+      description: 특정 이슈의 정보를 조회합니다 (소유자만 조회 가능)
+      parameters:
+        - name: newsletterId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 뉴스레터 ID
+        - name: issueId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 이슈 ID
+      responses:
+        '200':
+          description: 이슈 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_IssueResponse'
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+        '404':
+          description: 이슈를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+    patch:
+      tags:
+        - Issue
+      summary: 이슈 수정
+      description: |
+        이슈 정보를 수정합니다 (소유자만 수정 가능)
+        
+        PUBLISHED 또는 SCHEDULED 상태로 변경하려면 title이 필수입니다.
+      parameters:
+        - name: newsletterId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 뉴스레터 ID
+        - name: issueId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 이슈 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateIssueRequest'
+      responses:
+        '200':
+          description: 이슈 수정 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_IssueResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+    delete:
+      tags:
+        - Issue
+      summary: 이슈 삭제
+      description: 이슈를 삭제합니다 (소유자만 삭제 가능)
+      parameters:
+        - name: newsletterId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 뉴스레터 ID
+        - name: issueId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 이슈 ID
+      responses:
+        '200':
+          description: 이슈 삭제 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Message'
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+        '404':
+          description: 이슈를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  # ============================================
+  # Subscriber (인증 필요)
+  # ============================================
+  /api/newsletters/{newsletterId}/subscribers:
+    get:
+      tags:
+        - Subscriber
+      summary: 구독자 목록 조회
+      description: 특정 뉴스레터의 구독자 목록을 조회합니다 (소유자만 조회 가능)
+      parameters:
+        - name: newsletterId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 뉴스레터 ID
+      responses:
+        '200':
+          description: 구독자 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_SubscriberList'
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+    post:
+      tags:
+        - Subscriber
+      summary: 구독자 추가
+      description: 특정 뉴스레터에 구독자를 추가합니다 (소유자만 추가 가능)
+      parameters:
+        - name: newsletterId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 뉴스레터 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSubscriberRequest'
+      responses:
+        '201':
+          description: 구독자 추가 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_SubscriberResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  /api/newsletters/{newsletterId}/subscribers/{subscriberId}:
+    delete:
+      tags:
+        - Subscriber
+      summary: 구독자 삭제
+      description: 구독자를 삭제합니다 (소유자만 삭제 가능)
+      parameters:
+        - name: newsletterId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 뉴스레터 ID
+        - name: subscriberId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 구독자 ID
+      responses:
+        '200':
+          description: 구독자 삭제 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Message'
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+        '404':
+          description: 구독자를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  # ============================================
+  # Upload (인증 필요)
+  # ============================================
+  /api/upload/issues/{issueId}/images:
+    post:
+      tags:
+        - Upload
+      summary: 이슈 이미지 업로드
+      description: |
+        이슈에 이미지를 업로드합니다.
+        
+        multipart/form-data 형식으로 파일을 전송합니다.
+        업로드된 이미지의 CDN URL이 반환됩니다.
+      parameters:
+        - name: issueId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 이슈 ID
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: 이미지 파일
+      responses:
+        '200':
+          description: 이미지 업로드 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_ImageUploadResponse'
+        '400':
+          description: 잘못된 요청 (파일 형식, 크기 등)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+        '401':
+          description: 인증 필요
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+  /api/upload/presigned-url:
+    post:
+      tags:
+        - Upload
+      summary: Presigned URL 생성
+      description: |
+        S3에 직접 업로드하기 위한 Presigned URL을 생성합니다.
+        
+        사용자 프로필 이미지나 이슈 이미지 업로드에 사용됩니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PresignedUrlRequest'
+      responses:
+        '200':
+          description: Presigned URL 생성 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_PresignedUrlResponse'
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+        '401':
+          description: 인증 필요
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT 토큰을 Bearer 형식으로 전송
+
+  schemas:
+    # 공통 응답
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+          nullable: true
+        data:
+          type: object
+          nullable: true
+
+    ApiResponse_Error:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: false
+            message:
+              type: string
+              example: "Error message"
+
+    ApiResponse_Message:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            message:
+              type: string
+              example: "Success message"
+
+    # Auth
+    SendVerificationCodeRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: 인증 코드를 받을 이메일 주소
+
+    SendVerificationCodeResponse:
+      type: object
+      properties:
+        sent:
+          type: boolean
+          example: true
+
+    EmailAuthRequest:
+      type: object
+      required:
+        - email
+        - code
+      properties:
+        email:
+          type: string
+          format: email
+          description: 이메일 주소
+        code:
+          type: string
+          description: 인증 코드
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+          description: 리프레시 토큰
+
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: 액세스 토큰
+        refreshToken:
+          type: string
+          description: 리프레시 토큰
+        user:
+          $ref: '#/components/schemas/UserResponse'
+
+    ApiResponse_AuthResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              $ref: '#/components/schemas/AuthResponse'
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          description: 사용자명
+        name:
+          type: string
+          nullable: true
+          description: 이름
+        bio:
+          type: string
+          nullable: true
+          description: 자기소개
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        username:
+          type: string
+          nullable: true
+        name:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        imageUrl:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ApiResponse_UserResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              $ref: '#/components/schemas/UserResponse'
+
+    ApiResponse_SendVerificationCodeResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              $ref: '#/components/schemas/SendVerificationCodeResponse'
+
+    # Public Profile
+    PublicUserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        name:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        imageUrl:
+          type: string
+          nullable: true
+
+    ApiResponse_PublicUserProfile:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              $ref: '#/components/schemas/PublicUserProfile'
+
+    PublicNewsletter:
+      type: object
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        subscriberCount:
+          type: integer
+          format: int64
+
+    PublicNewsletterList:
+      type: array
+      items:
+        $ref: '#/components/schemas/PublicNewsletter'
+
+    ApiResponse_PublicNewsletterList:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              $ref: '#/components/schemas/PublicNewsletterList'
+
+    ApiResponse_PublicNewsletter:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              $ref: '#/components/schemas/PublicNewsletter'
+
+    PublicIssue:
+      type: object
+      description: 이슈 목록 조회용 (Preview 정보)
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        title:
+          type: string
+          nullable: true
+        excerpt:
+          type: string
+          nullable: true
+          description: 요약 (Short 버전)
+        publishedAt:
+          type: string
+          format: date-time
+        newsletterId:
+          type: string
+        newsletterSlug:
+          type: string
+        newsletterName:
+          type: string
+        ownerUsername:
+          type: string
+          nullable: true
+        ownerName:
+          type: string
+          nullable: true
+        ownerImageUrl:
+          type: string
+          nullable: true
+
+    PublicIssueList:
+      type: array
+      items:
+        $ref: '#/components/schemas/PublicIssue'
+
+    ApiResponse_PublicIssueList:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              $ref: '#/components/schemas/PublicIssueList'
+
+    PublicIssueDetail:
+      type: object
+      description: 이슈 상세 조회용 (모든 정보 포함)
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        title:
+          type: string
+          nullable: true
+        content:
+          type: string
+          description: 전체 콘텐츠 (HTML)
+        excerpt:
+          type: string
+          nullable: true
+        coverImageUrl:
+          type: string
+          nullable: true
+        publishedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        newsletterId:
+          type: string
+        newsletterSlug:
+          type: string
+        newsletterName:
+          type: string
+        newsletterDescription:
+          type: string
+          nullable: true
+        newsletterSenderName:
+          type: string
+          nullable: true
+        ownerId:
+          type: string
+        ownerUsername:
+          type: string
+          nullable: true
+        ownerName:
+          type: string
+          nullable: true
+        ownerBio:
+          type: string
+          nullable: true
+        ownerImageUrl:
+          type: string
+          nullable: true
+
+    ApiResponse_PublicIssueDetail:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              $ref: '#/components/schemas/PublicIssueDetail'
+
+    # Newsletter
+    CreateNewsletterRequest:
+      type: object
+      required:
+        - name
+        - slug
+      properties:
+        name:
+          type: string
+          description: 뉴스레터 이름
+        slug:
+          type: string
+          description: 뉴스레터 slug (URL에 사용)
+        description:
+          type: string
+          nullable: true
+          description: 뉴스레터 설명
+        senderName:
+          type: string
+          nullable: true
+          description: 발신자 이름
+
+    UpdateNewsletterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        senderName:
+          type: string
+          nullable: true
+
+    NewsletterResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        senderName:
+          type: string
+          nullable: true
+        timezone:
+          type: string
+        ownerId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    NewsletterList:
+      type: array
+      items:
+        $ref: '#/components/schemas/NewsletterResponse'
+
+    ApiResponse_NewsletterResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              $ref: '#/components/schemas/NewsletterResponse'
+
+    ApiResponse_NewsletterList:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              $ref: '#/components/schemas/NewsletterList'
+
+    # Issue
+    CreateIssueRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          nullable: true
+          description: "이슈 제목 (DRAFT는 nullable, PUBLISHED/SCHEDULED는 필수)"
+        slug:
+          type: string
+          nullable: true
+          description: "이슈 slug (자동 생성 가능)"
+        content:
+          type: string
+          nullable: true
+          description: "이슈 내용 (기본값은 빈 문자열)"
+        excerpt:
+          type: string
+          nullable: true
+          description: 이슈 요약
+        coverImageUrl:
+          type: string
+          nullable: true
+          description: 커버 이미지 URL
+        status:
+          type: string
+          enum: [DRAFT, PUBLISHED, SCHEDULED]
+          default: DRAFT
+          description: 이슈 상태
+
+    UpdateIssueRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          nullable: true
+          description: 이슈 제목 (PUBLISHED/SCHEDULED는 필수)
+        slug:
+          type: string
+          nullable: true
+        content:
+          type: string
+          nullable: true
+        excerpt:
+          type: string
+          nullable: true
+        coverImageUrl:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [DRAFT, PUBLISHED, SCHEDULED]
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        scheduledAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    IssueResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+          nullable: true
+        slug:
+          type: string
+        content:
+          type: string
+        excerpt:
+          type: string
+          nullable: true
+        coverImageUrl:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [DRAFT, PUBLISHED, SCHEDULED]
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        scheduledAt:
+          type: string
+          format: date-time
+          nullable: true
+        newsletterId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    IssueList:
+      type: array
+      items:
+        $ref: '#/components/schemas/IssueResponse'
+
+    ApiResponse_IssueResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              $ref: '#/components/schemas/IssueResponse'
+
+    ApiResponse_IssueList:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              $ref: '#/components/schemas/IssueList'
+
+    # Subscriber
+    CreateSubscriberRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: 구독자 이메일 주소
+
+    SubscriberResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, CONFIRMED, UNSUBSCRIBED]
+        subscribedAt:
+          type: string
+          format: date-time
+        confirmedAt:
+          type: string
+          format: date-time
+          nullable: true
+        unsubscribedAt:
+          type: string
+          format: date-time
+          nullable: true
+        newsletterId:
+          type: string
+
+    SubscriberList:
+      type: array
+      items:
+        $ref: '#/components/schemas/SubscriberResponse'
+
+    ApiResponse_SubscriberResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              $ref: '#/components/schemas/SubscriberResponse'
+
+    ApiResponse_SubscriberList:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              $ref: '#/components/schemas/SubscriberList'
+
+    SubscribeConfirmResponse:
+      type: object
+      properties:
+        confirmed:
+          type: boolean
+        message:
+          type: string
+
+    ApiResponse_SubscribeConfirmResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              $ref: '#/components/schemas/SubscribeConfirmResponse'
+
+    # Upload
+    PresignedUrlRequest:
+      type: object
+      required:
+        - type
+        - filename
+        - contentType
+        - fileSize
+      properties:
+        type:
+          type: string
+          enum: [user, issue]
+          description: 업로드 타입 (user: 프로필 이미지, issue: 이슈 이미지)
+        filename:
+          type: string
+          description: 파일명
+        contentType:
+          type: string
+          description: 파일 MIME 타입 (예: image/jpeg)
+        fileSize:
+          type: integer
+          description: 파일 크기 (bytes)
+        issueId:
+          type: string
+          nullable: true
+          description: 이슈 ID (type이 issue인 경우 필수)
+
+    PresignedUrlResponse:
+      type: object
+      properties:
+        presignedUrl:
+          type: string
+          description: S3 Presigned URL
+        filename:
+          type: string
+          description: 저장될 파일명
+        key:
+          type: string
+          description: S3 Key (경로)
+
+    ApiResponse_PresignedUrlResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              $ref: '#/components/schemas/PresignedUrlResponse'
+
+    ImageUploadResponse:
+      type: object
+      properties:
+        url:
+          type: string
+          description: 업로드된 이미지의 CDN URL
+        key:
+          type: string
+          description: S3 Key (경로)
+
+    ApiResponse_ImageUploadResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              $ref: '#/components/schemas/ImageUploadResponse'
+
