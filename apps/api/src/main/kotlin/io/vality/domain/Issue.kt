@@ -22,6 +22,7 @@ data class Issue(
     val status: IssueStatus = IssueStatus.DRAFT,
     @Contextual val publishedAt: Instant? = null,
     @Contextual val scheduledAt: Instant? = null,
+    val likeCount: Long = 0,
     val newsletterId: String,
     @Contextual val createdAt: Instant,
     @Contextual val updatedAt: Instant

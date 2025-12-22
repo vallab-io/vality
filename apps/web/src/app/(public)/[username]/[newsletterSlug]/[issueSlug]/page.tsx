@@ -96,7 +96,7 @@ export default async function IssuePage({ params }: IssuePageProps) {
 
         {/* Like & Share Buttons */}
         <div className="mt-10 flex items-center justify-between">
-          <LikeButton issueId={issue.id} />
+          <LikeButton issueId={issue.id} initialLikeCount={issue.likeCount || 0} />
           <ShareButtons title={issue.title || "Untitled"} />
         </div>
 

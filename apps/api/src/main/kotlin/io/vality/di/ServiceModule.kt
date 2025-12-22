@@ -2,6 +2,7 @@ package io.vality.di
 
 import com.typesafe.config.Config
 import io.vality.service.AuthService
+import io.vality.service.IssueService
 import io.vality.service.NewsletterService
 import io.vality.service.SubscriberService
 import io.vality.service.email.EmailService
@@ -75,6 +76,13 @@ val serviceModule = module {
     single<NewsletterService> {
         NewsletterService(
             newsletterRepository = get(),
+        )
+    }
+
+    // Issue Service
+    single<IssueService> {
+        IssueService(
+            issueRepository = get(),
         )
     }
 

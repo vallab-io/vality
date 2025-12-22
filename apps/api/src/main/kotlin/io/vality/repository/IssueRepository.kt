@@ -29,6 +29,7 @@ class IssueRepository {
             status = io.vality.domain.IssueStatus.valueOf(this[Issues.status]),
             publishedAt = this[Issues.publishedAt],
             scheduledAt = this[Issues.scheduledAt],
+            likeCount = this[Issues.likeCount],
             newsletterId = this[Issues.newsletterId],
             createdAt = this[Issues.createdAt],
             updatedAt = this[Issues.updatedAt]
@@ -47,6 +48,7 @@ class IssueRepository {
                 Issues.status,
                 Issues.publishedAt,
                 Issues.scheduledAt,
+                Issues.likeCount,
                 Issues.newsletterId,
                 Issues.createdAt,
                 Issues.updatedAt
@@ -69,6 +71,7 @@ class IssueRepository {
                 Issues.status,
                 Issues.publishedAt,
                 Issues.scheduledAt,
+                Issues.likeCount,
                 Issues.newsletterId,
                 Issues.createdAt,
                 Issues.updatedAt
@@ -91,6 +94,7 @@ class IssueRepository {
                 Issues.status,
                 Issues.publishedAt,
                 Issues.scheduledAt,
+                Issues.likeCount,
                 Issues.newsletterId,
                 Issues.createdAt,
                 Issues.updatedAt
@@ -113,6 +117,7 @@ class IssueRepository {
                 Issues.status,
                 Issues.publishedAt,
                 Issues.scheduledAt,
+                Issues.likeCount,
                 Issues.newsletterId,
                 Issues.createdAt,
                 Issues.updatedAt
@@ -134,6 +139,7 @@ class IssueRepository {
                 Issues.status,
                 Issues.publishedAt,
                 Issues.scheduledAt,
+                Issues.likeCount,
                 Issues.newsletterId,
                 Issues.createdAt,
                 Issues.updatedAt
@@ -204,6 +210,7 @@ class IssueRepository {
                     Issues.excerpt,
                     Issues.publishedAt,
                     Issues.coverImageUrl,
+                    Issues.likeCount,
                     Newsletters.id,
                     Newsletters.slug,
                     Newsletters.name,
@@ -230,6 +237,7 @@ class IssueRepository {
                     issueExcerpt = row[Issues.excerpt],
                     issuePublishedAt = row[Issues.publishedAt],
                     issueCoverImageUrl = row[Issues.coverImageUrl],
+                    issueLikeCount = row[Issues.likeCount],
                     newsletterId = row[Newsletters.id],
                     newsletterSlug = row[Newsletters.slug],
                     newsletterName = row[Newsletters.name],
@@ -239,6 +247,15 @@ class IssueRepository {
                     ownerImageUrl = row[Users.imageUrl],
                 )
             }
+    }
+
+    /**
+     * 이슈 좋아요 수 업데이트 (Repository 레이어 - 순수 데이터 접근)
+     */
+    suspend fun updateLikeCount(issueId: String, likeCount: Long) = dbQuery {
+        Issues.update({ Issues.id eq issueId }) {
+            it[Issues.likeCount] = likeCount
+        }
     }
 }
 
@@ -252,6 +269,7 @@ data class IssueWithNewsletterAndOwner(
     val issueExcerpt: String?,
     val issuePublishedAt: java.time.Instant?,
     val issueCoverImageUrl: String?,
+    val issueLikeCount: Long,
     val newsletterId: String,
     val newsletterSlug: String,
     val newsletterName: String,

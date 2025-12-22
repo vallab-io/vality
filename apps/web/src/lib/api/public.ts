@@ -39,6 +39,7 @@ export interface PublicIssue {
   excerpt: string | null; // Short 버전 (excerpt)
   coverImageUrl?: string | null;
   publishedAt: string;
+  likeCount: number;
   newsletterId: string;
   newsletterSlug: string;
   newsletterName: string;
@@ -59,6 +60,7 @@ export interface PublicIssueDetail {
   publishedAt: string;
   createdAt: string;
   updatedAt: string;
+  likeCount: number;
   
   // Newsletter 정보
   newsletterId: string;
@@ -191,4 +193,19 @@ export async function getAllPublicIssues(
     throw new Error(response.data.message || "Failed to get all issues");
   }
   return response.data.data;
+}
+
+/**
+ * 이슈 좋아요 추가 (Medium clap 방식)
+ * POST /api/public/issues/{issueId}/like
+ */
+export async function addIssueLike(issueId: string): Promise<number> {
+  const url = `/issues/${issueId}/like`;
+  console.log("Like API request:", `${publicApiClient.defaults.baseURL}${url}`);
+  
+  const response = await publicApiClient.post<ApiResponse<{ likeCount: number }>>(url);
+  if (!response.data.data) {
+    throw new Error(response.data.message || "Failed to add like");
+  }
+  return response.data.data.likeCount;
 }

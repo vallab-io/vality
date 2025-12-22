@@ -89,6 +89,7 @@ object Issues : Table("issues") {
     val status = varchar("status", 20).default("DRAFT")
     val publishedAt = timestamp("published_at").nullable()
     val scheduledAt = timestamp("scheduled_at").nullable()
+    val likeCount = long("like_count").default(0)
     val newsletterId = varchar("newsletter_id", 25).references(Newsletters.id, onDelete = ReferenceOption.CASCADE)
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")

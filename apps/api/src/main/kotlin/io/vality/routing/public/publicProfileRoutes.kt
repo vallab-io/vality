@@ -6,6 +6,7 @@ import io.ktor.server.application.log
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
+import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.vality.domain.IssueStatus
 import io.vality.dto.ApiResponse
@@ -13,6 +14,7 @@ import io.vality.repository.IssueRepository
 import io.vality.repository.NewsletterRepository
 import io.vality.repository.SubscriberRepository
 import io.vality.repository.UserRepository
+import io.vality.service.IssueService
 import io.vality.service.upload.ImageUrlService
 import kotlinx.serialization.Serializable
 import org.koin.ktor.ext.inject
@@ -47,6 +49,7 @@ data class PublicIssueResponse(
     val excerpt: String?, // Short 버전 (excerpt)
     val coverImageUrl: String?,
     val publishedAt: String,
+    val likeCount: Long = 0,
     val newsletterId: String,
     val newsletterSlug: String,
     val newsletterName: String,
@@ -72,6 +75,7 @@ data class PublicIssueDetailResponse(
     val publishedAt: String,
     val createdAt: String,
     val updatedAt: String,
+    val likeCount: Long = 0,
     
     // Newsletter 정보
     val newsletterId: String,
@@ -92,10 +96,57 @@ fun Route.publicProfileRoutes() {
     val userRepository: UserRepository by inject()
     val newsletterRepository: NewsletterRepository by inject()
     val issueRepository: IssueRepository by inject()
+    val issueService: IssueService by inject()
     val subscriberRepository: SubscriberRepository by inject()
     val imageUrlService: ImageUrlService by inject()
 
     route("/api/public") {
+        /**
+         * 이슈 좋아요 추가 (Medium clap 방식 - JWT 인증 불필요)
+         * POST /api/public/issues/{issueId}/like
+         * 같은 사람이 계속 눌러도 카운트가 올라감
+         * 더 구체적인 라우트를 먼저 정의
+         */
+        route("/issues/{issueId}/like") {
+            post {
+                val issueId = call.parameters["issueId"]
+                    ?: return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        ApiResponse.error<Nothing>(message = "Issue ID is required"),
+                    )
+
+                call.application.log.info("Like request received for issue: $issueId")
+
+                try {
+                    // 이슈 존재 확인
+                    val issue = issueRepository.findById(issueId)
+                        ?: return@post call.respond(
+                            HttpStatusCode.NotFound,
+                            ApiResponse.error<Nothing>(message = "Issue not found"),
+                        )
+
+                    // 좋아요 수 증가 (Medium clap 방식 - 중복 허용)
+                    val likeCount = issueService.incrementLikeCount(issueId)
+
+                    call.respond(
+                        HttpStatusCode.OK,
+                        ApiResponse.success(
+                            data = mapOf(
+                                "likeCount" to likeCount
+                            ),
+                            message = "Like added"
+                        ),
+                    )
+                } catch (e: Exception) {
+                    call.application.log.error("Failed to add like", e)
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        ApiResponse.error<Nothing>(message = "Failed to add like: ${e.message}"),
+                    )
+                }
+            }
+        }
+
         /**
          * 모든 사용자의 발행된 이슈 목록 조회 (최신순, 페이징)
          * GET /api/public/issues?limit=20&offset=0
@@ -115,6 +166,7 @@ fun Route.publicProfileRoutes() {
                         title = issue.issueTitle,
                         excerpt = issue.issueExcerpt, // Short 버전 (excerpt)
                         publishedAt = issue.issuePublishedAt?.toString() ?: "",
+                        likeCount = issue.issueLikeCount,
                         newsletterId = issue.newsletterId,
                         newsletterSlug = issue.newsletterSlug,
                         newsletterName = issue.newsletterName,
@@ -281,6 +333,7 @@ fun Route.publicProfileRoutes() {
                                 ownerName = user.name,
                                 ownerImageUrl = imageUrlService.getImageUrl(user),
                                 coverImageUrl = issue.coverImageUrl?.let { imageUrlService.getImageUrl(it) },
+                                likeCount = 0, // TODO: 좋아요 수 조회 추가
                             )
                         }
                 }
@@ -479,6 +532,7 @@ fun Route.publicProfileRoutes() {
                     publishedAt = issue.publishedAt?.toString() ?: "",
                     createdAt = issue.createdAt.toString(),
                     updatedAt = issue.updatedAt.toString(),
+                    likeCount = issue.likeCount,
                     
                     // Newsletter 정보
                     newsletterId = newsletter.id,
@@ -507,6 +561,7 @@ fun Route.publicProfileRoutes() {
                 )
             }
         }
+
     }
 }
 
