@@ -2,10 +2,15 @@ package io.vality.repository
 
 import io.vality.domain.Issue
 import io.vality.domain.Issues
+import io.vality.domain.Newsletters
+import io.vality.domain.Users
 import io.vality.plugins.dbQuery
 import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.innerJoin
+import org.jetbrains.exposed.v1.core.neq
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.select
@@ -181,5 +186,75 @@ class IssueRepository {
     suspend fun delete(id: String): Boolean = dbQuery {
         Issues.deleteWhere { Issues.id eq id } > 0
     }
+
+    /**
+     * 모든 발행된 이슈를 Newsletter와 Owner(User) 정보와 함께 조회 (페이징)
+     * Inner join을 사용하여 한 번의 쿼리로 모든 정보를 가져옴
+     */
+    suspend fun findAllPublishedWithNewsletterAndOwner(
+        limit: Int,
+        offset: Int
+    ): List<IssueWithNewsletterAndOwner> = dbQuery {
+        (Issues innerJoin Newsletters).innerJoin(Users)
+            .select(
+                listOf(
+                    Issues.id,
+                    Issues.slug,
+                    Issues.title,
+                    Issues.excerpt,
+                    Issues.publishedAt,
+                    Newsletters.id,
+                    Newsletters.slug,
+                    Newsletters.name,
+                    Users.id,
+                    Users.username,
+                    Users.name,
+                    Users.imageUrl,
+                )
+            )
+            .where {
+                (Issues.newsletterId eq Newsletters.id) and
+                        (Newsletters.ownerId eq Users.id) and
+                        (Issues.status eq io.vality.domain.IssueStatus.PUBLISHED.name) and
+                        (Issues.publishedAt neq null)
+            }
+            .orderBy(Issues.publishedAt to SortOrder.DESC)
+            .limit(limit)
+            .drop(offset)
+            .map { row ->
+                IssueWithNewsletterAndOwner(
+                    issueId = row[Issues.id],
+                    issueSlug = row[Issues.slug],
+                    issueTitle = row[Issues.title],
+                    issueExcerpt = row[Issues.excerpt],
+                    issuePublishedAt = row[Issues.publishedAt],
+                    newsletterId = row[Newsletters.id],
+                    newsletterSlug = row[Newsletters.slug],
+                    newsletterName = row[Newsletters.name],
+                    ownerId = row[Users.id],
+                    ownerUsername = row[Users.username],
+                    ownerName = row[Users.name],
+                    ownerImageUrl = row[Users.imageUrl],
+                )
+            }
+    }
 }
+
+/**
+ * Issue와 Newsletter, Owner 정보를 함께 담는 데이터 클래스
+ */
+data class IssueWithNewsletterAndOwner(
+    val issueId: String,
+    val issueSlug: String,
+    val issueTitle: String?,
+    val issueExcerpt: String?,
+    val issuePublishedAt: java.time.Instant?,
+    val newsletterId: String,
+    val newsletterSlug: String,
+    val newsletterName: String,
+    val ownerId: String,
+    val ownerUsername: String?,
+    val ownerName: String?,
+    val ownerImageUrl: String?,
+)
 

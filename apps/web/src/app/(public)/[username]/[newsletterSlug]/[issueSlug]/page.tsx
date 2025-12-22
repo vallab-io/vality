@@ -29,7 +29,7 @@ export async function generateMetadata({
       openGraph: {
         title: issue.title || "Untitled",
         type: "article",
-        authors: user.name ? [user.name] : undefined,
+        authors: issue.ownerName ? [issue.ownerName] : undefined,
       },
     };
   } catch {
@@ -46,9 +46,6 @@ export default async function IssuePage({ params }: IssuePageProps) {
       getPublicNewsletter(username, newsletterSlug),
       getPublicUserProfile(username),
     ]);
-
-    const prevIssue = issue.prevIssue;
-    const nextIssue = issue.nextIssue;
 
     return (
     <div className="min-h-screen bg-background">
@@ -83,17 +80,17 @@ export default async function IssuePage({ params }: IssuePageProps) {
           {/* Author */}
           <div className="mt-6 flex items-center gap-3">
             <UserAvatar 
-              name={user.name || user.username} 
-              imageUrl={user.imageUrl} 
+              name={issue.ownerName || issue.ownerUsername || ""} 
+              imageUrl={issue.ownerImageUrl} 
               size="md" 
             />
             <div>
               <Link href={`/@${username}`} className="font-medium hover:underline">
-                {user.name || user.username}
+                {issue.ownerName || issue.ownerUsername || username}
               </Link>
               <p className="text-sm text-muted-foreground">
                 <Link href={`/@${username}/${newsletterSlug}`} className="hover:underline">
-                  {newsletter.name}
+                  {issue.newsletterName}
                 </Link>
               </p>
             </div>
@@ -123,31 +120,6 @@ export default async function IssuePage({ params }: IssuePageProps) {
           </div>
         </div>
 
-        {/* Prev/Next Navigation */}
-        {(prevIssue || nextIssue) && (
-          <nav className="mt-10 grid gap-4 sm:grid-cols-2">
-            {prevIssue ? (
-              <Link
-                href={`/@${username}/${newsletterSlug}/${prevIssue.slug}`}
-                className="rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
-              >
-                <span className="text-sm text-muted-foreground">← 이전 글</span>
-                <p className="mt-1 font-medium line-clamp-1">{prevIssue.title || "Untitled"}</p>
-              </Link>
-            ) : (
-              <div />
-            )}
-            {nextIssue && (
-              <Link
-                href={`/@${username}/${newsletterSlug}/${nextIssue.slug}`}
-                className="rounded-lg border border-border p-4 text-right transition-colors hover:bg-muted/50"
-              >
-                <span className="text-sm text-muted-foreground">다음 글 →</span>
-                <p className="mt-1 font-medium line-clamp-1">{nextIssue.title || "Untitled"}</p>
-              </Link>
-            )}
-          </nav>
-        )}
       </main>
 
       {/* Footer */}

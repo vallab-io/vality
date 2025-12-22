@@ -17,7 +17,7 @@ import {
   checkUsernameAvailability,
 } from "@/lib/api/auth";
 import { getErrorMessage } from "@/lib/api/client";
-import { requestPresignedUrl, uploadImageToS3 } from "@/lib/api/upload";
+import { generatePresignedUrl, uploadImageToS3 } from "@/lib/api/upload";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -169,7 +169,7 @@ export default function SettingsPage() {
     setIsUploadingImage(true);
     try {
       // 1. Presigned URL 요청
-      const { presignedUrl, filename } = await requestPresignedUrl({
+      const { presignedUrl, filename } = await generatePresignedUrl({
         type: "user",
         filename: file.name,
         contentType: file.type,

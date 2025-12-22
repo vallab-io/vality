@@ -12,6 +12,8 @@ const SYSTEM_PATHS = [
   "/blog",
   "/newsletter", // 구독 확인 등 시스템 경로
   "/auth",
+  "/home",
+  "/about",
   "/_next",
   "/favicon.ico",
 ];

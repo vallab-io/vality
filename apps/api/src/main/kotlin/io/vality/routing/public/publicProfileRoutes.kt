@@ -35,36 +35,56 @@ data class PublicNewsletterResponse(
     val subscriberCount: Long,
 )
 
+/**
+ * 이슈 목록 조회용 Response (Preview 정보)
+ * 여러 이슈를 조회할 때 사용되는 간단한 정보만 포함
+ */
 @Serializable
 data class PublicIssueResponse(
     val id: String,
     val slug: String,
     val title: String?,
-    val excerpt: String?,
+    val excerpt: String?, // Short 버전 (excerpt)
     val publishedAt: String,
     val newsletterId: String,
     val newsletterSlug: String,
     val newsletterName: String,
+    val ownerUsername: String?,
+    val ownerName: String?,
+    val ownerImageUrl: String?,
 )
 
+/**
+ * 이슈 상세 조회용 Response
+ * /@{{username}}/{{newsletterSlug}}/{{issueSlug}}에서 사용
+ * user, newsletter, issue에 대한 모든 데이터 포함
+ */
 @Serializable
 data class PublicIssueDetailResponse(
+    // Issue 정보
     val id: String,
     val slug: String,
     val title: String?,
-    val content: String,
+    val content: String, // 전체 content
     val excerpt: String?,
     val coverImageUrl: String?,
     val publishedAt: String,
+    val createdAt: String,
+    val updatedAt: String,
+    
+    // Newsletter 정보
     val newsletterId: String,
     val newsletterSlug: String,
     val newsletterName: String,
-    val authorId: String,
-    val authorUsername: String?,
-    val authorName: String?,
-    val authorImageUrl: String?,
-    val prevIssue: PublicIssueResponse?,
-    val nextIssue: PublicIssueResponse?,
+    val newsletterDescription: String?,
+    val newsletterSenderName: String?,
+    
+    // Owner (User) 정보
+    val ownerId: String,
+    val ownerUsername: String?,
+    val ownerName: String?,
+    val ownerBio: String?,
+    val ownerImageUrl: String?,
 )
 
 fun Route.publicProfileRoutes() {
@@ -73,6 +93,49 @@ fun Route.publicProfileRoutes() {
     val issueRepository: IssueRepository by inject()
     val subscriberRepository: SubscriberRepository by inject()
     val imageUrlService: ImageUrlService by inject()
+
+    route("/api/public") {
+        /**
+         * 모든 사용자의 발행된 이슈 목록 조회 (최신순, 페이징)
+         * GET /api/public/issues?limit=20&offset=0
+         * JWT 인증 불필요
+         */
+        get("/issues") {
+            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
+            val offset = call.request.queryParameters["offset"]?.toIntOrNull() ?: 0
+
+            try {
+                val issuesWithDetails = issueRepository.findAllPublishedWithNewsletterAndOwner(limit, offset)
+                
+                val responses = issuesWithDetails.map { issue ->
+                    PublicIssueResponse(
+                        id = issue.issueId,
+                        slug = issue.issueSlug,
+                        title = issue.issueTitle,
+                        excerpt = issue.issueExcerpt, // Short 버전 (excerpt)
+                        publishedAt = issue.issuePublishedAt?.toString() ?: "",
+                        newsletterId = issue.newsletterId,
+                        newsletterSlug = issue.newsletterSlug,
+                        newsletterName = issue.newsletterName,
+                        ownerUsername = issue.ownerUsername,
+                        ownerName = issue.ownerName,
+                        ownerImageUrl = imageUrlService.getUserImageUrl(issue.ownerImageUrl, issue.ownerId),
+                    )
+                }
+                
+                call.respond(
+                    HttpStatusCode.OK,
+                    ApiResponse.success(data = responses)
+                )
+            } catch (e: Exception) {
+                call.application.log.error("Failed to get all issues", e)
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    ApiResponse.error<Nothing>(message = "Failed to get all issues: ${e.message}")
+                )
+            }
+        }
+    }
 
     route("/api/public/users") {
         /**
@@ -207,11 +270,14 @@ fun Route.publicProfileRoutes() {
                                 id = issue.id,
                                 slug = issue.slug,
                                 title = issue.title,
-                                excerpt = issue.excerpt,
+                                excerpt = issue.excerpt, // Short 버전 (excerpt)
                                 publishedAt = issue.publishedAt?.toString() ?: "",
                                 newsletterId = newsletter.id,
                                 newsletterSlug = newsletter.slug,
                                 newsletterName = newsletter.name,
+                                ownerUsername = user.username,
+                                ownerName = user.name,
+                                ownerImageUrl = imageUrlService.getImageUrl(user),
                             )
                         }
                 }
@@ -311,6 +377,8 @@ fun Route.publicProfileRoutes() {
                     )
 
                 // 발행된 이슈만 가져오기
+                // N+1 문제 방지: 한 번의 쿼리로 사용자 정보 가져오기
+                val owner = userRepository.findById(newsletter.ownerId)
                 val issues = issueRepository.findPublishedByNewsletterId(newsletter.id)
                     .sortedByDescending { it.publishedAt }
                     .drop(offset)
@@ -320,11 +388,14 @@ fun Route.publicProfileRoutes() {
                             id = issue.id,
                             slug = issue.slug,
                             title = issue.title,
-                            excerpt = issue.excerpt,
+                            excerpt = issue.excerpt, // Short 버전 (excerpt)
                             publishedAt = issue.publishedAt?.toString() ?: "",
                             newsletterId = newsletter.id,
                             newsletterSlug = newsletter.slug,
                             newsletterName = newsletter.name,
+                            ownerUsername = owner?.username,
+                            ownerName = owner?.name,
+                            ownerImageUrl = owner?.let { imageUrlService.getImageUrl(it) },
                         )
                     }
 
@@ -387,13 +458,6 @@ fun Route.publicProfileRoutes() {
                     )
                 }
 
-                // 이전/다음 이슈 찾기
-                val allIssues = issueRepository.findPublishedByNewsletterId(newsletter.id)
-                    .sortedByDescending { it.publishedAt }
-                val currentIndex = allIssues.indexOfFirst { it.id == issue.id }
-                val prevIssue = if (currentIndex > 0) allIssues[currentIndex - 1] else null
-                val nextIssue = if (currentIndex < allIssues.size - 1 && currentIndex >= 0) allIssues[currentIndex + 1] else null
-
                 val user = userRepository.findById(newsletter.ownerId)
                     ?: return@get call.respond(
                         HttpStatusCode.InternalServerError,
@@ -401,44 +465,30 @@ fun Route.publicProfileRoutes() {
                     )
 
                 val response = PublicIssueDetailResponse(
+                    // Issue 정보
                     id = issue.id,
                     slug = issue.slug,
                     title = issue.title,
-                    content = issue.content,
+                    content = issue.content, // 전체 content
                     excerpt = issue.excerpt,
                     coverImageUrl = issue.coverImageUrl?.let { imageUrlService.getImageUrl(it) },
                     publishedAt = issue.publishedAt?.toString() ?: "",
+                    createdAt = issue.createdAt.toString(),
+                    updatedAt = issue.updatedAt.toString(),
+                    
+                    // Newsletter 정보
                     newsletterId = newsletter.id,
                     newsletterSlug = newsletter.slug,
                     newsletterName = newsletter.name,
-                    authorId = user.id,
-                    authorUsername = user.username,
-                    authorName = user.name,
-                    authorImageUrl = imageUrlService.getImageUrl(user),
-                    prevIssue = prevIssue?.let {
-                        PublicIssueResponse(
-                            id = it.id,
-                            slug = it.slug,
-                            title = it.title,
-                            excerpt = it.excerpt,
-                            publishedAt = it.publishedAt?.toString() ?: "",
-                            newsletterId = newsletter.id,
-                            newsletterSlug = newsletter.slug,
-                            newsletterName = newsletter.name,
-                        )
-                    },
-                    nextIssue = nextIssue?.let {
-                        PublicIssueResponse(
-                            id = it.id,
-                            slug = it.slug,
-                            title = it.title,
-                            excerpt = it.excerpt,
-                            publishedAt = it.publishedAt?.toString() ?: "",
-                            newsletterId = newsletter.id,
-                            newsletterSlug = newsletter.slug,
-                            newsletterName = newsletter.name,
-                        )
-                    },
+                    newsletterDescription = newsletter.description,
+                    newsletterSenderName = newsletter.senderName,
+                    
+                    // Owner (User) 정보
+                    ownerId = user.id,
+                    ownerUsername = user.username,
+                    ownerName = user.name,
+                    ownerBio = user.bio,
+                    ownerImageUrl = imageUrlService.getImageUrl(user),
                 )
 
                 call.respond(

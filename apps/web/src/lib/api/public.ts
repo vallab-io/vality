@@ -31,28 +31,47 @@ export interface PublicNewsletter {
   subscriberCount: number;
 }
 
-// 공개 이슈 (목록용)
+// 공개 이슈 (목록용 - Preview 정보)
 export interface PublicIssue {
   id: string;
   slug: string;
   title: string | null;
-  excerpt: string | null;
+  excerpt: string | null; // Short 버전 (excerpt)
   publishedAt: string;
   newsletterId: string;
   newsletterSlug: string;
   newsletterName: string;
+  ownerUsername: string | null;
+  ownerName: string | null;
+  ownerImageUrl: string | null;
 }
 
-// 공개 이슈 상세
-export interface PublicIssueDetail extends PublicIssue {
-  content: string;
+// 공개 이슈 상세 (모든 정보 포함)
+export interface PublicIssueDetail {
+  // Issue 정보
+  id: string;
+  slug: string;
+  title: string | null;
+  content: string; // 전체 content
+  excerpt: string | null;
   coverImageUrl: string | null;
-  authorId: string;
-  authorUsername: string | null;
-  authorName: string | null;
-  authorImageUrl: string | null;
-  prevIssue: PublicIssue | null;
-  nextIssue: PublicIssue | null;
+  publishedAt: string;
+  createdAt: string;
+  updatedAt: string;
+  
+  // Newsletter 정보
+  newsletterId: string;
+  newsletterSlug: string;
+  newsletterName: string;
+  newsletterDescription: string | null;
+  newsletterSenderName: string | null;
+  
+  // Owner (User) 정보
+  ownerId: string;
+  ownerUsername: string | null;
+  ownerName: string | null;
+  ownerBio: string | null;
+  ownerImageUrl: string | null;
 }
 
 // 공개 사용자 프로필 조회
@@ -124,6 +143,26 @@ export async function getPublicNewsletterIssues(
   return getPublicIssues(username, newsletterSlug, limit, offset);
 }
 
+// 공개 사용자 이슈 목록 조회 (별칭)
+export async function getPublicUserIssues(
+  username: string,
+  options?: { limit?: number; offset?: number }
+): Promise<PublicIssue[]> {
+  return getPublicIssues(
+    username,
+    undefined,
+    options?.limit ?? 20,
+    options?.offset ?? 0
+  );
+}
+
+// 공개 사용자 뉴스레터 목록 조회 (별칭)
+export async function getPublicUserNewsletters(
+  username: string
+): Promise<PublicNewsletter[]> {
+  return getPublicNewsletters(username);
+}
+
 // 공개 이슈 상세 조회
 export async function getPublicIssueDetail(
   username: string,
@@ -135,6 +174,20 @@ export async function getPublicIssueDetail(
   );
   if (!response.data.data) {
     throw new Error(response.data.message || "Failed to get issue");
+  }
+  return response.data.data;
+}
+
+// 모든 사용자의 공개 이슈 목록 조회
+export async function getAllPublicIssues(
+  limit: number = 20,
+  offset: number = 0
+): Promise<PublicIssue[]> {
+  const response = await publicApiClient.get<ApiResponse<PublicIssue[]>>("/issues", {
+    params: { limit, offset },
+  });
+  if (!response.data.data) {
+    throw new Error(response.data.message || "Failed to get all issues");
   }
   return response.data.data;
 }
