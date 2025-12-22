@@ -1,8 +1,10 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { SubscribeForm } from "./_components/subscribe-form";
-import { UserAvatar, Logo } from "@/components/common";
+import { UserAvatar } from "@/components/common";
+import { ProfileHeader } from "./_components/profile-header";
 import {
   getPublicUserProfile,
   getPublicUserNewsletters,
@@ -61,13 +63,9 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border">
-        <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-6">
-          <Logo href="/" className="text-sm" />
-        </div>
-      </header>
+      <ProfileHeader />
 
-      <main className="mx-auto max-w-3xl px-6 py-12">
+      <main className="mx-auto max-w-5xl px-6 py-16">
         {/* 1. User 자기 소개 */}
         <section className="flex flex-col items-center text-center">
           <UserAvatar
@@ -151,14 +149,22 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                         {issue.excerpt}
                       </p>
                     </div>
-                  </div>
-                  <div className="mt-3">
-                    <Link
-                      href={`/@${username}/${issue.newsletterSlug}/${issue.slug}`}
-                      className="text-sm font-medium text-primary hover:underline"
-                    >
-                      읽기 →
-                    </Link>
+                    {issue.coverImageUrl && (
+                      <Link
+                        href={`/@${username}/${issue.newsletterSlug}/${issue.slug}`}
+                        className="flex-shrink-0"
+                      >
+                        <div className="relative h-24 w-32 overflow-hidden rounded-lg bg-muted/50 border border-border/60">
+                          <Image
+                            src={issue.coverImageUrl}
+                            alt={issue.title || "cover image"}
+                            fill
+                            sizes="128px"
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        </div>
+                      </Link>
+                    )}
                   </div>
                 </article>
               ))}
@@ -166,18 +172,6 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           </section>
         )}
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-border">
-        <div className="mx-auto max-w-3xl px-6 py-6">
-          <p className="text-center text-sm text-muted-foreground">
-            <Link href="/" className="hover:text-foreground">
-              Vality
-            </Link>
-            로 만들어진 뉴스레터
-          </p>
-        </div>
-      </footer>
     </div>
   );
   } catch (error) {

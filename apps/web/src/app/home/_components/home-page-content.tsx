@@ -3,14 +3,16 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Logo } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { getAllPublicIssues, type PublicIssue } from "@/lib/api/public";
 import { useAtomValue } from "jotai";
 import { userAtom, authLoadingAtom } from "@/stores/auth.store";
 import { getMyNewsletters } from "@/lib/api/newsletter";
+import { Heart } from "lucide-react";
 
-export function HomePageContent() {
+export default function HomePageContent() {
   const router = useRouter();
   const user = useAtomValue(userAtom);
   const authLoading = useAtomValue(authLoadingAtom);
@@ -59,7 +61,8 @@ export function HomePageContent() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("ko-KR", {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("ko-KR", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -77,81 +80,134 @@ export function HomePageContent() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border">
-        <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-6">
-          <Logo href="/home" className="text-sm" />
+      <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
+          <Logo href="/home" className="text-xl font-bold text-foreground" />
           {isAuthenticated && (
             <Button 
               size="sm" 
               onClick={handleDashboardClick} 
               disabled={authLoading}
-              className="bg-primary hover:bg-primary/90 shadow-sm hover:shadow-md transition-all duration-200"
+              className="font-medium"
             >
-              대시보드
+              Dashboard
             </Button>
           )}
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-6 py-12">
-        {/* Page Header */}
-        <div className="mb-10">
-          <h1 className="text-3xl font-semibold tracking-tight">아카이브</h1>
-          <p className="mt-2 text-muted-foreground">
-            발행된 뉴스레터 이슈들을 탐색하세요.
-          </p>
-        </div>
-
+      <main className="mx-auto max-w-5xl px-6 py-16">
         {/* Issues List */}
         {issues.length === 0 ? (
-          <div className="mt-12 rounded-lg border border-border py-12 text-center">
-            <p className="text-muted-foreground">아직 발행된 이슈가 없습니다.</p>
+          <div className="mt-12 rounded-xl border border-border bg-card py-20 text-center shadow-sm">
+            <p className="text-muted-foreground text-lg font-medium">아직 발행된 이슈가 없습니다.</p>
             <Link
               href="/dashboard"
-              className="mt-4 inline-block text-sm font-medium text-primary hover:underline"
+              className="mt-4 inline-block text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
             >
               첫 번째 이슈 작성하기 →
             </Link>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {issues.map((issue) => (
               <article
                 key={issue.id}
-                className="group rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/50 hover:shadow-md"
+                className="group h-full overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 hover:border-primary/20 hover:shadow-md"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                {/* Thumbnail */}
+                <Link
+                  href={`/@${issue.ownerUsername || "unknown"}/${issue.newsletterSlug}/${issue.slug}`}
+                  className="block overflow-hidden"
+                >
+                  <div className="relative h-48 w-full overflow-hidden bg-gradient-to-br from-muted/60 to-muted/40">
+                    {issue.coverImageUrl ? (
+                      <Image
+                        src={issue.coverImageUrl}
+                        alt={issue.newsletterName}
+                        fill
+                        sizes="(min-width: 1024px) 400px, 100vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        priority={false}
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <div className="text-center">
+                          <div className="mx-auto mb-2 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-2xl">📝</span>
+                          </div>
+                          <p className="text-xs font-medium text-muted-foreground">커버 이미지 없음</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </Link>
+
+                <div className="flex min-h-[220px] flex-col px-5 pb-5 pt-4">
+                  {/* Newsletter & Author Info */}
+                  <div className="flex items-center gap-2.5 text-sm">
+                    {issue.ownerImageUrl ? (
+                      <Link
+                        href={`/@${issue.ownerUsername || "unknown"}`}
+                        className="flex-shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Image
+                          src={issue.ownerImageUrl}
+                          alt={issue.ownerName || issue.ownerUsername || "User"}
+                          width={28}
+                          height={28}
+                          className="rounded-full ring-2 ring-border transition-all hover:ring-primary/30"
+                        />
+                      </Link>
+                    ) : (
+                      <div className="h-7 w-7 flex-shrink-0 rounded-full bg-gradient-to-br from-primary/20 to-accent/20" />
+                    )}
+                    <div className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
                       <Link
                         href={`/@${issue.ownerUsername || "unknown"}/${issue.newsletterSlug}`}
-                        className="text-sm font-medium text-primary hover:underline"
+                        className="truncate font-semibold text-foreground hover:text-primary transition-colors"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         {issue.newsletterName}
                       </Link>
-                      <span className="text-muted-foreground">·</span>
-                      <time className="text-sm text-muted-foreground">
-                        {formatDate(issue.publishedAt)}
-                      </time>
+                      <span className="text-muted-foreground/60">by</span>
+                      <Link
+                        href={`/@${issue.ownerUsername || "unknown"}`}
+                        className="truncate text-foreground hover:text-primary transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {issue.ownerName || issue.ownerUsername || "Unknown"}
+                      </Link>
                     </div>
-                    <Link
-                      href={`/@${issue.ownerUsername || "unknown"}/${issue.newsletterSlug}/${issue.slug}`}
-                    >
-                      <h3 className="text-xl font-semibold tracking-tight group-hover:text-primary transition-colors">
-                        {issue.title || "Untitled"}
-                      </h3>
-                    </Link>
-                    {issue.excerpt && (
-                      <p className="mt-2 text-muted-foreground line-clamp-2">
-                        {issue.excerpt}
-                      </p>
-                    )}
-                    <Link
-                      href={`/@${issue.ownerUsername || "unknown"}/${issue.newsletterSlug}/${issue.slug}`}
-                      className="mt-4 inline-block text-sm font-medium text-primary hover:underline"
-                    >
-                      읽기 →
-                    </Link>
+                  </div>
+
+                  {/* Title */}
+                  <Link
+                    href={`/@${issue.ownerUsername || "unknown"}/${issue.newsletterSlug}/${issue.slug}`}
+                    className="mt-4 block"
+                  >
+                    <h2 className="text-xl font-bold leading-tight text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+                      {issue.title || "Untitled"}
+                    </h2>
+                  </Link>
+
+                  {/* Excerpt */}
+                  {issue.excerpt && (
+                    <p className="mt-3 text-sm leading-relaxed text-muted-foreground line-clamp-3">
+                      {issue.excerpt}
+                    </p>
+                  )}
+
+                  {/* Footer (read-only like) */}
+                  <div className="mt-auto flex items-center justify-between pt-5 border-t border-border/50">
+                    <div className="flex items-center gap-2">
+                      <Heart className="h-4 w-4 fill-foreground text-foreground" />
+                      <span className="text-sm font-semibold text-foreground">0</span>
+                    </div>
+                    <time className="text-xs font-medium text-muted-foreground">
+                      {formatDate(issue.publishedAt)}
+                    </time>
                   </div>
                 </div>
               </article>
@@ -160,17 +216,6 @@ export function HomePageContent() {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border mt-20">
-        <div className="mx-auto max-w-4xl px-6 py-6">
-          <p className="text-center text-sm text-muted-foreground">
-            <Link href="/" className="hover:text-foreground">
-              Vality
-            </Link>
-            로 만들어진 뉴스레터
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { UserAvatar } from "@/components/common";
 import { SubscribeForm } from "../../_components/subscribe-form";
 import { ShareButtons } from "./_components/share-buttons";
+import { IssueHeader } from "./_components/issue-header";
+import { LikeButton } from "./_components/like-button";
 import {
   getPublicIssueDetail,
   getPublicNewsletter,
@@ -50,24 +52,13 @@ export default async function IssuePage({ params }: IssuePageProps) {
     return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border">
-        <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-6">
-          <Link
-            href={`/@${username}/${newsletterSlug}`}
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            ← {newsletter.name}
-          </Link>
-          <Link
-            href="/login"
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            로그인
-          </Link>
-        </div>
-      </header>
+      <IssueHeader 
+        newsletterName={newsletter.name}
+        username={username}
+        newsletterSlug={newsletterSlug}
+      />
 
-      <main className="mx-auto max-w-2xl px-6 py-12">
+      <main className="mx-auto max-w-5xl px-6 py-12">
         {/* Article Header */}
         <header className="mb-10">
           <time className="text-sm text-muted-foreground">
@@ -103,36 +94,24 @@ export default async function IssuePage({ params }: IssuePageProps) {
           dangerouslySetInnerHTML={{ __html: issue.content }}
         />
 
-        {/* Share Buttons */}
-        <div className="mt-10 flex items-center justify-between border-t border-border pt-6">
-          <span className="text-sm text-muted-foreground">공유하기</span>
+        {/* Like & Share Buttons */}
+        <div className="mt-10 flex items-center justify-between">
+          <LikeButton issueId={issue.id} />
           <ShareButtons title={issue.title || "Untitled"} />
         </div>
 
         {/* Subscribe CTA */}
-        <div className="mt-10 rounded-xl border border-border p-6 text-center">
+        <div className="mx-auto mt-10 max-w-md rounded-xl border border-border bg-muted/30 p-6 text-center">
           <h2 className="text-lg font-semibold">{newsletter.name} 구독하기</h2>
           <p className="mt-2 text-sm text-muted-foreground">
             새로운 글이 발행되면 이메일로 알려드립니다.
           </p>
-          <div className="mx-auto mt-4 max-w-sm">
+          <div className="mt-4">
             <SubscribeForm newsletterId={newsletter.id} />
           </div>
         </div>
 
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-border">
-        <div className="mx-auto max-w-2xl px-6 py-6">
-          <p className="text-center text-sm text-muted-foreground">
-            <Link href="/" className="hover:text-foreground">
-              Vality
-            </Link>
-            로 만들어진 뉴스레터
-          </p>
-        </div>
-      </footer>
     </div>
     );
   } catch (error) {

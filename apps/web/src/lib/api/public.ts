@@ -37,6 +37,7 @@ export interface PublicIssue {
   slug: string;
   title: string | null;
   excerpt: string | null; // Short 버전 (excerpt)
+  coverImageUrl?: string | null;
   publishedAt: string;
   newsletterId: string;
   newsletterSlug: string;

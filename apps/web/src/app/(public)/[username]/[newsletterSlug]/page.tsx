@@ -1,8 +1,10 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { SubscribeForm } from "../_components/subscribe-form";
-import { UserAvatar, Logo } from "@/components/common";
+import { UserAvatar } from "@/components/common";
+import { NewsletterHeader } from "./_components/newsletter-header";
 import {
   getPublicUserProfile,
   getPublicNewsletter,
@@ -61,13 +63,9 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border">
-        <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-6">
-          <Logo href="/" className="text-sm" />
-        </div>
-      </header>
+      <NewsletterHeader />
 
-      <main className="mx-auto max-w-2xl px-6 py-12">
+      <main className="mx-auto max-w-5xl px-6 py-16">
         {/* 1. 뉴스레터 소개 */}
         <section className="text-center">
           <Link
@@ -93,7 +91,7 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
         </section>
 
         {/* 2. 구독 화면 */}
-        <section className="mt-8 rounded-xl border border-border bg-muted/30 p-6">
+        <section className="mx-auto mt-8 max-w-md rounded-xl border border-border bg-muted/30 p-6">
           <h2 className="text-center font-semibold">뉴스레터 구독하기</h2>
           <p className="mt-2 text-center text-sm text-muted-foreground">
             새로운 글이 발행되면 이메일로 알려드립니다.
@@ -117,46 +115,51 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
               <p className="text-muted-foreground">아직 발행된 글이 없습니다.</p>
             </div>
           ) : (
-            <div className="mt-6 divide-y divide-border">
+            <div className="mt-4 space-y-4">
               {issues.map((issue) => (
-                <article key={issue.id} className="py-6 first:pt-0 last:pb-0">
-                  <time className="text-sm text-muted-foreground">
-                    {formatDate(issue.publishedAt)}
-                  </time>
-                  <Link href={`/@${username}/${newsletterSlug}/${issue.slug}`}>
-                    <h3 className="mt-2 text-lg font-semibold hover:underline">
-                      {issue.title}
-                    </h3>
-                  </Link>
-                  {issue.excerpt && (
-                    <p className="mt-2 text-muted-foreground line-clamp-2">
-                      {issue.excerpt}
-                    </p>
-                  )}
-                  <Link
-                    href={`/@${username}/${newsletterSlug}/${issue.slug}`}
-                    className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
-                  >
-                    읽기 →
-                  </Link>
+                <article
+                  key={issue.id}
+                  className="group rounded-lg border border-border p-5 transition-colors hover:border-[#2563EB]/50 dark:hover:border-[#38BDF8]/50"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <time>{formatDate(issue.publishedAt)}</time>
+                      </div>
+                      <Link
+                        href={`/@${username}/${newsletterSlug}/${issue.slug}`}
+                      >
+                        <h3 className="mt-2 font-semibold group-hover:underline">
+                          {issue.title}
+                        </h3>
+                      </Link>
+                      <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
+                        {issue.excerpt}
+                      </p>
+                    </div>
+                    {issue.coverImageUrl && (
+                      <Link
+                        href={`/@${username}/${newsletterSlug}/${issue.slug}`}
+                        className="flex-shrink-0"
+                      >
+                        <div className="relative h-24 w-32 overflow-hidden rounded-lg bg-muted/50 border border-border/60">
+                          <Image
+                            src={issue.coverImageUrl}
+                            alt={issue.title || "cover image"}
+                            fill
+                            sizes="128px"
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        </div>
+                      </Link>
+                    )}
+                  </div>
                 </article>
               ))}
             </div>
           )}
         </section>
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-border">
-        <div className="mx-auto max-w-2xl px-6 py-6">
-          <p className="text-center text-sm text-muted-foreground">
-            <Link href="/" className="hover:text-foreground">
-              Vality
-            </Link>
-            로 만들어진 뉴스레터
-          </p>
-        </div>
-      </footer>
     </div>
     );
   } catch (error) {

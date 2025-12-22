@@ -45,6 +45,7 @@ data class PublicIssueResponse(
     val slug: String,
     val title: String?,
     val excerpt: String?, // Short 버전 (excerpt)
+    val coverImageUrl: String?,
     val publishedAt: String,
     val newsletterId: String,
     val newsletterSlug: String,
@@ -120,6 +121,7 @@ fun Route.publicProfileRoutes() {
                         ownerUsername = issue.ownerUsername,
                         ownerName = issue.ownerName,
                         ownerImageUrl = imageUrlService.getUserImageUrl(issue.ownerImageUrl, issue.ownerId),
+                        coverImageUrl = issue.issueCoverImageUrl?.let { imageUrlService.getImageUrl(it) },
                     )
                 }
                 
@@ -278,6 +280,7 @@ fun Route.publicProfileRoutes() {
                                 ownerUsername = user.username,
                                 ownerName = user.name,
                                 ownerImageUrl = imageUrlService.getImageUrl(user),
+                                coverImageUrl = issue.coverImageUrl?.let { imageUrlService.getImageUrl(it) },
                             )
                         }
                 }
@@ -396,6 +399,7 @@ fun Route.publicProfileRoutes() {
                             ownerUsername = owner?.username,
                             ownerName = owner?.name,
                             ownerImageUrl = owner?.let { imageUrlService.getImageUrl(it) },
+                            coverImageUrl = issue.coverImageUrl?.let { imageUrlService.getImageUrl(it) },
                         )
                     }
 
