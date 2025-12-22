@@ -10,16 +10,10 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.vality.dto.ApiResponse
-import io.vality.dto.subscriber.SubscribeConfirmResponse
+import io.vality.dto.public.PublicSubscribeRequest
 import io.vality.dto.subscriber.toSubscriberResponse
 import io.vality.service.SubscriberService
-import kotlinx.serialization.Serializable
 import org.koin.ktor.ext.inject
-
-@Serializable
-data class PublicSubscribeRequest(
-    val email: String,
-)
 
 fun Route.publicSubscriberRoutes() {
     val subscriberService: SubscriberService by inject()

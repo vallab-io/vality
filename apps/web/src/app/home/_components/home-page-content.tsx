@@ -203,7 +203,7 @@ export default function HomePageContent() {
                   <div className="mt-auto flex items-center justify-between pt-5 border-t border-border/50">
                     <div className="flex items-center gap-2">
                       <Heart className="h-4 w-4 fill-foreground text-foreground" />
-                      <span className="text-sm font-semibold text-foreground">0</span>
+                      <span className="text-sm font-semibold text-foreground">{issue.likeCount || 0}</span>
                     </div>
                     <time className="text-xs font-medium text-muted-foreground">
                       {formatDate(issue.publishedAt)}

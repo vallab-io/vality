@@ -1,12 +1,17 @@
 package io.vality.service
 
 import io.vality.domain.Newsletter
+import io.vality.dto.public.PublicNewsletterResponse
 import io.vality.repository.NewsletterRepository
+import io.vality.repository.SubscriberRepository
+import io.vality.repository.UserRepository
 import io.vality.util.CuidGenerator
 import java.time.Instant
 
 class NewsletterService(
     private val newsletterRepository: NewsletterRepository,
+    private val subscriberRepository: SubscriberRepository,
+    private val userRepository: UserRepository,
 ) {
     /**
      * 뉴스레터 생성
@@ -135,6 +140,43 @@ class NewsletterService(
      */
     suspend fun hasNewsletter(ownerId: String): Boolean {
         return newsletterRepository.findByOwnerId(ownerId).isNotEmpty()
+    }
+
+    /**
+     * 특정 뉴스레터 조회 (username + slug)
+     */
+    suspend fun getNewsletterByUsernameAndSlug(username: String, newsletterSlug: String): PublicNewsletterResponse {
+        val newsletter = newsletterRepository.findByUsernameAndSlug(username, newsletterSlug)
+            ?: throw IllegalArgumentException("Newsletter not found")
+
+        val subscriberCount = subscriberRepository.countActiveByNewsletterId(newsletter.id)
+        return PublicNewsletterResponse(
+            id = newsletter.id,
+            slug = newsletter.slug,
+            name = newsletter.name,
+            description = newsletter.description,
+            subscriberCount = subscriberCount,
+        )
+    }
+
+    /**
+     * 사용자의 뉴스레터 목록 조회
+     */
+    suspend fun getUserNewsletters(username: String): List<PublicNewsletterResponse> {
+        val user = userRepository.findByUsername(username)
+            ?: throw IllegalArgumentException("User not found")
+
+        val newsletters = newsletterRepository.findByOwnerId(user.id)
+        return newsletters.map { newsletter ->
+            val subscriberCount = subscriberRepository.countActiveByNewsletterId(newsletter.id)
+            PublicNewsletterResponse(
+                id = newsletter.id,
+                slug = newsletter.slug,
+                name = newsletter.name,
+                description = newsletter.description,
+                subscriberCount = subscriberCount,
+            )
+        }
     }
 }
 

@@ -8,7 +8,7 @@ import io.vality.routing.docs.docsRoutes
 import io.vality.routing.health.healthRoutes
 import io.vality.routing.issue.issueRoutes
 import io.vality.routing.newsletter.newsletterRoutes
-import io.vality.routing.public.publicProfileRoutes
+import io.vality.routing.public.publicRoutes
 import io.vality.routing.public.publicSubscriberRoutes
 import io.vality.routing.subscriber.subscriberRoutes
 import io.vality.routing.test.testRoutes
@@ -24,7 +24,7 @@ fun Application.configureRouting() {
         newsletterRoutes()
         issueRoutes()
         subscriberRoutes()
-        publicProfileRoutes()
+        publicRoutes()
         publicSubscriberRoutes()
         testRoutes()
     }
