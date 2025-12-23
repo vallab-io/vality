@@ -185,6 +185,7 @@ class SubscriptionService(
     ): Subscription? {
         return subscriptionRepository.findByLemonSqueezySubscriptionId(lemonSqueezySubscriptionId)
     }
+
 }
 
 /**

@@ -12,7 +12,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import java.security.MessageDigest
 import java.time.Instant
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
@@ -30,6 +29,12 @@ class LemonSqueezyService(
     private val config: Config,
 ) {
     private val webhookSecret: String = config.getString("ktor.lemonSqueezy.webhookSecret")
+    private val starterVariantId: String? = config.getStringOrNull("ktor.lemonSqueezy.starterVariantId")
+    private val proVariantId: String? = config.getStringOrNull("ktor.lemonSqueezy.proVariantId")
+    private val storeId: String? = config.getStringOrNull("ktor.lemonSqueezy.storeId")
+    private val checkoutBaseUrl: String =
+        config.getStringOrNull("ktor.lemonSqueezy.checkoutBaseUrl")
+            ?: "https://store.lemonsqueezy.com/checkout"
 
     /**
      * 웹훅 서명 검증
@@ -378,10 +383,6 @@ class LemonSqueezyService(
         val variantId = attributes["variant_id"]?.jsonPrimitive?.content
             ?: return null
 
-        // 환경 변수에서 variant_id 매핑 확인
-        val starterVariantId = config.getStringOrNull("ktor.lemonSqueezy.starterVariantId")
-        val proVariantId = config.getStringOrNull("ktor.lemonSqueezy.proVariantId")
-
         return when (variantId) {
             starterVariantId -> PlanType.STARTER
             proVariantId -> PlanType.PRO
@@ -415,5 +416,30 @@ private fun Config.getStringOrNull(path: String): String? {
     } catch (e: Exception) {
         null
     }
+}
+
+/**
+ * 체크아웃 URL 생성용 헬퍼
+ *
+ * Lemon Squeezy의 Buy Link 형태 사용:
+ * https://store.lemonsqueezy.com/checkout/buy/{variant_id}?checkout[custom][userId]={userId}
+ */
+fun LemonSqueezyService.createCheckoutUrl(planType: PlanType, userId: String): String {
+    val variantId = when (planType) {
+        PlanType.STARTER -> starterVariantId
+        PlanType.PRO -> proVariantId
+        PlanType.FREE -> null
+    } ?: throw IllegalArgumentException("Variant ID not configured for plan: $planType")
+
+    val base = if (checkoutBaseUrl.endsWith("/")) checkoutBaseUrl.dropLast(1) else checkoutBaseUrl
+    // storeId가 있는 경우 store별 도메인 형태 사용 가능 (옵션)
+    val baseUrl = if (!storeId.isNullOrBlank()) {
+        "https://store-$storeId.lemonsqueezy.com/checkout"
+    } else {
+        base
+    }
+
+    val encodedUserId = java.net.URLEncoder.encode(userId, Charsets.UTF_8)
+    return "$baseUrl/buy/$variantId?checkout[custom][userId]=$encodedUserId"
 }
 

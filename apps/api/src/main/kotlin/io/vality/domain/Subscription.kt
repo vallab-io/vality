@@ -17,7 +17,7 @@ import java.time.Instant
 enum class PlanType {
     FREE,
     STARTER,
-    PRO
+    PRO,
 }
 
 /**
