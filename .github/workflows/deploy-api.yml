@@ -1,0 +1,96 @@
+name: Deploy API (build & push to ECR)
+
+on:
+  push:
+    branches:
+      - deploy/api
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+jobs:
+  Deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Github Repository 파일 불러오기
+        uses: actions/checkout@v4
+
+      - name: JDK 21버전 설치
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+# todo: need to implement
+#      - name: application.yml 파일 만들기
+#        run: echo "${{ secrets.APPLICATION_PROPERTIES }}" > ./src/main/resources/application.yml
+
+      - name: 테스트 및 빌드하기
+        working-directory: apps/api
+        run: ./gradlew clean build
+
+      - name: AWS credentials 설정
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ap-northeast-2
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+
+      - name: ECR에 로그인하기
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+#jobs:
+#  build-and-push:
+#    runs-on: ubuntu-latest
+#    permissions:
+#      id-token: write   # for OIDC
+#      contents: read
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#
+#      - name: Configure AWS credentials (OIDC)
+#        uses: aws-actions/configure-aws-credentials@v4
+#        with:
+#          aws-region: ${{ env.AWS_REGION }}
+#          role-to-assume: ${{ secrets.AWS_ROLE_ARN }} # 예: arn:aws:iam::<account>:role/GitHubActionsECR
+#          role-session-name: github-actions-ecr
+#
+#      - name: Set up JDK 21
+#        uses: actions/setup-java@v4
+#        with:
+#          distribution: temurin
+#          java-version: "21"
+#
+#      - name: Cache Gradle
+#        uses: actions/cache@v4
+#        with:
+#          path: |
+#            ~/.gradle/caches
+#            ~/.gradle/wrapper
+#          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+#          restore-keys: |
+#            ${{ runner.os }}-gradle-
+#
+#      - name: Build API (Gradle)
+#        working-directory: apps/api
+#        run: ./gradlew clean build
+#
+#      - name: Login to Amazon ECR
+#        id: login-ecr
+#        uses: aws-actions/amazon-ecr-login@v2
+#
+#      - name: Build and push (API)
+#        run: |
+#          IMAGE_TAG=latest
+#          IMAGE_URI=${ECR_REPO}:${IMAGE_TAG}
+#
+#          echo "Building image: ${IMAGE_URI}"
+#          docker build -t ${IMAGE_URI} apps/api
+#          docker push ${IMAGE_URI}
+#
+#          echo "Image pushed: ${IMAGE_URI}"
+
