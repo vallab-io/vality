@@ -28,8 +28,8 @@ jobs:
 #        run: echo "${{ secrets.APPLICATION_PROPERTIES }}" > ./src/main/resources/application.yml
 
       - name: 테스트 및 빌드하기
-        working-directory: apps/api
-        run: ./gradlew clean build
+        run: |
+          ./gradlew :apps:api:clean :apps:api:build
 
       - name: AWS credentials 설정
         uses: aws-actions/configure-aws-credentials@v4
