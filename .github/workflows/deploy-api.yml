@@ -43,13 +43,13 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Docker 이미지 생성
-        run: docker build -t vality-api -f apps/api/Dockerfile apps/api
+        run: docker build -t vality-api-repository -f apps/api/Dockerfile apps/api
 
       - name: Docker 이미지에 Tag 붙이기
-        run: docker tag vality-api ${{ steps.login-ecr.outputs.registry }}/vality-api:latest
+        run: docker tag vality-api-repository ${{ steps.login-ecr.outputs.registry }}/vality-api-repository:latest
 
       - name: ECR에 Docker 이미지 Push하기
-        run: docker push ${{ steps.login-ecr.outputs.registry }}/vality-api:latest
+        run: docker push ${{ steps.login-ecr.outputs.registry }}/vality-api-repository:latest
 
 #jobs:
 #  build-and-push:
