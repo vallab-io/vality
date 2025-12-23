@@ -23,10 +23,6 @@ jobs:
           distribution: temurin
           java-version: 21
 
-# todo: need to implement
-#      - name: application.yml 파일 만들기
-#        run: echo "${{ secrets.APPLICATION_PROPERTIES }}" > ./src/main/resources/application.yml
-
       - name: Gradle 설치
         uses: gradle/actions/setup-gradle@v3
         with:
@@ -45,6 +41,15 @@ jobs:
       - name: ECR에 로그인하기
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Docker 이미지 생성
+        run: docker build -t vality-api -f apps/api/Dockerfile apps/api
+
+      - name: Docker 이미지에 Tag 붙이기
+        run: docker tag vality-api ${{ steps.login-ecr.outputs.registry }}/vality-api:latest
+
+      - name: ECR에 Docker 이미지 Push하기
+        run: docker push ${{ steps.login-ecr.outputs.registry }}/vality-api:latest
 
 #jobs:
 #  build-and-push:
