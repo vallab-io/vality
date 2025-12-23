@@ -133,8 +133,8 @@ class SubscriptionWebhookEventRepository {
      */
     suspend fun markAsProcessed(eventId: String): Boolean = dbQuery {
         SubscriptionWebhookEvents.update({ SubscriptionWebhookEvents.id eq eventId }) {
-            it[processed] = true
-            it[errorMessage] = null
+            it[SubscriptionWebhookEvents.processed] = true
+            it[SubscriptionWebhookEvents.errorMessage] = null
         } > 0
     }
 
@@ -143,8 +143,8 @@ class SubscriptionWebhookEventRepository {
      */
     suspend fun markAsFailed(eventId: String, errorMessage: String): Boolean = dbQuery {
         SubscriptionWebhookEvents.update({ SubscriptionWebhookEvents.id eq eventId }) {
-            it[processed] = true
-            it[errorMessage] = errorMessage
+            it[SubscriptionWebhookEvents.processed] = true
+            it[SubscriptionWebhookEvents.errorMessage] = errorMessage
         } > 0
     }
 }

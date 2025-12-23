@@ -25,9 +25,6 @@ import { useAtomValue, useSetAtom } from "jotai";
 import { userAtom } from "@/stores/auth.store";
 import { getMyNewsletters, type Newsletter } from "@/lib/api/newsletter";
 
-// 플랜 기본값 (향후 API 연동 시 교체)
-const DEFAULT_PLAN: "free" | "pro" = "free";
-
 const MAX_FREE_NEWSLETTERS = 1;
 
 // 뉴스레터 아이콘
@@ -107,8 +104,7 @@ export function DashboardSidebar() {
     }
   }, [newsletters]);
 
-  const canCreateNewsletter =
-    DEFAULT_PLAN === "pro" || newsletters.length < MAX_FREE_NEWSLETTERS;
+  const canCreateNewsletter = newsletters.length < MAX_FREE_NEWSLETTERS;
 
   const handleCreateNewsletter = () => {
     if (!canCreateNewsletter) {
@@ -236,6 +232,22 @@ export function DashboardSidebar() {
               </div>
             )}
           </div>
+
+          {/* 계정 설정 */}
+          <Link
+            href="/dashboard/subscription"
+            className={cn(
+              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              pathname === "/dashboard/subscription"
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <span className="flex h-5 w-5 items-center justify-center rounded bg-muted text-[10px] font-semibold">
+              ₩
+            </span>
+            구독 관리
+          </Link>
 
           {/* 계정 설정 */}
           <Link
