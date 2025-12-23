@@ -3,6 +3,7 @@ package io.vality.di
 import com.typesafe.config.Config
 import io.vality.service.AuthService
 import io.vality.service.IssueService
+import io.vality.service.LemonSqueezyService
 import io.vality.service.NewsletterService
 import io.vality.service.SubscriberService
 import io.vality.service.SubscriptionService
@@ -106,7 +107,16 @@ val serviceModule = module {
         SubscriptionService(
             subscriptionRepository = get(),
             newsletterRepository = get(),
-            subscriberRepository = get(),
+        )
+    }
+
+    // Lemon Squeezy Service
+    single<LemonSqueezyService> {
+        LemonSqueezyService(
+            subscriptionRepository = get(),
+            subscriptionWebhookEventRepository = get(),
+            subscriptionService = get(),
+            config = get(),
         )
     }
 
