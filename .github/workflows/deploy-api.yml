@@ -27,12 +27,13 @@ jobs:
 #      - name: application.yml 파일 만들기
 #        run: echo "${{ secrets.APPLICATION_PROPERTIES }}" > ./src/main/resources/application.yml
 
-      - name: Gradle Wrapper 실행 권한 부여
-        run: chmod +x gradlew
+      - name: Gradle 설치
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.7
 
       - name: 테스트 및 빌드하기
-        working-directory: apps/api
-        run: ./gradlew clean build
+        run: gradle -p apps/api clean build
 
       - name: AWS credentials 설정
         uses: aws-actions/configure-aws-credentials@v4
