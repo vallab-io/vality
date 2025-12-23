@@ -162,3 +162,45 @@ object SubscriberVerificationTokens : Table("subscriber_verification_tokens") {
 
     override val primaryKey = PrimaryKey(id)
 }
+
+// ============================================
+// Subscription - 구독 정보
+// ============================================
+object Subscriptions : Table("subscriptions") {
+    val id = varchar("id", 24)
+    val userId = varchar("user_id", 24).references(Users.id, onDelete = ReferenceOption.CASCADE)
+    val lemonSqueezySubscriptionId = varchar("lemon_squeezy_subscription_id", 255).nullable().uniqueIndex()
+    val lemonSqueezyOrderId = varchar("lemon_squeezy_order_id", 255).nullable()
+    val planType = varchar("plan_type", 20).default("FREE")
+    val status = varchar("status", 20).default("ACTIVE")
+    val currentPeriodStart = timestamp("current_period_start").nullable()
+    val currentPeriodEnd = timestamp("current_period_end").nullable()
+    val cancelAtPeriodEnd = bool("cancel_at_period_end").default(false)
+    val cancelledAt = timestamp("cancelled_at").nullable()
+    val createdAt = timestamp("created_at")
+    val updatedAt = timestamp("updated_at")
+
+    override val primaryKey = PrimaryKey(id)
+}
+
+// ============================================
+// SubscriptionWebhookEvent - 구독 웹훅 이벤트 로그
+// ============================================
+object SubscriptionWebhookEvents : Table("subscription_webhook_events") {
+    val id = varchar("id", 24)
+    val eventType = varchar("event_type", 50)
+    val lemonSqueezyEventId = varchar("lemon_squeezy_event_id", 255).nullable().uniqueIndex()
+    val subscriptionId = varchar("subscription_id", 24).nullable()
+    val payload = text("payload") // JSONB는 TEXT로 저장하고 JSON으로 파싱
+    val processed = bool("processed").default(false)
+    val errorMessage = text("error_message").nullable()
+    val createdAt = timestamp("created_at")
+
+    override val primaryKey = PrimaryKey(id)
+    
+    init {
+        // nullable 컬럼의 경우 외래키는 데이터베이스 레벨에서만 설정
+        // Exposed v1에서는 nullable 컬럼에 대한 references가 제한적이므로
+        // 마이그레이션 파일에서 직접 외래키를 설정
+    }
+}

@@ -5,6 +5,7 @@ import io.vality.service.AuthService
 import io.vality.service.IssueService
 import io.vality.service.NewsletterService
 import io.vality.service.SubscriberService
+import io.vality.service.SubscriptionService
 import io.vality.service.UserService
 import io.vality.service.email.EmailService
 import io.vality.service.oauth.GoogleOAuthService
@@ -97,6 +98,15 @@ val serviceModule = module {
             newsletterRepository = get(),
             userRepository = get(),
             imageUrlService = get(),
+        )
+    }
+
+    // Subscription Service
+    single<SubscriptionService> {
+        SubscriptionService(
+            subscriptionRepository = get(),
+            newsletterRepository = get(),
+            subscriberRepository = get(),
         )
     }
 
