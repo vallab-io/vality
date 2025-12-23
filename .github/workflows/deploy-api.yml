@@ -74,4 +74,4 @@ jobs:
             docker pull ${{ steps.login-ecr.outputs.registry }}/vality-api-repository:latest
             
             # 새 컨테이너 실행
-             docker run -d --name vality-api-repository -p 8080:8080 ${{ steps.login-ecr.outputs.registry }}/vality-api-repository:latest
+             docker run -d --name vality-api-repository -p 4000:4000 ${{ steps.login-ecr.outputs.registry }}/vality-api-repository:latest
