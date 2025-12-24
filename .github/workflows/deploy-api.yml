@@ -12,6 +12,7 @@ env:
   EC2_HOST: ${{ secrets.EC2_HOST }}
   EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
   EC2_PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+  APPLICATION_CONF: ${{ secrets.APPLICATION_CONF }}
 
 jobs:
   Deploy:
@@ -34,11 +35,13 @@ jobs:
       - name: application.conf 파일 만들기
         run: |
           mkdir -p ./apps/api/src/main/resources
-          # GitHub Actions의 ${{ }} 문법을 사용하여 직접 파일로 쓰기
-          # 이렇게 하면 bash 변수 치환 없이 직접 값이 치환됨
+          # heredoc을 사용하여 multiline 문자열을 안전하게 파일로 쓰기
+          # delimiter를 single quote로 감싸서 bash 변수 치환 방지
           cat > ./apps/api/src/main/resources/application.conf << 'APPLICATION_CONF_EOF'
-          ${{ secrets.APPLICATION_CONF }}
+          $APPLICATION_CONF
           APPLICATION_CONF_EOF
+        env:
+          APPLICATION_CONF: ${{ env.APPLICATION_CONF }}
 
       - name: 테스트 및 빌드하기
         run: gradle -p apps/api clean build
