@@ -17,6 +17,7 @@ import {
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/auth.store";
 import { getMyNewsletters, type Newsletter } from "@/lib/api/newsletter";
+import { getMySubscription, type PlanType } from "@/lib/api/subscription";
 
 const MAX_FREE_NEWSLETTERS = 1;
 
@@ -63,9 +64,24 @@ export function DashboardHeader() {
   const [selectedNewsletter, setSelectedNewsletter] = useState<Newsletter | null>(null);
   const [isNewsletterOpen, setIsNewsletterOpen] = useState(true);
   const [showNewsletterSwitcher, setShowNewsletterSwitcher] = useState(false);
+  const [userPlan, setUserPlan] = useState<PlanType>("FREE");
   const pathname = usePathname();
-  
-  const userPlan: "free" | "pro" = "free"; // TODO: API에서 가져오기
+
+  // 구독 정보 가져오기
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      try {
+        const subscription = await getMySubscription();
+        if (subscription) {
+          setUserPlan(subscription.planType);
+        }
+      } catch (error) {
+        console.error("Failed to fetch subscription:", error);
+      }
+    };
+
+    fetchSubscription();
+  }, []);
 
   // 뉴스레터 목록 가져오기
   useEffect(() => {
@@ -103,7 +119,7 @@ export function DashboardHeader() {
   const closeMenu = () => setIsMenuOpen(false);
 
   const canCreateNewsletter =
-    userPlan === "pro" || newsletters.length < MAX_FREE_NEWSLETTERS;
+    userPlan === "PRO" || newsletters.length < MAX_FREE_NEWSLETTERS;
 
   const handleCreateNewsletter = () => {
     if (!canCreateNewsletter) {
