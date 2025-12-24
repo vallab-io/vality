@@ -12,6 +12,7 @@ env:
   EC2_HOST: ${{ secrets.EC2_HOST }}
   EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
   EC2_PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+  APPLICATION_CONF: ${{ secrets.APPLICATION_CONF }}
 
 jobs:
   Deploy:
@@ -30,6 +31,9 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: 8.7
+
+      - name: application.conf 파일 만들기
+        run: echo "${{ env.APPLICATION_CONF }}" > ./apps/api/src/main/resources/application.conf
 
       - name: 테스트 및 빌드하기
         run: gradle -p apps/api clean build
