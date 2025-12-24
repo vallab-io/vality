@@ -9,6 +9,10 @@ env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  EC2_HOST: ${{ secrets.EC2_HOST }}
+  EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+  EC2_PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+  APPLICATION_CONF: ${{ secrets.APPLICATION_CONF }}
 
 jobs:
   Deploy:
@@ -23,13 +27,22 @@ jobs:
           distribution: temurin
           java-version: 21
 
-# todo: need to implement
-#      - name: application.yml 파일 만들기
-#        run: echo "${{ secrets.APPLICATION_PROPERTIES }}" > ./src/main/resources/application.yml
+      - name: Gradle 설치
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.7
+
+      - name: application.conf 파일 만들기
+        run: |
+          mkdir -p ./apps/api/src/main/resources
+          # 모든 $ 문자를 $$로 이스케이프하여 HOCON 파싱 오류 방지
+          # HOCON에서 $$는 리터럴 $로, $${...}는 ${...}로 해석됨
+          echo "$APPLICATION_CONF" | sed 's/\$/$$/g' > ./apps/api/src/main/resources/application.conf
+        env:
+          APPLICATION_CONF: ${{ env.APPLICATION_CONF }}
 
       - name: 테스트 및 빌드하기
-        working-directory: apps/api
-        run: ./gradlew clean build
+        run: gradle -p apps/api clean build
 
       - name: AWS credentials 설정
         uses: aws-actions/configure-aws-credentials@v4
@@ -42,55 +55,33 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-#jobs:
-#  build-and-push:
-#    runs-on: ubuntu-latest
-#    permissions:
-#      id-token: write   # for OIDC
-#      contents: read
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v4
-#
-#      - name: Configure AWS credentials (OIDC)
-#        uses: aws-actions/configure-aws-credentials@v4
-#        with:
-#          aws-region: ${{ env.AWS_REGION }}
-#          role-to-assume: ${{ secrets.AWS_ROLE_ARN }} # 예: arn:aws:iam::<account>:role/GitHubActionsECR
-#          role-session-name: github-actions-ecr
-#
-#      - name: Set up JDK 21
-#        uses: actions/setup-java@v4
-#        with:
-#          distribution: temurin
-#          java-version: "21"
-#
-#      - name: Cache Gradle
-#        uses: actions/cache@v4
-#        with:
-#          path: |
-#            ~/.gradle/caches
-#            ~/.gradle/wrapper
-#          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-#          restore-keys: |
-#            ${{ runner.os }}-gradle-
-#
-#      - name: Build API (Gradle)
-#        working-directory: apps/api
-#        run: ./gradlew clean build
-#
-#      - name: Login to Amazon ECR
-#        id: login-ecr
-#        uses: aws-actions/amazon-ecr-login@v2
-#
-#      - name: Build and push (API)
-#        run: |
-#          IMAGE_TAG=latest
-#          IMAGE_URI=${ECR_REPO}:${IMAGE_TAG}
-#
-#          echo "Building image: ${IMAGE_URI}"
-#          docker build -t ${IMAGE_URI} apps/api
-#          docker push ${IMAGE_URI}
-#
-#          echo "Image pushed: ${IMAGE_URI}"
+      - name: Docker 이미지 생성
+        run: docker build -t vality-api-repository -f apps/api/Dockerfile apps/api
 
+      - name: Docker 이미지에 Tag 붙이기
+        run: docker tag vality-api-repository ${{ steps.login-ecr.outputs.registry }}/vality-api-repository:latest
+
+      - name: ECR에 Docker 이미지 Push하기
+        run: docker push ${{ steps.login-ecr.outputs.registry }}/vality-api-repository:latest
+
+      - name: SSH로 EC2에 접속하여 배포하기
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ env.EC2_HOST }}
+          username: ${{ env.EC2_USERNAME }}
+          key: ${{ env.EC2_PRIVATE_KEY }}
+          script_stop: true
+          script: |
+            # EC2에서 ECR 로그인
+            aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
+              docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+            
+            # 기존 컨테이너 중지 및 제거
+            docker stop vality-api-repository || true
+            docker rm vality-api-repository || true
+            
+            # 최신 이미지 pull
+            docker pull ${{ steps.login-ecr.outputs.registry }}/vality-api-repository:latest
+            
+            # 새 컨테이너 실행
+             docker run -d --name vality-api-repository -p 4000:4000 ${{ steps.login-ecr.outputs.registry }}/vality-api-repository:latest
