@@ -33,7 +33,13 @@ jobs:
           gradle-version: 8.7
 
       - name: application.conf 파일 만들기
-        run: echo "${{ env.APPLICATION_CONF }}" > ./apps/api/src/main/resources/application.conf
+        run: |
+          mkdir -p ./apps/api/src/main/resources
+          # GitHub Actions의 ${{ }} 문법을 사용하여 직접 파일로 쓰기
+          # 이렇게 하면 bash 변수 치환 없이 직접 값이 치환됨
+          cat > ./apps/api/src/main/resources/application.conf << 'APPLICATION_CONF_EOF'
+          ${{ env.APPLICATION_CONF }}
+          APPLICATION_CONF_EOF
 
       - name: 테스트 및 빌드하기
         run: gradle -p apps/api clean build
