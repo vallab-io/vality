@@ -35,11 +35,9 @@ jobs:
       - name: application.conf 파일 만들기
         run: |
           mkdir -p ./apps/api/src/main/resources
-          # heredoc을 사용하여 multiline 문자열을 안전하게 파일로 쓰기
-          # delimiter를 single quote로 감싸서 bash 변수 치환 방지
-          cat > ./apps/api/src/main/resources/application.conf << 'APPLICATION_CONF_EOF'
-          $APPLICATION_CONF
-          APPLICATION_CONF_EOF
+          # 모든 $ 문자를 $$로 이스케이프하여 HOCON 파싱 오류 방지
+          # HOCON에서 $$는 리터럴 $로, $${...}는 ${...}로 해석됨
+          echo "$APPLICATION_CONF" | sed 's/\$/$$/g' > ./apps/api/src/main/resources/application.conf
         env:
           APPLICATION_CONF: ${{ env.APPLICATION_CONF }}
 
