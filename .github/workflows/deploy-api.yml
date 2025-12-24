@@ -12,7 +12,6 @@ env:
   EC2_HOST: ${{ secrets.EC2_HOST }}
   EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
   EC2_PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
-  APPLICATION_CONF: ${{ secrets.APPLICATION_CONF }}
 
 jobs:
   Deploy:
@@ -38,7 +37,7 @@ jobs:
           # GitHub Actions의 ${{ }} 문법을 사용하여 직접 파일로 쓰기
           # 이렇게 하면 bash 변수 치환 없이 직접 값이 치환됨
           cat > ./apps/api/src/main/resources/application.conf << 'APPLICATION_CONF_EOF'
-          ${{ env.APPLICATION_CONF }}
+          ${{ secrets.APPLICATION_CONF }}
           APPLICATION_CONF_EOF
 
       - name: 테스트 및 빌드하기
