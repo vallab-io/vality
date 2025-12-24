@@ -264,6 +264,79 @@ NEXT_PUBLIC_API_URL=https://api.your-domain.com
 
 ### 5. 커스텀 도메인 연결
 
+#### 5-0. Route 53에서 Vercel로 도메인 연결 (AWS Route 53 사용 시)
+
+**사전 준비:**
+- Route 53에서 `vality.io` 호스팅 영역이 이미 생성되어 있어야 합니다
+- Vercel 프로젝트가 배포되어 있어야 합니다
+
+**단계별 설정:**
+
+**1단계: Vercel에서 도메인 추가**
+1. Vercel 대시보드 → Project Settings → Domains
+2. "Add Domain" 클릭
+3. 도메인 입력:
+   - `vality.io` (루트 도메인)
+   - `www.vality.io` (www 서브도메인, 선택사항)
+4. Vercel이 DNS 레코드 정보를 표시합니다:
+   - 루트 도메인: A 레코드 IP 주소 (예: `76.76.21.21` 또는 `216.198.79.1`)
+   - www 서브도메인: CNAME 레코드 값 (예: `cname.vercel-dns.com`)
+
+**2단계: Route 53에서 DNS 레코드 추가**
+
+**루트 도메인 (`vality.io`) 설정:**
+1. AWS 콘솔 → Route 53 → 호스팅 영역 → `vality.io` 선택
+2. "레코드 생성" 클릭
+3. 레코드 설정:
+   - **레코드 이름**: 비워둡니다 (루트 도메인용)
+   - **레코드 유형**: `A`
+   - **별칭**: **비활성화** (Vercel은 AWS 서비스가 아니므로 Alias 사용 불가)
+   - **값/트래픽 라우팅 대상**: Vercel이 제공한 IP 주소 입력
+     - 예: `76.76.21.21` 또는 `216.198.79.1` (Vercel 대시보드에서 확인)
+   - **TTL**: `300` (5분) 또는 `3600` (1시간)
+4. "레코드 생성" 클릭
+
+**www 서브도메인 (`www.vality.io`) 설정:**
+1. Route 53 → 호스팅 영역 → `vality.io` 선택
+2. "레코드 생성" 클릭
+3. 레코드 설정:
+   - **레코드 이름**: `www`
+   - **레코드 유형**: `CNAME`
+   - **값**: Vercel이 제공한 CNAME 값 입력
+     - 예: `cname.vercel-dns.com`
+   - **TTL**: `300` (5분) 또는 `3600` (1시간)
+4. "레코드 생성" 클릭
+
+**3단계: DNS 전파 확인**
+```bash
+# DNS 전파 확인 (터미널에서)
+dig vality.io
+dig www.vality.io
+
+# 또는 온라인 도구 사용
+# https://dnschecker.org
+```
+
+**4단계: SSL 인증서 발급 대기**
+- Vercel이 자동으로 Let's Encrypt SSL 인증서를 발급합니다
+- 보통 몇 분~최대 24시간 소요
+- Vercel 대시보드에서 인증서 상태 확인 가능
+
+**주의사항:**
+- Route 53의 **Alias 레코드는 AWS 서비스에만 사용 가능**하므로 Vercel에는 사용할 수 없습니다
+- 반드시 **일반 A 레코드**와 **CNAME 레코드**를 사용해야 합니다
+- DNS 전파 시간: 보통 몇 분~최대 48시간
+- 기존 레코드가 있다면 삭제하거나 수정해야 합니다
+
+**문제 해결:**
+- "Invalid Configuration" 경고가 나타나면:
+  1. DNS 레코드가 올바르게 설정되었는지 확인
+  2. DNS 전파가 완료되었는지 확인 (`dig` 명령어 사용)
+  3. Vercel 대시보드에서 도메인 설정 재확인
+  4. Route 53 레코드의 TTL 값을 낮춰서 빠른 전파 확인
+
+#### 5-0-1. 일반 DNS 제공업체 사용 시
+
 1. Vercel 대시보드 → Project Settings → Domains
 2. "Add Domain" 클릭
 3. 도메인 입력 (예: `your-domain.com`, `www.your-domain.com`)
