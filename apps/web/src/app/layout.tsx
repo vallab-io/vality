@@ -32,12 +32,32 @@ export const metadata: Metadata = {
     title: "Vality - 뉴스레터 & 웹 아카이빙 플랫폼",
     description:
       "한 번 발행으로 이메일 · 블로그 · 프로필 콘텐츠가 동시에 완성되는 구조",
+    images: [
+      {
+        url: "https://vality.io/logo.svg",
+        width: 1200,
+        height: 1200,
+        alt: "Vality",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Vality - 뉴스레터 & 웹 아카이빙 플랫폼",
     description:
       "한 번 발행으로 이메일 · 블로그 · 프로필 콘텐츠가 동시에 완성되는 구조",
+    images: ["https://vality.io/logo.svg"],
+  },
+  icons: {
+    icon: [
+      { url: "/logo.svg", sizes: "any", type: "image/svg+xml" },
+      { url: "/logo.svg", type: "image/svg+xml", sizes: "192x192" },
+      { url: "/logo.svg", type: "image/svg+xml", sizes: "512x512" },
+    ],
+    shortcut: "/logo.svg",
+    apple: [
+      { url: "/logo.svg", sizes: "180x180", type: "image/svg+xml" },
+    ],
   },
   robots: {
     index: true,

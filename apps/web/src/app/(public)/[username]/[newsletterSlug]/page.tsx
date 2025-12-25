@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { SubscribeForm } from "../_components/subscribe-form";
 import { UserAvatar } from "@/components/common";
-import { NewsletterHeader } from "./_components/newsletter-header";
 import {
   getPublicUserProfile,
   getPublicNewsletter,
@@ -61,10 +60,7 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
     };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <NewsletterHeader />
-
+    <>
       <main className="mx-auto max-w-5xl px-6 py-16">
         {/* 1. 뉴스레터 소개 */}
         <section className="text-center">
@@ -160,7 +156,7 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
           )}
         </section>
       </main>
-    </div>
+    </>
     );
   } catch (error) {
     notFound();

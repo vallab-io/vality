@@ -9,22 +9,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  async redirects() {
-    return [
-      // vality.io -> www.vality.io (301 Permanent Redirect)
-      {
-        source: "/:path*",
-        has: [
-          {
-            type: "host",
-            value: "vality.io",
-          },
-        ],
-        destination: "https://www.vality.io/:path*",
-        permanent: true, // 301 리다이렉트
-      },
-    ];
-  },
   async rewrites() {
     return [
       // /@username -> /[username]
