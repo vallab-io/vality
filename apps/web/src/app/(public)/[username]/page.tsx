@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { SubscribeForm } from "./_components/subscribe-form";
 import { UserAvatar } from "@/components/common";
-import { ProfileHeader } from "./_components/profile-header";
 import {
   getPublicUserProfile,
   getPublicUserNewsletters,
@@ -61,10 +60,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <ProfileHeader />
-
+    <>
       <main className="mx-auto max-w-5xl px-6 py-16">
         {/* 1. User 자기 소개 */}
         <section className="flex flex-col items-center text-center">
@@ -172,7 +168,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           </section>
         )}
       </main>
-    </div>
+    </>
   );
   } catch (error) {
     notFound();

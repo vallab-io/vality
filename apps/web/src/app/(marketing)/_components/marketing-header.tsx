@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -14,9 +14,13 @@ import { getMyNewsletters } from "@/lib/api/newsletter";
 
 export function MarketingHeader() {
   const router = useRouter();
+  const pathname = usePathname();
   const user = useAtomValue(userAtom);
   const authLoading = useAtomValue(authLoadingAtom);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // /about, /blog, /pricing, /price 페이지에서 Logo 클릭 시 /about으로 이동
+  const logoHref = ["/about", "/blog", "/pricing", "/price"].includes(pathname) ? "/about" : "/";
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
@@ -52,8 +56,15 @@ export function MarketingHeader() {
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-md shadow-sm">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
           <div className="flex items-center gap-8">
-            <Logo />
+            <Logo href={logoHref} />
             <nav className="hidden items-center gap-6 md:flex">
+              <Link
+                href="/home"
+                className="text-sm text-muted-foreground transition-all duration-200 hover:text-[#2563EB] dark:hover:text-[#38BDF8] relative group"
+              >
+                홈
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#2563EB] dark:bg-[#38BDF8] group-hover:w-full transition-all duration-200" />
+              </Link>
               {MARKETING_NAV_ITEMS.map((item) => (
                 <Link
                   key={item.href}
@@ -135,6 +146,13 @@ export function MarketingHeader() {
 
         {/* Menu Items */}
         <nav className="space-y-1 p-4">
+          <Link
+            href="/home"
+            onClick={closeMenu}
+            className="block rounded-lg px-3 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+          >
+            홈
+          </Link>
           {MARKETING_NAV_ITEMS.map((item) => (
             <Link
               key={item.href}
