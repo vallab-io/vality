@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { HomeSidebar } from "./home-sidebar";
+import { MarketingFooter } from "@/app/(marketing)/_components/marketing-footer";
 import { getAllPublicIssues, type PublicIssue } from "@/lib/api/public";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/auth.store";
@@ -176,6 +177,9 @@ export default function HomePageContent() {
         </div>
       </main>
 
+      <div className="ml-64">
+        <MarketingFooter />
+      </div>
     </div>
   );
 }
