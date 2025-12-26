@@ -4,7 +4,6 @@ import Link from "next/link";
 import { UserAvatar } from "@/components/common";
 import { SubscribeForm } from "../../_components/subscribe-form";
 import { ShareButtons } from "./_components/share-buttons";
-import { IssueHeader } from "./_components/issue-header";
 import { LikeButton } from "./_components/like-button";
 import {
   getPublicIssueDetail,
@@ -50,13 +49,20 @@ export default async function IssuePage({ params }: IssuePageProps) {
     ]);
 
     return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <IssueHeader 
-        newsletterName={newsletter.name}
-        username={username}
-        newsletterSlug={newsletterSlug}
-      />
+    <>
+      {/* Newsletter Header */}
+      <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+        <div className="mx-auto max-w-5xl px-6">
+          <div className="flex h-16 items-center">
+            <Link
+              href={`/@${username}/${newsletterSlug}`}
+              className="text-xl font-bold text-foreground hover:text-primary transition-colors"
+            >
+              {newsletter.name}
+            </Link>
+          </div>
+        </div>
+      </header>
 
       <main className="mx-auto max-w-5xl px-6 py-12">
         {/* Article Header */}
@@ -112,7 +118,7 @@ export default async function IssuePage({ params }: IssuePageProps) {
         </div>
 
       </main>
-    </div>
+    </>
     );
   } catch (error) {
     console.error("Failed to load issue:", error);

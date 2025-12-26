@@ -30,7 +30,7 @@ export interface CreateIssueRequest {
 
 // 이슈 수정 요청
 export interface UpdateIssueRequest {
-  title?: string;
+  title?: string | null;
   slug?: string;
   content?: string;
   excerpt?: string | null;

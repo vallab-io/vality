@@ -1,5 +1,6 @@
 "use client";
 
+import { JSX } from "react";
 import {
   DecoratorNode,
   NodeKey,

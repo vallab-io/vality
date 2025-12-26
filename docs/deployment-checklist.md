@@ -264,6 +264,79 @@ NEXT_PUBLIC_API_URL=https://api.your-domain.com
 
 ### 5. 커스텀 도메인 연결
 
+#### 5-0. Route 53에서 Vercel로 도메인 연결 (AWS Route 53 사용 시)
+
+**사전 준비:**
+- Route 53에서 `vality.io` 호스팅 영역이 이미 생성되어 있어야 합니다
+- Vercel 프로젝트가 배포되어 있어야 합니다
+
+**단계별 설정:**
+
+**1단계: Vercel에서 도메인 추가**
+1. Vercel 대시보드 → Project Settings → Domains
+2. "Add Domain" 클릭
+3. 도메인 입력:
+   - `vality.io` (루트 도메인)
+   - `www.vality.io` (www 서브도메인, 선택사항)
+4. Vercel이 DNS 레코드 정보를 표시합니다:
+   - 루트 도메인: A 레코드 IP 주소 (예: `76.76.21.21` 또는 `216.198.79.1`)
+   - www 서브도메인: CNAME 레코드 값 (예: `cname.vercel-dns.com`)
+
+**2단계: Route 53에서 DNS 레코드 추가**
+
+**루트 도메인 (`vality.io`) 설정:**
+1. AWS 콘솔 → Route 53 → 호스팅 영역 → `vality.io` 선택
+2. "레코드 생성" 클릭
+3. 레코드 설정:
+   - **레코드 이름**: 비워둡니다 (루트 도메인용)
+   - **레코드 유형**: `A`
+   - **별칭**: **비활성화** (Vercel은 AWS 서비스가 아니므로 Alias 사용 불가)
+   - **값/트래픽 라우팅 대상**: Vercel이 제공한 IP 주소 입력
+     - 예: `76.76.21.21` 또는 `216.198.79.1` (Vercel 대시보드에서 확인)
+   - **TTL**: `300` (5분) 또는 `3600` (1시간)
+4. "레코드 생성" 클릭
+
+**www 서브도메인 (`www.vality.io`) 설정:**
+1. Route 53 → 호스팅 영역 → `vality.io` 선택
+2. "레코드 생성" 클릭
+3. 레코드 설정:
+   - **레코드 이름**: `www`
+   - **레코드 유형**: `CNAME`
+   - **값**: Vercel이 제공한 CNAME 값 입력
+     - 예: `cname.vercel-dns.com`
+   - **TTL**: `300` (5분) 또는 `3600` (1시간)
+4. "레코드 생성" 클릭
+
+**3단계: DNS 전파 확인**
+```bash
+# DNS 전파 확인 (터미널에서)
+dig vality.io
+dig www.vality.io
+
+# 또는 온라인 도구 사용
+# https://dnschecker.org
+```
+
+**4단계: SSL 인증서 발급 대기**
+- Vercel이 자동으로 Let's Encrypt SSL 인증서를 발급합니다
+- 보통 몇 분~최대 24시간 소요
+- Vercel 대시보드에서 인증서 상태 확인 가능
+
+**주의사항:**
+- Route 53의 **Alias 레코드는 AWS 서비스에만 사용 가능**하므로 Vercel에는 사용할 수 없습니다
+- 반드시 **일반 A 레코드**와 **CNAME 레코드**를 사용해야 합니다
+- DNS 전파 시간: 보통 몇 분~최대 48시간
+- 기존 레코드가 있다면 삭제하거나 수정해야 합니다
+
+**문제 해결:**
+- "Invalid Configuration" 경고가 나타나면:
+  1. DNS 레코드가 올바르게 설정되었는지 확인
+  2. DNS 전파가 완료되었는지 확인 (`dig` 명령어 사용)
+  3. Vercel 대시보드에서 도메인 설정 재확인
+  4. Route 53 레코드의 TTL 값을 낮춰서 빠른 전파 확인
+
+#### 5-0-1. 일반 DNS 제공업체 사용 시
+
 1. Vercel 대시보드 → Project Settings → Domains
 2. "Add Domain" 클릭
 3. 도메인 입력 (예: `your-domain.com`, `www.your-domain.com`)
@@ -272,6 +345,211 @@ NEXT_PUBLIC_API_URL=https://api.your-domain.com
    - **CNAME 레코드**: `cname.vercel-dns.com`
 5. DNS 전파 대기 (보통 몇 분~최대 48시간)
 6. SSL 인증서 자동 발급 (Let's Encrypt)
+
+### 5-1. 도메인 변경하기
+
+**기존 도메인 제거 후 새 도메인 추가:**
+
+1. Vercel 대시보드 → Project Settings → Domains
+2. 제거할 도메인 옆의 **"..." 메뉴** 클릭
+3. **"Remove"** 선택
+4. 확인 대화상자에서 **"Remove Domain"** 클릭
+5. 새 도메인 추가:
+   - **"Add Domain"** 클릭
+   - 새 도메인 입력
+   - DNS 설정 안내에 따라 레코드 추가
+
+**도메인 교체 (기존 도메인 유지하면서 새 도메인 추가):**
+
+1. Vercel 대시보드 → Project Settings → Domains
+2. **"Add Domain"** 클릭
+3. 새 도메인 입력 및 DNS 설정
+4. 필요시 기존 도메인 제거
+
+**주의사항:**
+- 도메인 제거 시 즉시 적용되며, SSL 인증서도 함께 제거됩니다
+- 새 도메인 추가 시 DNS 전파 시간이 필요합니다 (보통 몇 분~최대 48시간)
+- 여러 도메인을 동시에 연결할 수 있습니다 (예: `your-domain.com`, `www.your-domain.com`)
+
+### 5-2. www와 루트 도메인의 차이점
+
+**기술적 차이점:**
+
+| 항목 | `vality.io` (루트 도메인) | `www.vality.io` (www 서브도메인) |
+|------|---------------------------|----------------------------------|
+| **DNS 레코드** | A 레코드 (IP 주소) | CNAME 레코드 (별칭) |
+| **쿠키 공유** | 서브도메인 간 공유 어려움 | 서브도메인 간 공유 가능 |
+| **길이** | 더 짧음 | 더 김 |
+| **전통적 관례** | 최신 트렌드 | 전통적 관례 |
+
+**SEO 영향:**
+- **중요**: 두 도메인을 모두 사용할 경우 **리다이렉트 설정 필수**
+- 검색 엔진은 `vality.io`와 `www.vality.io`를 **다른 사이트로 인식**할 수 있음
+- 중복 콘텐츠 문제 발생 가능
+- **해결책**: 하나를 메인으로 설정하고 다른 하나를 리다이렉트
+
+**권장 설정:**
+
+**옵션 1: 루트 도메인을 메인으로 (권장 - 최신 트렌드)**
+```
+vality.io → 메인 도메인
+www.vality.io → vality.io로 리다이렉트
+```
+- ✅ 더 짧고 깔끔한 URL
+- ✅ 타이핑이 쉬움
+- ✅ 최신 웹사이트 트렌드
+
+**옵션 2: www를 메인으로 (전통적 방식)**
+```
+www.vality.io → 메인 도메인
+vality.io → www.vality.io로 리다이렉트
+```
+- ✅ 서브도메인 간 쿠키 공유 용이
+- ✅ 전통적으로 널리 사용됨
+- ✅ 일부 레거시 시스템과 호환성 좋음
+
+**Vercel에서 리다이렉트 설정:**
+
+1. Vercel 대시보드 → Project Settings → Domains
+2. 두 도메인 모두 추가 (`vality.io`, `www.vality.io`)
+3. `next.config.ts`에 리다이렉트 설정 추가:
+   ```typescript
+   const nextConfig: NextConfig = {
+     async redirects() {
+       return [
+         {
+           source: '/:path*',
+           has: [
+             {
+               type: 'host',
+               value: 'www.vality.io',
+             },
+           ],
+           destination: 'https://vality.io/:path*',
+           permanent: true, // 301 리다이렉트
+         },
+       ];
+     },
+   };
+   ```
+   또는 반대로 (`vality.io` → `www.vality.io`):
+   ```typescript
+   {
+     source: '/:path*',
+     has: [
+       {
+         type: 'host',
+         value: 'vality.io',
+       },
+     ],
+     destination: 'https://www.vality.io/:path*',
+     permanent: true,
+   }
+   ```
+
+**추가 고려사항:**
+- **Google Search Console**: 메인 도메인만 등록 (리다이렉트된 도메인은 자동 인식)
+- **소셜 미디어 공유**: Open Graph 태그에서 메인 도메인 사용
+- **sitemap.xml**: 메인 도메인 기준으로 생성
+- **canonical URL**: 메인 도메인으로 설정
+
+### 5-3. HTTP 리다이렉트 상태 코드 차이점
+
+**301 Permanent Redirect (영구 리다이렉트)**
+- **의미**: 리소스가 **영구적으로** 다른 위치로 이동했음
+- **SEO**: 검색 엔진이 **링크 권한(link juice)을 전달**함
+- **캐싱**: 브라우저가 리다이렉트를 **캐시**하여 다음 방문 시 직접 새 URL로 이동
+- **HTTP 메서드**: GET, POST 등 **모든 메서드 유지**
+- **사용 시나리오**:
+  - ✅ 도메인 변경 (영구적)
+  - ✅ www ↔ 루트 도메인 통일 (영구적)
+  - ✅ URL 구조 변경 (영구적)
+- **Next.js 설정**: `permanent: true`
+
+**302 Found / Temporary Redirect (임시 리다이렉트)**
+- **의미**: 리소스가 **임시로** 다른 위치에 있음
+- **SEO**: 검색 엔진이 **링크 권한을 전달하지 않음**
+- **캐싱**: 브라우저가 리다이렉트를 **캐시하지 않음**
+- **HTTP 메서드**: **GET으로 변경**될 수 있음 (구식 브라우저)
+- **사용 시나리오**:
+  - ✅ A/B 테스트
+  - ✅ 임시 유지보수 페이지
+  - ✅ 프로모션 페이지 (기간 한정)
+- **Next.js 설정**: `permanent: false` (기본값)
+
+**307 Temporary Redirect (임시 리다이렉트 - 메서드 유지)**
+- **의미**: 리소스가 **임시로** 다른 위치에 있음 (302와 유사)
+- **SEO**: 검색 엔진이 **링크 권한을 전달하지 않음**
+- **캐싱**: 브라우저가 리다이렉트를 **캐시하지 않음**
+- **HTTP 메서드**: **원본 메서드 유지** (GET, POST, PUT 등)
+- **사용 시나리오**:
+  - ✅ API 엔드포인트 임시 이동
+  - ✅ POST 요청을 보존해야 하는 경우
+  - ✅ 임시 유지보수 (메서드 보존 필요)
+- **Next.js 설정**: `permanent: false` (기본값, 302와 동일하게 처리)
+
+**308 Permanent Redirect (영구 리다이렉트 - 메서드 유지)**
+- **의미**: 리소스가 **영구적으로** 다른 위치로 이동했음 (301과 유사)
+- **SEO**: 검색 엔진이 **링크 권한을 전달**함
+- **캐싱**: 브라우저가 리다이렉트를 **캐시**
+- **HTTP 메서드**: **원본 메서드 유지** (GET, POST, PUT 등)
+- **사용 시나리오**:
+  - ✅ API 엔드포인트 영구 이동 (POST/PUT 보존 필요)
+  - ✅ RESTful API 버전 변경
+  - ✅ 도메인 변경 (API 메서드 보존 필요)
+- **Next.js 설정**: `permanent: true` (301과 동일하게 처리, 명시적 메서드 보존은 추가 설정 필요)
+
+**비교표:**
+
+| 상태 코드 | 영구/임시 | SEO 영향 | 메서드 유지 | 캐싱 | 권장 사용 |
+|-----------|-----------|----------|-------------|------|-----------|
+| **301** | 영구 | ✅ 링크 권한 전달 | ⚠️ GET으로 변경 가능 | ✅ 캐시 | 도메인 변경, www 통일 |
+| **302** | 임시 | ❌ 링크 권한 미전달 | ❌ GET으로 변경 | ❌ 캐시 안 함 | A/B 테스트, 임시 페이지 |
+| **307** | 임시 | ❌ 링크 권한 미전달 | ✅ 메서드 유지 | ❌ 캐시 안 함 | API 임시 이동 (POST 보존) |
+| **308** | 영구 | ✅ 링크 권한 전달 | ✅ 메서드 유지 | ✅ 캐시 | API 영구 이동 (POST 보존) |
+
+**Vercel/Next.js에서 사용:**
+
+```typescript
+// next.config.ts
+const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'www.vality.io',
+          },
+        ],
+        destination: 'https://vality.io/:path*',
+        permanent: true,  // 301 리다이렉트 (도메인 변경 시 권장)
+      },
+      {
+        source: '/old-path/:path*',
+        destination: '/new-path/:path*',
+        permanent: true,  // 301 (URL 구조 변경)
+      },
+      {
+        source: '/promo',
+        destination: '/special-offer',
+        permanent: false, // 302 (임시 프로모션)
+      },
+    ];
+  },
+};
+```
+
+**도메인 변경 시 권장:**
+- ✅ **301 Permanent Redirect** 사용
+- 이유: SEO 링크 권한 전달, 검색 엔진이 새 도메인을 인덱싱하도록 안내
+- 예: `www.vality.io` → `vality.io` (영구적 변경)
+
+**주의사항:**
+- **301 사용 시**: 검색 엔진이 새 URL을 인덱싱하는 데 시간이 걸릴 수 있음 (몇 주~몇 개월)
+- **302 사용 시**: 검색 엔진이 원본 URL을 계속 인덱싱함 (임시로만 사용)
+- **API 엔드포인트**: POST/PUT 요청을 보존해야 하면 307/308 고려
 
 ### 6. 자동 배포 설정
 
