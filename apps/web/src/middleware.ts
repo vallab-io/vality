@@ -14,6 +14,8 @@ const SYSTEM_PATHS = [
   "/auth",
   "/home",
   "/about",
+  "/privacy",
+  "/terms",
   "/_next",
   "/favicon.ico",
 ];
