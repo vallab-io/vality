@@ -33,10 +33,6 @@ export const MARKETING_NAV_ITEMS = [
     label: "가격안내",
     href: "/pricing",
   },
-  {
-    label: "블로그",
-    href: "/blog",
-  },
 ] as const;
 
 /**

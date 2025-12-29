@@ -65,24 +65,6 @@ function SearchIcon({ className }: { className?: string }) {
   );
 }
 
-// 다운로드 아이콘
-function DownloadIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={2}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-      />
-    </svg>
-  );
-}
 
 export default function SubscribersPage() {
   const params = useParams();
@@ -177,10 +159,6 @@ export default function SubscribersPage() {
     }
   };
 
-  const handleExportCSV = () => {
-    toast.info("CSV 내보내기는 준비 중입니다.");
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("ko-KR", {
       year: "numeric",
@@ -193,12 +171,7 @@ export default function SubscribersPage() {
     <div className="mx-auto max-w-4xl">
       <div className="flex items-center justify-between">
         <PageHeader title="구독자" />
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleExportCSV}>
-            <DownloadIcon className="mr-2 h-4 w-4" />
-            CSV 내보내기
-          </Button>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button size="sm">
                 <PlusIcon className="mr-2 h-4 w-4" />
@@ -239,7 +212,6 @@ export default function SubscribersPage() {
               </div>
             </DialogContent>
           </Dialog>
-        </div>
       </div>
 
       {/* Stats */}

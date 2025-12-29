@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Logo, UserAvatar } from "@/components/common";
-import { CheckIcon, PlusIcon, HomeIcon, SettingsIcon } from "@/components/icons";
+import { CheckIcon, PlusIcon, HomeIcon, SettingsIcon, DashboardIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -137,7 +137,21 @@ export function DashboardSidebar() {
 
         {/* Navigation */}
         <nav className="flex-1 space-y-1 overflow-y-auto p-4">
-          {/* 홈/대시보드 */}
+          {/* Home (공개 홈) */}
+          <Link
+            href="/home"
+            className={cn(
+              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              pathname === "/home"
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <HomeIcon className="h-5 w-5" />
+            Home
+          </Link>
+
+          {/* 대시보드 */}
           <Link
             href="/dashboard"
             className={cn(
@@ -147,8 +161,8 @@ export function DashboardSidebar() {
                 : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             )}
           >
-            <HomeIcon className="h-5 w-5" />
-            홈
+            <DashboardIcon className="h-5 w-5" />
+            대시보드
           </Link>
 
           {/* 뉴스레터 섹션 (아코디언) */}

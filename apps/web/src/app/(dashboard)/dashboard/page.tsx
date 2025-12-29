@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -11,60 +11,22 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { PageHeader, EmptyState } from "@/components/common";
-import {
-  NewsletterIcon,
-  MoreIcon,
-} from "@/components/icons";
+import { NewsletterIcon } from "@/components/icons";
 import { useAtomValue } from "jotai";
 import { userAtom, isAuthenticatedAtom, authLoadingAtom } from "@/stores/auth.store";
-
-// 목업 데이터: 실제로는 API에서 가져올 데이터
-const MOCK_STATS = {
-  totalSubscribers: 128,
-  publishedNewsletters: 12,
-  draftNewsletters: 3,
-};
-
-const MOCK_NEWSLETTERS = [
-  {
-    id: "clh2issue001abc123def",
-    title: "2025년 1월 뉴스레터",
-    status: "published" as const,
-    publishedAt: "2025-01-15",
-    openRate: 42.5,
-  },
-  {
-    id: "clh2issue002abc123def",
-    title: "새해 인사 - 2025년을 시작하며",
-    status: "published" as const,
-    publishedAt: "2025-01-01",
-    openRate: 38.2,
-  },
-  {
-    id: "clh2issue004abc123def",
-    title: "12월 회고와 내년 계획",
-    status: "published" as const,
-    publishedAt: "2024-12-28",
-    openRate: 45.1,
-  },
-  {
-    id: "clh2issue003abc123def",
-    title: "다음 주 발행 예정",
-    status: "draft" as const,
-    publishedAt: null,
-    openRate: null,
-  },
-];
-
-// 빈 상태 테스트를 위해 true/false 토글
-const HAS_DATA = true;
+import { getDashboardStats, getRecentIssues, type DashboardStats, type RecentIssue } from "@/lib/api/dashboard";
 
 export default function DashboardPage() {
   const router = useRouter();
   const user = useAtomValue(userAtom);
   const isAuthenticated = useAtomValue(isAuthenticatedAtom);
   const authLoading = useAtomValue(authLoadingAtom);
+
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [recentIssues, setRecentIssues] = useState<RecentIssue[]>([]);
+  const [isDataLoading, setIsDataLoading] = useState(true);
 
   useEffect(() => {
     // 인증 초기화가 완료될 때까지 기다림
@@ -90,6 +52,31 @@ export default function DashboardPage() {
     // 실제 뉴스레터가 필요한 페이지에서 체크
   }, [authLoading, isAuthenticated, user, router]);
 
+  // 대시보드 데이터 로드
+  useEffect(() => {
+    if (!isAuthenticated || !user || !user.username) {
+      return;
+    }
+
+    const loadDashboardData = async () => {
+      try {
+        setIsDataLoading(true);
+        const [statsData, issuesData] = await Promise.all([
+          getDashboardStats(),
+          getRecentIssues(5),
+        ]);
+        setStats(statsData);
+        setRecentIssues(issuesData);
+      } catch (error) {
+        console.error("Failed to load dashboard data:", error);
+      } finally {
+        setIsDataLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, [isAuthenticated, user]);
+
   // 인증 초기화 중이거나 인증 및 onboarding 완료 확인 중
   if (authLoading || !isAuthenticated || !user || !user.username) {
     return (
@@ -102,8 +89,7 @@ export default function DashboardPage() {
     );
   }
 
-  const stats = HAS_DATA ? MOCK_STATS : { totalSubscribers: 0, publishedNewsletters: 0, draftNewsletters: 0 };
-  const newsletters = HAS_DATA ? MOCK_NEWSLETTERS : [];
+  const displayStats = stats ?? { totalSubscribers: 0, publishedIssues: 0, draftIssues: 0 };
 
   return (
     <div className="space-y-8">
@@ -125,32 +111,29 @@ export default function DashboardPage() {
         <StatsCard
           icon={<NewsletterIcon className="h-5 w-5" />}
           title="총 구독자"
-          value={stats.totalSubscribers.toLocaleString()}
+          value={isDataLoading ? "-" : displayStats.totalSubscribers.toLocaleString()}
           description="활성 구독자 수"
         />
         <StatsCard
           icon={<NewsletterIcon className="h-5 w-5" />}
-          title="발행된 뉴스레터"
-          value={stats.publishedNewsletters.toString()}
-          description="지금까지 발행한 뉴스레터"
+          title="발행된 이슈"
+          value={isDataLoading ? "-" : displayStats.publishedIssues.toString()}
+          description="지금까지 발행한 이슈"
         />
         <StatsCard
           icon={<NewsletterIcon className="h-5 w-5" />}
           title="임시저장"
-          value={stats.draftNewsletters.toString()}
-          description="작성 중인 뉴스레터"
+          value={isDataLoading ? "-" : displayStats.draftIssues.toString()}
+          description="작성 중인 이슈"
           className="sm:col-span-2 lg:col-span-1"
         />
       </div>
 
-      {/* Recent Newsletters */}
+      {/* Recent Published Issues */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>최근 뉴스레터</CardTitle>
-            <CardDescription>최근 작성한 뉴스레터 목록</CardDescription>
-          </div>
-          {newsletters.length > 0 && (
+          <CardTitle>최신 발행된 이슈</CardTitle>
+          {recentIssues.length > 0 && (
             <Link href="/dashboard/newsletters">
               <Button variant="ghost" size="sm">
                 전체 보기
@@ -159,17 +142,21 @@ export default function DashboardPage() {
           )}
         </CardHeader>
         <CardContent>
-          {newsletters.length > 0 ? (
-            <div className="space-y-1">
-              {newsletters.slice(0, 5).map((newsletter) => (
-                <NewsletterItem key={newsletter.id} newsletter={newsletter} />
+          {isDataLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+            </div>
+          ) : recentIssues.length > 0 ? (
+            <div className="space-y-3">
+              {recentIssues.map((issue) => (
+                <IssueItem key={issue.id} issue={issue} />
               ))}
             </div>
           ) : (
             <EmptyState
               icon="📝"
-              title="아직 작성한 뉴스레터가 없습니다"
-              description="첫 뉴스레터를 작성하고 구독자에게 전달하세요"
+              title="아직 발행된 이슈가 없습니다"
+              description="첫 이슈를 작성하고 발행하세요"
             >
               <Link href="/dashboard/newsletters">
                 <Button>뉴스레터 관리하기</Button>
@@ -179,17 +166,6 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Quick Actions */}
-      {newsletters.length > 0 && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <QuickActionCard
-            title="뉴스레터 목록"
-            description="모든 뉴스레터를 확인하고 관리하세요"
-            href="/dashboard/newsletters"
-            icon={<NewsletterIcon className="h-5 w-5" />}
-          />
-        </div>
-      )}
     </div>
   );
 }
@@ -204,15 +180,15 @@ interface StatsCardProps {
 
 function StatsCard({ icon, title, value, description, className }: StatsCardProps) {
   return (
-    <Card className={`group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ${className}`}>
+    <Card className={cn("group hover:shadow-md transition-all duration-200", className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardDescription className="text-sm font-medium">{title}</CardDescription>
-        <div className="text-muted-foreground group-hover:text-[#2563EB] dark:group-hover:text-[#38BDF8] transition-colors duration-300">
+        <div className="text-muted-foreground group-hover:text-primary transition-colors duration-200">
           {icon}
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-semibold bg-gradient-to-br from-foreground to-foreground/80 bg-clip-text text-transparent">
+        <div className="text-3xl font-semibold text-foreground">
           {value}
         </div>
         <p className="text-xs text-muted-foreground mt-2">{description}</p>
@@ -221,88 +197,42 @@ function StatsCard({ icon, title, value, description, className }: StatsCardProp
   );
 }
 
-interface Newsletter {
-  id: string;
-  title: string;
-  status: "published" | "draft";
-  publishedAt: string | null;
-  openRate: number | null;
-}
-
-function NewsletterItem({ newsletter }: { newsletter: Newsletter }) {
+function IssueItem({ issue }: { issue: RecentIssue }) {
+  // Public 이슈 페이지 URL 생성
+  const issueUrl = `/@${issue.ownerUsername}/${issue.newsletterSlug}/${issue.slug}`;
+  
   return (
     <Link
-      href={`/dashboard/newsletters/${newsletter.id}/issues`}
-      className="group flex items-center justify-between rounded-lg px-3 py-3 -mx-3 transition-all duration-200 hover:bg-muted/50 hover:shadow-sm"
+      href={issueUrl}
+      className="block rounded-lg border border-border p-4 transition-all duration-200 hover:bg-muted/50 hover:border-primary/20"
     >
-      <div className="flex-1 min-w-0">
-        <p className="font-medium truncate">{newsletter.title}</p>
-        <div className="flex items-center gap-2 mt-1">
-          <StatusBadge status={newsletter.status} />
-          {newsletter.publishedAt && (
-            <span className="text-xs text-muted-foreground">
-              {formatDate(newsletter.publishedAt)}
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="font-medium truncate text-foreground">
+              {issue.title || "Untitled"}
             </span>
-          )}
-          {newsletter.openRate !== null && (
-            <span className="text-xs text-muted-foreground">
-              · 오픈율 {newsletter.openRate}%
+            <span className="shrink-0 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium">
+              발행됨
             </span>
-          )}
+          </div>
+          <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
+            <span>{issue.newsletterName}</span>
+            {issue.publishedAt && (
+              <span>· {formatDateShort(issue.publishedAt)}</span>
+            )}
+          </div>
         </div>
       </div>
-      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 ml-2">
-        <MoreIcon className="h-4 w-4" />
-      </Button>
     </Link>
   );
 }
 
-function StatusBadge({ status }: { status: "published" | "draft" }) {
-  if (status === "published") {
-    return (
-      <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
-        발행됨
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-800/50 dark:text-slate-400">
-      임시저장
-    </span>
-  );
-}
-
-interface QuickActionCardProps {
-  title: string;
-  description: string;
-  href: string;
-  icon: React.ReactNode;
-}
-
-function QuickActionCard({ title, description, href, icon }: QuickActionCardProps) {
-  return (
-    <Link href={href}>
-      <Card className="group transition-all duration-300 hover:bg-muted/50 hover:shadow-lg hover:-translate-y-1 border-2 hover:border-blue-200 dark:hover:border-blue-800/50">
-        <CardContent className="flex items-center gap-4 p-6">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 text-[#2563EB] dark:text-[#38BDF8] group-hover:scale-110 transition-transform duration-300">
-            {icon}
-          </div>
-          <div>
-            <p className="font-semibold group-hover:text-[#2563EB] dark:group-hover:text-[#38BDF8] transition-colors duration-300">{title}</p>
-            <p className="text-sm text-muted-foreground">{description}</p>
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
-  );
-}
-
-function formatDate(dateString: string): string {
+function formatDateShort(dateString: string): string {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat("ko-KR", {
     year: "numeric",
-    month: "long",
+    month: "short",
     day: "numeric",
   }).format(date);
 }

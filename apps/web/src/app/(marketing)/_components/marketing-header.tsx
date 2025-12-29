@@ -19,8 +19,8 @@ export function MarketingHeader() {
   const authLoading = useAtomValue(authLoadingAtom);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // /about, /blog, /pricing, /price 페이지에서 Logo 클릭 시 /about으로 이동
-  const logoHref = ["/about", "/blog", "/pricing", "/price"].includes(pathname) ? "/about" : "/";
+  // /about, /pricing, /price, /terms, /privacy 페이지에서 Logo 클릭 시 /about으로 이동
+  const logoHref = ["/about", "/pricing", "/price", "/terms", "/privacy"].includes(pathname) ? "/about" : "/";
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
