@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { PlusIcon, TrashIcon } from "@/components/icons";
+import { PlusIcon, TrashIcon, SearchIcon } from "@/components/icons";
 import {
   getSubscribers,
   createSubscriber,
@@ -38,26 +38,6 @@ const STATUS_COLORS: Record<string, string> = {
   pending: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",
   unsubscribed: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
 };
-
-// 검색 아이콘
-function SearchIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={2}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-      />
-    </svg>
-  );
-}
-
 
 export default function SubscribersPage() {
   const params = useParams();
@@ -109,7 +89,8 @@ export default function SubscribersPage() {
       </Button>
     );
     return () => setAction(null);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setAction]);
 
   // 필터링된 구독자 목록
   const filteredSubscribers = subscribers.filter((subscriber) => {
