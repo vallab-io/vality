@@ -113,10 +113,12 @@ export async function updateProfile(
 }
 
 // Google OAuth 시작
-export async function startGoogleOAuth(): Promise<void> {
+export async function startGoogleOAuth(locale?: string): Promise<void> {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
   // 백엔드 OAuth 시작 엔드포인트로 리다이렉트
-  window.location.href = `${API_BASE_URL}/api/auth/oauth/google`;
+  // locale 파라미터를 전달하여 백엔드에서 Google OAuth URL에 hl 파라미터 추가
+  const localeParam = locale ? `?hl=${locale}` : "";
+  window.location.href = `${API_BASE_URL}/api/auth/oauth/google${localeParam}`;
 }
 
 // OAuth 콜백 처리 (백엔드 완료 엔드포인트에서 AuthResponse 받기)

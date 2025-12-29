@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { PageHeader } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -27,28 +26,17 @@ import { getIssues, deleteIssue, createIssue, type Issue } from "@/lib/api/issue
 import { getNewsletterById, type Newsletter } from "@/lib/api/newsletter";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/auth.store";
+import { useT } from "@/hooks/use-translation";
+import { useTopbarAction } from "../../../../_components/topbar-action-context";
 
 type IssueStatus = "all" | "draft" | "published";
 type SortOrder = "newest" | "oldest";
-
-const STATUS_LABELS: Record<IssueStatus, string> = {
-  all: "전체",
-  draft: "초안",
-  published: "발행됨",
-};
 
 const STATUS_BADGE_COLORS: Record<string, string> = {
   DRAFT: "bg-slate-100 text-slate-700 dark:bg-slate-800/50 dark:text-slate-400",
   PUBLISHED: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
   SCHEDULED: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",
   ARCHIVED: "bg-slate-100 text-slate-700 dark:bg-slate-800/50 dark:text-slate-400",
-};
-
-const STATUS_DISPLAY: Record<string, string> = {
-  DRAFT: "초안",
-  PUBLISHED: "발행됨",
-  SCHEDULED: "예약됨",
-  ARCHIVED: "보관됨",
 };
 
 // 검색 아이콘
@@ -75,6 +63,8 @@ export default function IssuesPage() {
   const router = useRouter();
   const newsletterId = params.newsletterId as string;
   const user = useAtomValue(userAtom);
+  const t = useT();
+  const { setAction } = useTopbarAction();
   
   const [issues, setIssues] = useState<Issue[]>([]);
   const [newsletter, setNewsletter] = useState<Newsletter | null>(null);
@@ -83,6 +73,19 @@ export default function IssuesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<IssueStatus>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
+
+  const STATUS_LABELS: Record<IssueStatus, string> = {
+    all: t("issues.all"),
+    draft: t("issues.draft"),
+    published: t("issues.published"),
+  };
+
+  const STATUS_DISPLAY: Record<string, string> = {
+    DRAFT: t("issues.draft"),
+    PUBLISHED: t("issues.published"),
+    SCHEDULED: t("issues.scheduled"),
+    ARCHIVED: t("issues.archived"),
+  };
 
   // 데이터 로드
   useEffect(() => {
@@ -97,7 +100,7 @@ export default function IssuesPage() {
         setNewsletter(newsletterData);
       } catch (error: any) {
         console.error("Failed to load issues:", error);
-        toast.error(error.message || "이슈 목록을 불러오는데 실패했습니다.");
+        toast.error(error.message || t("issues.failedToLoad"));
       } finally {
         setIsLoading(false);
       }
@@ -122,11 +125,26 @@ export default function IssuesPage() {
       router.push(`/dashboard/newsletters/${newsletterId}/issues/${newIssue.id}`);
     } catch (error: any) {
       console.error("Failed to create issue:", error);
-      toast.error(error.message || "이슈 생성에 실패했습니다.");
+      toast.error(error.message || t("issues.createFailed"));
     } finally {
       setIsCreating(false);
     }
   };
+
+  // Topbar에 New Issue 버튼 설정
+  useEffect(() => {
+    setAction(
+      <Button 
+        size="sm" 
+        onClick={handleCreateNewIssue}
+        disabled={isCreating}
+      >
+        <PlusIcon className="mr-2 h-4 w-4" />
+        {isCreating ? t("issues.creating") : t("issues.newIssue")}
+      </Button>
+    );
+    return () => setAction(null);
+  }, [isCreating]);
 
   // 필터링 및 정렬
   const filteredIssues = issues
@@ -155,16 +173,16 @@ export default function IssuesPage() {
   };
 
   const handleDelete = async (id: string, title: string | null) => {
-    const issueTitle = title || "제목 없음";
-    if (!confirm(`"${issueTitle}" 이슈를 삭제하시겠습니까?`)) return;
+    const issueTitle = title || t("common.untitled");
+    if (!confirm(t("issues.deleteConfirm").replace("{title}", issueTitle))) return;
 
     try {
       await deleteIssue(newsletterId, id);
       setIssues(issues.filter((issue) => issue.id !== id));
-      toast.success("이슈가 삭제되었습니다.");
+      toast.success(t("issues.deleted"));
     } catch (error: any) {
       console.error("Delete issue error:", error);
-      toast.error(error.message || "이슈 삭제에 실패했습니다.");
+      toast.error(error.message || t("issues.deleteFailed"));
     }
   };
 
@@ -189,7 +207,7 @@ export default function IssuesPage() {
         <div className="flex items-center justify-center py-12">
           <div className="text-center space-y-4">
             <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-muted-foreground">이슈 목록을 불러오는 중...</p>
+            <p className="text-muted-foreground">{t("issues.loadingIssues")}</p>
           </div>
         </div>
       </div>
@@ -198,18 +216,6 @@ export default function IssuesPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div className="flex items-center justify-between">
-        <PageHeader title="이슈" />
-        <Button 
-          size="sm" 
-          onClick={handleCreateNewIssue}
-          disabled={isCreating}
-        >
-          <PlusIcon className="mr-2 h-4 w-4" />
-          {isCreating ? "생성 중..." : "새 이슈 작성"}
-        </Button>
-      </div>
-
       {/* Stats */}
       <div className="mt-6 grid grid-cols-3 gap-4">
         {(["all", "published", "draft"] as const).map((status) => (
@@ -234,7 +240,7 @@ export default function IssuesPage() {
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="제목으로 검색..."
+            placeholder={t("issues.searchPlaceholder")}
             className="pl-10"
           />
         </div>
@@ -261,8 +267,8 @@ export default function IssuesPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="newest">최신순</SelectItem>
-            <SelectItem value="oldest">오래된순</SelectItem>
+            <SelectItem value="newest">{t("issues.newest")}</SelectItem>
+            <SelectItem value="oldest">{t("issues.oldest")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -288,13 +294,13 @@ export default function IssuesPage() {
             </div>
             <h3 className="font-medium">
               {searchQuery || statusFilter !== "all"
-                ? "검색 결과가 없습니다"
-                : "아직 작성된 이슈가 없습니다"}
+                ? t("issues.noResults")
+                : t("issues.noIssues")}
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
               {searchQuery || statusFilter !== "all"
-                ? "다른 검색어나 필터를 사용해보세요."
-                : "첫 번째 이슈를 작성해보세요."}
+                ? t("issues.noResultsDesc")
+                : t("issues.noIssuesDesc")}
             </p>
             {!searchQuery && statusFilter === "all" && (
               <Button 
@@ -304,7 +310,7 @@ export default function IssuesPage() {
                 disabled={isCreating}
               >
                 <PlusIcon className="mr-2 h-4 w-4" />
-                {isCreating ? "생성 중..." : "새 이슈 작성"}
+                {isCreating ? t("issues.creating") : t("issues.newIssue")}
               </Button>
             )}
           </div>
@@ -325,7 +331,7 @@ export default function IssuesPage() {
                           !issue.title && "text-muted-foreground italic"
                         )}
                       >
-                        {issue.title || "Untitled"}
+                        {issue.title || t("common.untitled")}
                       </Link>
                       <span
                         className={cn(
@@ -343,11 +349,11 @@ export default function IssuesPage() {
                     )}
                     <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
                       {issue.status === "PUBLISHED" && issue.publishedAt ? (
-                        <span>발행일: {formatDate(issue.publishedAt)}</span>
+                        <span>{t("issues.publishedAt")}: {formatDate(issue.publishedAt)}</span>
                       ) : issue.scheduledAt ? (
-                        <span>예약일: {formatDate(issue.scheduledAt)}</span>
+                        <span>{t("issues.scheduledAt")}: {formatDate(issue.scheduledAt)}</span>
                       ) : (
-                        <span>작성일: {formatDate(issue.createdAt)}</span>
+                        <span>{t("issues.createdAt")}: {formatDate(issue.createdAt)}</span>
                       )}
                     </div>
                   </div>
@@ -367,7 +373,7 @@ export default function IssuesPage() {
                       <DropdownMenuItem asChild>
                         <Link href={`/dashboard/newsletters/${newsletterId}/issues/${issue.id}`}>
                           <EditIcon className="mr-2 h-4 w-4" />
-                          편집
+                          {t("issues.edit")}
                         </Link>
                       </DropdownMenuItem>
                       {issue.status === "PUBLISHED" && getPublicIssueUrl(issue) && (
@@ -386,7 +392,7 @@ export default function IssuesPage() {
                                 d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
                               />
                             </svg>
-                            보기
+                            {t("issues.view")}
                           </Link>
                         </DropdownMenuItem>
                       )}
@@ -396,7 +402,7 @@ export default function IssuesPage() {
                         onClick={() => handleDelete(issue.id, issue.title)}
                       >
                         <TrashIcon className="mr-2 h-4 w-4" />
-                        삭제
+                        {t("common.delete")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -410,11 +416,10 @@ export default function IssuesPage() {
       {/* Footer Info */}
       {filteredIssues.length > 0 && (
         <div className="mt-4 text-sm text-muted-foreground">
-          총 {filteredIssues.length}개의 이슈
+          {t("issues.totalIssues").replace("{count}", String(filteredIssues.length))}
           {statusFilter !== "all" && ` (${STATUS_LABELS[statusFilter]})`}
         </div>
       )}
     </div>
   );
 }
-

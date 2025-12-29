@@ -6,11 +6,12 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/common";
+import { LocaleSwitcher } from "@/components/common/locale-switcher";
 import { MenuIcon, CloseIcon } from "@/components/icons";
-import { MARKETING_NAV_ITEMS } from "@/constants/navigation";
 import { useAtomValue } from "jotai";
 import { userAtom, authLoadingAtom } from "@/stores/auth.store";
 import { getMyNewsletters } from "@/lib/api/newsletter";
+import { useT } from "@/hooks/use-translation";
 
 export function MarketingHeader() {
   const router = useRouter();
@@ -18,9 +19,10 @@ export function MarketingHeader() {
   const user = useAtomValue(userAtom);
   const authLoading = useAtomValue(authLoadingAtom);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const t = useT();
 
-  // /about, /blog, /pricing, /price 페이지에서 Logo 클릭 시 /about으로 이동
-  const logoHref = ["/about", "/blog", "/pricing", "/price"].includes(pathname) ? "/about" : "/";
+  // /about, /pricing, /price, /terms, /privacy 페이지에서 Logo 클릭 시 /about으로 이동
+  const logoHref = ["/about", "/pricing", "/price", "/terms", "/privacy"].includes(pathname) ? "/about" : "/";
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
@@ -62,36 +64,34 @@ export function MarketingHeader() {
                 href="/home"
                 className="text-sm text-muted-foreground transition-all duration-200 hover:text-[#2563EB] dark:hover:text-[#38BDF8] relative group"
               >
-                홈
+                {t("nav.home")}
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#2563EB] dark:bg-[#38BDF8] group-hover:w-full transition-all duration-200" />
               </Link>
-              {MARKETING_NAV_ITEMS.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="text-sm text-muted-foreground transition-all duration-200 hover:text-[#2563EB] dark:hover:text-[#38BDF8] relative group"
-                >
-                  {item.label}
-                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#2563EB] dark:bg-[#38BDF8] group-hover:w-full transition-all duration-200" />
-                </Link>
-              ))}
+              <Link
+                href="/pricing"
+                className="text-sm text-muted-foreground transition-all duration-200 hover:text-[#2563EB] dark:hover:text-[#38BDF8] relative group"
+              >
+                {t("nav.pricing")}
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#2563EB] dark:bg-[#38BDF8] group-hover:w-full transition-all duration-200" />
+              </Link>
             </nav>
           </div>
 
           {/* Desktop Actions */}
           <nav className="hidden items-center gap-2 md:flex">
+            <LocaleSwitcher />
             {user ? (
               <Button size="sm" onClick={handleLoginClick} disabled={authLoading} className="bg-primary hover:bg-primary/90 shadow-sm hover:shadow-md transition-all duration-200">
-                대시보드
+                {t("nav.dashboard")}
               </Button>
             ) : (
               <>
                 <Button size="sm" variant="ghost" onClick={handleLoginClick} disabled={authLoading} className="hover:bg-muted/50">
-                  로그인
+                  {t("nav.login")}
                 </Button>
                 <Link href="/signup">
                   <Button size="sm" className="bg-primary hover:bg-primary/90 shadow-sm hover:shadow-md transition-all duration-200">
-                    시작하기
+                    {t("nav.signup")}
                   </Button>
                 </Link>
               </>
@@ -132,13 +132,13 @@ export function MarketingHeader() {
       >
         {/* Menu Header */}
         <div className="flex h-14 items-center justify-between border-b border-border px-4">
-          <span className="font-semibold">메뉴</span>
+          <span className="font-semibold">{t("nav.menu")}</span>
           <Button
             variant="ghost"
             size="sm"
             className="h-9 w-9 p-0"
             onClick={closeMenu}
-            aria-label="메뉴 닫기"
+            aria-label="Close menu"
           >
             <CloseIcon className="h-5 w-5" />
           </Button>
@@ -151,33 +151,33 @@ export function MarketingHeader() {
             onClick={closeMenu}
             className="block rounded-lg px-3 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
           >
-            홈
+            {t("nav.home")}
           </Link>
-          {MARKETING_NAV_ITEMS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={closeMenu}
-              className="block rounded-lg px-3 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-            >
-              {item.label}
-            </Link>
-          ))}
+          <Link
+            href="/pricing"
+            onClick={closeMenu}
+            className="block rounded-lg px-3 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+          >
+            {t("nav.pricing")}
+          </Link>
         </nav>
 
         {/* Actions */}
         <div className="border-t border-border p-4 space-y-2">
+          <div className="flex justify-center pb-2">
+            <LocaleSwitcher />
+          </div>
           {user ? (
             <Button className="w-full bg-primary hover:bg-primary/90" onClick={handleLoginClick} disabled={authLoading}>
-              대시보드
+              {t("nav.dashboard")}
             </Button>
           ) : (
             <>
               <Button className="w-full" onClick={handleLoginClick} disabled={authLoading}>
-                로그인
+                {t("nav.login")}
               </Button>
               <Link href="/signup" onClick={closeMenu}>
-                <Button className="w-full bg-primary hover:bg-primary/90">시작하기</Button>
+                <Button className="w-full bg-primary hover:bg-primary/90">{t("nav.signup")}</Button>
               </Link>
             </>
           )}

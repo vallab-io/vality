@@ -2,6 +2,7 @@ package io.vality.di
 
 import com.typesafe.config.Config
 import io.vality.service.AuthService
+import io.vality.service.DashboardService
 import io.vality.service.IssueService
 import io.vality.service.LemonSqueezyService
 import io.vality.service.NewsletterService
@@ -130,6 +131,16 @@ val serviceModule = module {
             userRepository = get(),
             emailService = get(),
             frontendUrl = config.getString("ktor.web.url"),
+        )
+    }
+
+    // Dashboard Service
+    single<DashboardService> {
+        DashboardService(
+            newsletterRepository = get(),
+            issueRepository = get(),
+            subscriberRepository = get(),
+            userRepository = get(),
         )
     }
 }

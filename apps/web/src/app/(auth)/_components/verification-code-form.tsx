@@ -10,6 +10,7 @@ import { getMyNewsletters } from "@/lib/api/newsletter";
 import { userAtom } from "@/stores/auth.store";
 import { useSetAtom } from "jotai";
 import { getErrorMessage } from "@/lib/api/client";
+import { useT } from "@/hooks/use-translation";
 
 interface VerificationCodeFormProps {
   email: string;
@@ -24,6 +25,7 @@ export function VerificationCodeForm({
   mode,
   onBack,
 }: VerificationCodeFormProps) {
+  const t = useT();
   const router = useRouter();
   const setUser = useSetAtom(userAtom);
   const [code, setCode] = useState<string[]>(Array(CODE_LENGTH).fill(""));
@@ -104,30 +106,30 @@ export function VerificationCodeForm({
       const needsProfileSetup = !authResponse.user.username;
       
       if (needsProfileSetup) {
-        toast.success("회원가입 성공! 프로필을 설정해주세요.");
+        toast.success(t("auth.signupSuccess"));
         router.push("/onboarding");
       } else {
         // username이 있으면 뉴스레터 확인
         try {
           const newsletters = await getMyNewsletters();
           if (newsletters.length === 0) {
-            toast.success("로그인 성공! 뉴스레터를 만들어보세요.");
+            toast.success(t("auth.createNewsletterPrompt"));
             router.push("/onboarding");
           } else {
-            toast.success("로그인 성공!");
+            toast.success(t("auth.loginSuccess"));
             router.push("/dashboard");
           }
         } catch (error) {
           console.error("Failed to check newsletters:", error);
           // 에러 발생 시 대시보드로 이동
-          toast.success("로그인 성공!");
+          toast.success(t("auth.loginSuccess"));
           router.push("/dashboard");
         }
       }
     } catch (error) {
       console.error("Verification error:", error);
       const errorMessage = getErrorMessage(error);
-      toast.error(errorMessage || "인증 코드가 올바르지 않습니다. 다시 시도해주세요.");
+      toast.error(errorMessage || t("auth.invalidCode"));
       setCode(Array(CODE_LENGTH).fill(""));
       inputRefs.current[0]?.focus();
     } finally {
@@ -141,13 +143,13 @@ export function VerificationCodeForm({
     try {
       // API 연동 - 인증 코드 재발송
       await sendVerificationCode(email);
-      toast.success("인증 코드가 재발송되었습니다.");
+      toast.success(t("auth.codeResent"));
       setCode(Array(CODE_LENGTH).fill(""));
       inputRefs.current[0]?.focus();
     } catch (error) {
       console.error("Resend error:", error);
       const errorMessage = getErrorMessage(error);
-      toast.error(errorMessage || "재발송에 실패했습니다. 다시 시도해주세요.");
+      toast.error(errorMessage || t("auth.resendFailed"));
     } finally {
       setIsResending(false);
     }
@@ -160,7 +162,7 @@ export function VerificationCodeForm({
         <p className="text-sm text-muted-foreground">
           <span className="font-medium text-foreground">{email}</span>
           <br />
-          으로 발송된 6자리 코드를 입력하세요.
+          {t("auth.verificationCodeSent")}
         </p>
       </div>
 
@@ -188,7 +190,7 @@ export function VerificationCodeForm({
       {/* 로딩 표시 */}
       {isLoading && (
         <p className="text-center text-sm text-muted-foreground">
-          확인 중...
+          {t("auth.verifying")}
         </p>
       )}
 
@@ -201,7 +203,7 @@ export function VerificationCodeForm({
           onClick={handleResend}
           disabled={isResending || isLoading}
         >
-          {isResending ? "발송 중..." : "코드 재발송"}
+          {isResending ? t("auth.resending") : t("auth.resendCode")}
         </Button>
 
         <Button
@@ -211,10 +213,9 @@ export function VerificationCodeForm({
           onClick={onBack}
           disabled={isLoading}
         >
-          ← 다른 이메일로 시도
+          {t("auth.tryDifferentEmail")}
         </Button>
       </div>
     </div>
   );
 }
-

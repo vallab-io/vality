@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,23 +11,28 @@ import { updateProfile, checkUsernameAvailability } from "@/lib/api/auth";
 import { userAtom } from "@/stores/auth.store";
 import { useSetAtom, useAtomValue } from "jotai";
 import { getErrorMessage } from "@/lib/api/client";
+import { useT } from "@/hooks/use-translation";
 
 interface OnboardingFormProps {
   onComplete?: () => void;
 }
 
 export function OnboardingForm({ onComplete }: OnboardingFormProps) {
+  const t = useT();
   const router = useRouter();
   const setUser = useSetAtom(userAtom);
   const user = useAtomValue(userAtom);
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
-  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [isUsernameTaken, setIsUsernameTaken] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
     name: "",
     bio: "",
   });
+  
+  // 마지막으로 체크한 username과 결과를 저장
+  const lastCheckedRef = useRef<{ username: string; isAvailable: boolean } | null>(null);
 
   // user에 name이 있으면 기본값으로 설정
   useEffect(() => {
@@ -38,29 +43,35 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
 
   // Username 중복 확인 (debounce)
   useEffect(() => {
+    const username = formData.username.trim();
+    
+    // 최소 길이 체크
+    if (username.length < 3) {
+      setIsUsernameTaken(false);
+      return;
+    }
+
+    // 현재 사용자의 username과 같으면 체크하지 않음
+    if (user?.username === username) {
+      setIsUsernameTaken(false);
+      return;
+    }
+
+    // 이미 같은 username을 체크했으면 API 호출 스킵
+    if (lastCheckedRef.current?.username === username) {
+      setIsUsernameTaken(!lastCheckedRef.current.isAvailable);
+      return;
+    }
+
     const checkUsername = async () => {
-      const username = formData.username.trim();
-      
-      // 최소 길이 체크
-      if (username.length < 3) {
-        setUsernameError(null);
-        return;
-      }
-
-      // 현재 사용자의 username과 같으면 체크하지 않음
-      if (user?.username === username) {
-        setUsernameError(null);
-        return;
-      }
-
       setIsCheckingUsername(true);
-      setUsernameError(null);
+      setIsUsernameTaken(false);
 
       try {
         const isAvailable = await checkUsernameAvailability(username);
-        if (!isAvailable) {
-          setUsernameError("이미 사용 중인 사용자명입니다.");
-        }
+        // 결과 캐시
+        lastCheckedRef.current = { username, isAvailable };
+        setIsUsernameTaken(!isAvailable);
       } catch (error) {
         console.error("Username check error:", error);
         // 에러가 발생해도 사용자에게 표시하지 않음 (네트워크 오류 등)
@@ -90,18 +101,18 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
     e.preventDefault();
 
     if (!formData.username) {
-      toast.error("사용자명을 입력해주세요.");
+      toast.error(t("onboarding.enterUsername"));
       return;
     }
 
     if (formData.username.length < 3) {
-      toast.error("사용자명은 3자 이상이어야 합니다.");
+      toast.error(t("onboarding.usernameMinLength"));
       return;
     }
 
     // Username 중복 확인
-    if (usernameError) {
-      toast.error(usernameError);
+    if (isUsernameTaken) {
+      toast.error(t("onboarding.usernameTaken"));
       return;
     }
 
@@ -110,12 +121,12 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
       try {
         const isAvailable = await checkUsernameAvailability(formData.username);
         if (!isAvailable) {
-          toast.error("이미 사용 중인 사용자명입니다.");
+          toast.error(t("onboarding.usernameTaken"));
           return;
         }
       } catch (error) {
         console.error("Final username check error:", error);
-        toast.error("사용자명 확인 중 오류가 발생했습니다.");
+        toast.error(t("onboarding.usernameCheckError"));
         return;
       }
     }
@@ -133,7 +144,7 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
       // 사용자 정보 업데이트
       setUser(updatedUser);
 
-      toast.success("프로필이 저장되었습니다!");
+      toast.success(t("onboarding.profileSaved"));
       
       // 뉴스레터가 있는지 확인 후 다음 단계로 이동
       // 뉴스레터 확인은 부모 컴포넌트에서 처리
@@ -146,7 +157,7 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
     } catch (error) {
       console.error("Save error:", error);
       const errorMessage = getErrorMessage(error);
-      toast.error(errorMessage || "저장에 실패했습니다. 다시 시도해주세요.");
+      toast.error(errorMessage || t("onboarding.saveFailed"));
     } finally {
       setIsLoading(false);
     }
@@ -157,18 +168,18 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
       {/* 사용자명 */}
       <div className="space-y-2">
         <Label htmlFor="username">
-          사용자명 <span className="text-destructive">*</span>
+          {t("onboarding.username")} <span className="text-destructive">*</span>
         </Label>
         <div className="relative">
           <Input
             id="username"
             name="username"
             type="text"
-            placeholder="username"
+            placeholder={t("onboarding.usernamePlaceholder")}
             value={formData.username}
             onChange={handleUsernameChange}
             disabled={isLoading}
-            className={`h-11 ${usernameError ? "border-destructive" : ""}`}
+            className={`h-11 ${isUsernameTaken ? "border-destructive" : ""}`}
             autoFocus
           />
           {isCheckingUsername && (
@@ -177,27 +188,39 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
             </div>
           )}
         </div>
-        {usernameError ? (
-          <p className="text-xs text-destructive">{usernameError}</p>
-        ) : formData.username.length >= 3 && !isCheckingUsername && !usernameError ? (
-          <p className="text-xs text-[#2563EB] dark:text-[#38BDF8]">
-            사용 가능한 사용자명입니다.
+        {/* URL 힌트 - 항상 표시 */}
+        <p className="text-xs text-muted-foreground">
+          vality.io/@{formData.username || "username"}
+        </p>
+        {/* Validation 상태 */}
+        {formData.username.length > 0 && formData.username.length < 3 && (
+          <p className="text-xs text-amber-500">
+            {t("onboarding.usernameMinLength")}
           </p>
-        ) : (
+        )}
+        {isCheckingUsername && (
           <p className="text-xs text-muted-foreground">
-            vality.io/@{formData.username || "username"}
+            {t("common.loading")}
+          </p>
+        )}
+        {isUsernameTaken && (
+          <p className="text-xs text-destructive">{t("onboarding.usernameTaken")}</p>
+        )}
+        {formData.username.length >= 3 && !isCheckingUsername && !isUsernameTaken && (
+          <p className="text-xs text-[#2563EB] dark:text-[#38BDF8]">
+            {t("onboarding.usernameAvailable")}
           </p>
         )}
       </div>
 
       {/* 이름 */}
       <div className="space-y-2">
-        <Label htmlFor="name">이름 (선택)</Label>
+        <Label htmlFor="name">{t("onboarding.nameOptional")}</Label>
         <Input
           id="name"
           name="name"
           type="text"
-          placeholder="홍길동"
+          placeholder={t("onboarding.namePlaceholder")}
           value={formData.name}
           onChange={handleChange}
           disabled={isLoading}
@@ -207,11 +230,11 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
 
       {/* 소개 */}
       <div className="space-y-2">
-        <Label htmlFor="bio">소개 (선택)</Label>
+        <Label htmlFor="bio">{t("onboarding.bioOptional")}</Label>
         <Textarea
           id="bio"
           name="bio"
-          placeholder="간단한 소개를 작성하세요"
+          placeholder={t("onboarding.bioPlaceholder")}
           value={formData.bio}
           onChange={handleChange}
           disabled={isLoading}
@@ -228,13 +251,12 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
           isLoading ||
           !formData.username ||
           formData.username.length < 3 ||
-          !!usernameError ||
+          isUsernameTaken ||
           isCheckingUsername
         }
       >
-        {isLoading ? "저장 중..." : "시작하기"}
+        {isLoading ? t("onboarding.saving") : t("onboarding.startButton")}
       </Button>
     </form>
   );
 }
-
