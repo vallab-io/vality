@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { CheckIcon } from "@/components/icons";
 import { useT } from "@/hooks/use-translation";
 
 export function PricingPageClient() {
@@ -59,22 +60,6 @@ export function PricingPageClient() {
         </div>
       </div>
     </main>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg
-      className="h-5 w-5"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M20 6L9 17l-5-5" />
-    </svg>
   );
 }
 

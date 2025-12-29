@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { PlusIcon, MoreIcon, EditIcon, TrashIcon } from "@/components/icons";
+import { PlusIcon, MoreIcon, EditIcon, TrashIcon, SearchIcon } from "@/components/icons";
 import { getIssues, deleteIssue, createIssue, type Issue } from "@/lib/api/issue";
 import { getNewsletterById, type Newsletter } from "@/lib/api/newsletter";
 import { useAtomValue } from "jotai";
@@ -38,25 +38,6 @@ const STATUS_BADGE_COLORS: Record<string, string> = {
   SCHEDULED: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",
   ARCHIVED: "bg-slate-100 text-slate-700 dark:bg-slate-800/50 dark:text-slate-400",
 };
-
-// 검색 아이콘
-function SearchIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={2}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-      />
-    </svg>
-  );
-}
 
 export default function IssuesPage() {
   const params = useParams();
@@ -112,24 +93,21 @@ export default function IssuesPage() {
   }, [newsletterId]);
 
   // 새 이슈 생성 핸들러
-  const handleCreateNewIssue = async () => {
+  const handleCreateNewIssue = useCallback(async () => {
     setIsCreating(true);
     try {
-      // 즉시 DRAFT 이슈 생성
       const newIssue = await createIssue(newsletterId, {
         status: "DRAFT",
         content: "",
       });
-      
-      // 생성된 이슈의 페이지로 이동
       router.push(`/dashboard/newsletters/${newsletterId}/issues/${newIssue.id}`);
     } catch (error: any) {
       console.error("Failed to create issue:", error);
-      toast.error(error.message || t("issues.createFailed"));
+      toast.error(error.message || "Failed to create issue");
     } finally {
       setIsCreating(false);
     }
-  };
+  }, [newsletterId, router]);
 
   // Topbar에 New Issue 버튼 설정
   useEffect(() => {
@@ -144,7 +122,8 @@ export default function IssuesPage() {
       </Button>
     );
     return () => setAction(null);
-  }, [isCreating]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handleCreateNewIssue, isCreating, setAction]);
 
   // 필터링 및 정렬
   const filteredIssues = issues

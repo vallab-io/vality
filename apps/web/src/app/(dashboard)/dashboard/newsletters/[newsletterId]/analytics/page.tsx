@@ -1,12 +1,9 @@
 "use client";
 
-import { useParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { useT } from "@/hooks/use-translation";
 
 export default function AnalyticsPage() {
-  const params = useParams();
-  const newsletterId = params.newsletterId as string;
   const t = useT();
 
   return (
