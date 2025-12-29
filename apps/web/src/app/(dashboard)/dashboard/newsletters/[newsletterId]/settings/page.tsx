@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { PageHeader } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +17,7 @@ import { toast } from "sonner";
 import { getNewsletterById, updateNewsletter } from "@/lib/api/newsletter";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/auth.store";
+import { useT } from "@/hooks/use-translation";
 
 // 주요 Timezone 목록 (IANA timezone format)
 const TIMEZONES = [
@@ -44,6 +44,7 @@ export default function NewsletterSettingsPage() {
   const params = useParams();
   const newsletterId = params.newsletterId as string;
   const user = useAtomValue(userAtom);
+  const t = useT();
   
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
@@ -70,7 +71,7 @@ export default function NewsletterSettingsPage() {
         });
       } catch (error) {
         console.error("Failed to fetch newsletter:", error);
-        toast.error("뉴스레터 정보를 불러오는데 실패했습니다.");
+        toast.error(t("settings.newsletterLoadFailed"));
       } finally {
         setIsFetching(false);
       }
@@ -98,23 +99,24 @@ export default function NewsletterSettingsPage() {
     setFormData((prev) => ({ ...prev, timezone: value }));
   };
 
-  const embedCode = `<iframe
-    src="https://vality.io/@${user?.username || "username"}/${formData.slug}/subscribe-widget"
-    width="100%"
-    height="220"
-    style="border:1px solid #e5e5e5; border-radius:12px;"
-    title="Subscribe to ${formData.name}"
-  ></iframe>`;
+  // Subscribe Widget - Coming Soon
+  // const embedCode = `<iframe
+  //   src="https://vality.io/@${user?.username || "username"}/${formData.slug}/subscribe-widget"
+  //   width="100%"
+  //   height="220"
+  //   style="border:1px solid #e5e5e5; border-radius:12px;"
+  //   title="Subscribe to ${formData.name}"
+  // ></iframe>`;
 
-  const handleCopyEmbed = async () => {
-    try {
-      await navigator.clipboard.writeText(embedCode);
-      toast.success("임베드 코드가 복사되었습니다.");
-    } catch (error) {
-      console.error("Copy embed error:", error);
-      toast.error("복사에 실패했습니다.");
-    }
-  };
+  // const handleCopyEmbed = async () => {
+  //   try {
+  //     await navigator.clipboard.writeText(embedCode);
+  //     toast.success(t("settings.codeCopied"));
+  //   } catch (error) {
+  //     console.error("Copy embed error:", error);
+  //     toast.error(t("settings.copyFailed"));
+  //   }
+  // };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,10 +140,10 @@ export default function NewsletterSettingsPage() {
         timezone: updatedNewsletter.timezone,
       });
       
-      toast.success("뉴스레터 설정이 저장되었습니다.");
+      toast.success(t("settings.newsletterSaved"));
     } catch (error: any) {
       console.error("Newsletter settings update error:", error);
-      const errorMessage = error?.response?.data?.message || error?.message || "설정 저장에 실패했습니다.";
+      const errorMessage = error?.response?.data?.message || error?.message || t("settings.newsletterSaveFailed");
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -150,12 +152,11 @@ export default function NewsletterSettingsPage() {
 
   if (isFetching) {
     return (
-      <div className="mx-auto max-w-2xl">
-        <PageHeader title="뉴스레터 설정" />
-        <div className="mt-8 flex items-center justify-center py-12">
+      <div className="mx-auto max-w-4xl">
+        <div className="flex items-center justify-center py-12">
           <div className="text-center space-y-4">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
-            <p className="text-muted-foreground">로딩 중...</p>
+            <p className="text-muted-foreground">{t("common.loading")}</p>
           </div>
         </div>
       </div>
@@ -163,33 +164,31 @@ export default function NewsletterSettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <PageHeader title="뉴스레터 설정" />
-
-      <div className="mt-8 space-y-6">
+    <div className="mx-auto max-w-4xl">
+      <div className="space-y-6">
         {/* Basic Info Section */}
         <section className="rounded-lg border border-border">
           <div className="border-b border-border px-6 py-4">
-            <h2 className="font-medium">기본 정보</h2>
+            <h2 className="font-medium">{t("settings.basicInfo")}</h2>
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Newsletter Name */}
             <div className="grid gap-2">
-              <Label htmlFor="name">뉴스레터 이름</Label>
+              <Label htmlFor="name">{t("settings.newsletterName")}</Label>
               <Input
                 id="name"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="뉴스레터 이름"
+                placeholder={t("settings.newsletterNamePlaceholder")}
                 disabled={isLoading || isFetching}
               />
             </div>
 
             {/* Slug */}
             <div className="grid gap-2">
-              <Label htmlFor="slug">URL 슬러그</Label>
+              <Label htmlFor="slug">{t("settings.urlSlug")}</Label>
               <div className="flex">
                 <span className="inline-flex items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground">
                   /@{user?.username || "username"}/
@@ -199,7 +198,7 @@ export default function NewsletterSettingsPage() {
                   name="slug"
                   value={formData.slug}
                   onChange={handleSlugChange}
-                  placeholder="newsletter-slug"
+                  placeholder={t("settings.urlSlugPlaceholder")}
                   disabled={isLoading || isFetching}
                   className="rounded-l-none"
                 />
@@ -212,7 +211,7 @@ export default function NewsletterSettingsPage() {
             {/* Description */}
             <div className="grid gap-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="description">설명</Label>
+                <Label htmlFor="description">{t("settings.newsletterDescription")}</Label>
                 <span className="text-xs text-muted-foreground">
                   {formData.description.length}/300
                 </span>
@@ -222,7 +221,7 @@ export default function NewsletterSettingsPage() {
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                placeholder="뉴스레터에 대한 간단한 설명"
+                placeholder={t("settings.newsletterDescPlaceholder")}
                 disabled={isLoading || isFetching}
                 rows={3}
                 className="resize-none"
@@ -232,7 +231,7 @@ export default function NewsletterSettingsPage() {
             {/* Submit */}
             <div className="flex justify-end pt-2">
               <Button type="submit" disabled={isLoading || isFetching}>
-                {isLoading ? "저장 중..." : "변경사항 저장"}
+                {isLoading ? t("settings.saving") : t("settings.saveChanges")}
               </Button>
             </div>
           </form>
@@ -241,36 +240,36 @@ export default function NewsletterSettingsPage() {
         {/* Email Settings Section */}
         <section className="rounded-lg border border-border">
           <div className="border-b border-border px-6 py-4">
-            <h2 className="font-medium">이메일 설정</h2>
+            <h2 className="font-medium">{t("settings.emailSettings")}</h2>
           </div>
 
           <div className="p-6 space-y-6">
             {/* Sender Name */}
             <div className="grid gap-2">
-              <Label htmlFor="senderName">발신자 이름</Label>
+              <Label htmlFor="senderName">{t("settings.senderName")}</Label>
               <Input
                 id="senderName"
                 name="senderName"
                 value={formData.senderName}
                 onChange={handleChange}
-                placeholder="발신자 이름"
+                placeholder={t("settings.senderNamePlaceholder")}
                 disabled={isLoading || isFetching}
               />
               <p className="text-xs text-muted-foreground">
-                이메일 발신자로 표시되는 이름입니다.
+                {t("settings.senderNameHint")}
               </p>
             </div>
 
             {/* Timezone */}
             <div className="grid gap-2">
-              <Label htmlFor="timezone">시간대</Label>
+              <Label htmlFor="timezone">{t("settings.timezone")}</Label>
               <Select
                 value={formData.timezone}
                 onValueChange={handleTimezoneChange}
                 disabled={isLoading || isFetching}
               >
                 <SelectTrigger id="timezone">
-                  <SelectValue placeholder="시간대를 선택하세요" />
+                  <SelectValue placeholder={t("settings.timezoneSelect")} />
                 </SelectTrigger>
                 <SelectContent>
                   {TIMEZONES.map((tz) => (
@@ -286,7 +285,7 @@ export default function NewsletterSettingsPage() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                예약 발송 및 통계에 사용됩니다.
+                {t("settings.timezoneHint")}
               </p>
             </div>
 
@@ -297,31 +296,31 @@ export default function NewsletterSettingsPage() {
                 onClick={handleSubmit}
                 disabled={isLoading || isFetching}
               >
-                {isLoading ? "저장 중..." : "변경사항 저장"}
+                {isLoading ? t("settings.saving") : t("settings.saveChanges")}
               </Button>
             </div>
           </div>
         </section>
 
-        {/* Subscribe Widget Section */}
+        {/* Subscribe Widget Section - Coming Soon
         <section className="rounded-lg border border-border">
           <div className="border-b border-border px-6 py-4">
-            <h2 className="font-medium">구독 위젯</h2>
+            <h2 className="font-medium">{t("settings.subscribeWidget")}</h2>
             <p className="text-sm text-muted-foreground">
-              블로그나 웹사이트 어디에서든 붙여넣을 수 있는 구독 폼입니다.
+              {t("settings.subscribeWidgetDesc")}
             </p>
           </div>
 
           <div className="p-6 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium">임베드 코드</p>
+                <p className="text-sm font-medium">{t("settings.embedCode")}</p>
                 <p className="text-xs text-muted-foreground">
-                  iframe 코드를 복사해 붙여넣으세요.
+                  {t("settings.embedCodeDesc")}
                 </p>
               </div>
               <Button variant="outline" size="sm" onClick={handleCopyEmbed}>
-                코드 복사
+                {t("settings.copyCode")}
               </Button>
             </div>
 
@@ -332,8 +331,8 @@ export default function NewsletterSettingsPage() {
             />
           </div>
         </section>
+        */}
       </div>
     </div>
   );
 }
-

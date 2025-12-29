@@ -29,6 +29,9 @@ fun Route.oauthRoutes() {
         // Google OAuth2 시작
         get("/google") {
             try {
+                // 프론트엔드에서 전달한 언어 설정 (없으면 영어)
+                val locale = call.request.queryParameters["hl"] ?: "en"
+                
                 // 프론트엔드 콜백 URL 설정
                 val webUrl = try {
                     config.getString("ktor.web.url")
@@ -46,7 +49,7 @@ fun Route.oauthRoutes() {
                 // State와 Redirect URI를 메모리에 저장
                 OAuthStateStore.storeState(state, redirectUri)
 
-                val authUrl = googleOAuthService.getAuthorizationUrl(state, redirectUri)
+                val authUrl = googleOAuthService.getAuthorizationUrl(state, redirectUri, locale)
                 call.respondRedirect(authUrl)
             } catch (e: Exception) {
                 logger.error("Failed to initiate Google OAuth", e)

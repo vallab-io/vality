@@ -8,6 +8,7 @@ import { NewsletterSetupForm } from "./_components/newsletter-setup-form";
 import { Logo } from "@/components/common";
 import { userAtom, isAuthenticatedAtom, authLoadingAtom } from "@/stores/auth.store";
 import { getMyNewsletters } from "@/lib/api/newsletter";
+import { useT } from "@/hooks/use-translation";
 
 type OnboardingStep = "profile" | "newsletter";
 
@@ -19,6 +20,7 @@ export default function OnboardingPage() {
   const authLoading = useAtomValue(authLoadingAtom);
   const [currentStep, setCurrentStep] = useState<OnboardingStep>("profile");
   const [isCheckingNewsletter, setIsCheckingNewsletter] = useState(true);
+  const t = useT();
 
   // 인증 및 단계 확인
   useEffect(() => {
@@ -76,7 +78,7 @@ export default function OnboardingPage() {
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
-          <p className="text-muted-foreground">로딩 중...</p>
+          <p className="text-muted-foreground">{t("common.loading")}</p>
         </div>
       </div>
     );
@@ -115,10 +117,10 @@ export default function OnboardingPage() {
             <>
               <div className="space-y-2 text-center">
                 <h1 className="text-2xl font-semibold tracking-tight">
-                  프로필 설정
+                  {t("onboarding.step1Title")}
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  뉴스레터에서 사용할 정보를 입력하세요
+                  {t("onboarding.step1Desc")}
                 </p>
               </div>
               <OnboardingForm onComplete={handleProfileComplete} />
@@ -127,10 +129,10 @@ export default function OnboardingPage() {
             <>
               <div className="space-y-2 text-center">
                 <h1 className="text-2xl font-semibold tracking-tight">
-                  뉴스레터 만들기
+                  {t("onboarding.step2Title")}
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  첫 번째 뉴스레터를 만들어보세요
+                  {t("onboarding.step2Desc")}
                 </p>
               </div>
               <NewsletterSetupForm

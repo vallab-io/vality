@@ -9,12 +9,14 @@ import { getAllPublicIssues, type PublicIssue } from "@/lib/api/public";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/auth.store";
 import { Heart } from "lucide-react";
+import { useT } from "@/hooks/use-translation";
 
 export default function HomePageContent() {
   const user = useAtomValue(userAtom);
   const [issues, setIssues] = useState<PublicIssue[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
+  const t = useT();
 
   useEffect(() => {
     // 성능 측정 오류 방지를 위해 transition 사용
@@ -45,7 +47,7 @@ export default function HomePageContent() {
       <div className="min-h-screen bg-background">
         <HomeSidebar />
         <div className="ml-64 flex min-h-screen items-center justify-center">
-          <div className="text-muted-foreground">로딩 중...</div>
+          <div className="text-muted-foreground">{t("common.loading")}</div>
         </div>
       </div>
     );
@@ -60,13 +62,13 @@ export default function HomePageContent() {
           {/* Issues List */}
           {issues.length === 0 ? (
             <div className="mt-12 rounded-xl border border-border bg-card py-20 text-center shadow-sm">
-              <p className="text-muted-foreground text-lg font-medium">아직 발행된 이슈가 없습니다.</p>
+              <p className="text-muted-foreground text-lg font-medium">{t("common.noIssuesYet")}</p>
               {user && (
                 <Link
                   href="/dashboard"
                   className="mt-4 inline-block text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
                 >
-                  첫 번째 이슈 작성하기 →
+                  {t("common.writeFirstIssue")}
                 </Link>
               )}
             </div>
@@ -74,7 +76,7 @@ export default function HomePageContent() {
             <div>
               {/* Section Header */}
               <div className="mb-8 pb-4 border-b border-border/50">
-                <h2 className="text-lg font-semibold text-foreground">For you</h2>
+                <h2 className="text-lg font-semibold text-foreground">{t("home.forYou")}</h2>
               </div>
 
               <div className="space-y-6">
