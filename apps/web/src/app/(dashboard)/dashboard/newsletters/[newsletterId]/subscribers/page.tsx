@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { PageHeader } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +18,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -30,15 +28,10 @@ import {
   deleteSubscriber,
   type Subscriber,
 } from "@/lib/api/subscriber";
+import { useT } from "@/hooks/use-translation";
+import { useTopbarAction } from "../../../../_components/topbar-action-context";
 
 type SubscriberStatus = "all" | "active" | "pending" | "unsubscribed";
-
-const STATUS_LABELS: Record<SubscriberStatus, string> = {
-  all: "전체",
-  active: "활성",
-  pending: "대기",
-  unsubscribed: "취소",
-};
 
 const STATUS_COLORS: Record<string, string> = {
   active: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
@@ -69,6 +62,8 @@ function SearchIcon({ className }: { className?: string }) {
 export default function SubscribersPage() {
   const params = useParams();
   const newsletterId = params.newsletterId as string;
+  const t = useT();
+  const { setAction } = useTopbarAction();
   
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,6 +72,13 @@ export default function SubscribersPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+
+  const STATUS_LABELS: Record<SubscriberStatus, string> = {
+    all: t("subscribers.all"),
+    active: t("subscribers.active"),
+    pending: t("subscribers.pending"),
+    unsubscribed: t("subscribers.unsubscribed"),
+  };
 
   // 구독자 목록 가져오기
   useEffect(() => {
@@ -87,7 +89,7 @@ export default function SubscribersPage() {
         setSubscribers(data);
       } catch (error) {
         console.error("Failed to fetch subscribers:", error);
-        toast.error("구독자 목록을 가져오는데 실패했습니다.");
+        toast.error(t("subscribers.failedToLoad"));
       } finally {
         setIsLoading(false);
       }
@@ -97,6 +99,17 @@ export default function SubscribersPage() {
       fetchSubscribers();
     }
   }, [newsletterId]);
+
+  // Topbar에 Add Subscriber 버튼 설정
+  useEffect(() => {
+    setAction(
+      <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
+        <PlusIcon className="mr-2 h-4 w-4" />
+        {t("subscribers.addSubscriber")}
+      </Button>
+    );
+    return () => setAction(null);
+  }, []);
 
   // 필터링된 구독자 목록
   const filteredSubscribers = subscribers.filter((subscriber) => {
@@ -121,7 +134,7 @@ export default function SubscribersPage() {
 
   const handleAddSubscriber = async () => {
     if (!newEmail) {
-      toast.error("이메일을 입력해주세요.");
+      toast.error(t("subscribers.pleaseEnterEmail"));
       return;
     }
 
@@ -131,13 +144,13 @@ export default function SubscribersPage() {
         email: newEmail,
       });
       setSubscribers([...subscribers, newSubscriber]);
-      toast.success("구독자가 추가되었습니다.");
+      toast.success(t("subscribers.addSuccess"));
       setNewEmail("");
       setIsAddDialogOpen(false);
     } catch (error: any) {
       console.error("Add subscriber error:", error);
       toast.error(
-        error?.response?.data?.message || "구독자 추가에 실패했습니다."
+        error?.response?.data?.message || t("subscribers.addFailed")
       );
     } finally {
       setIsAdding(false);
@@ -145,16 +158,16 @@ export default function SubscribersPage() {
   };
 
   const handleDeleteSubscriber = async (id: string, email: string) => {
-    if (!confirm(`${email} 구독자를 삭제하시겠습니까?`)) return;
+    if (!confirm(t("subscribers.deleteConfirm").replace("{email}", email))) return;
 
     try {
       await deleteSubscriber(newsletterId, id);
       setSubscribers(subscribers.filter((s) => s.id !== id));
-      toast.success("구독자가 삭제되었습니다.");
+      toast.success(t("subscribers.deleteSuccess"));
     } catch (error: any) {
       console.error("Delete subscriber error:", error);
       toast.error(
-        error?.response?.data?.message || "구독자 삭제에 실패했습니다."
+        error?.response?.data?.message || t("subscribers.deleteFailed")
       );
     }
   };
@@ -169,50 +182,42 @@ export default function SubscribersPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div className="flex items-center justify-between">
-        <PageHeader title="구독자" />
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <PlusIcon className="mr-2 h-4 w-4" />
-                구독자 추가
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>구독자 추가</DialogTitle>
-                <DialogDescription>
-                  새 구독자의 이메일을 입력하세요.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">이메일</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    placeholder="subscriber@example.com"
-                    disabled={isAdding}
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsAddDialogOpen(false)}
-                  disabled={isAdding}
-                >
-                  취소
-                </Button>
-                <Button onClick={handleAddSubscriber} disabled={isAdding}>
-                  {isAdding ? "추가 중..." : "추가"}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-      </div>
+      {/* Add Subscriber Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("subscribers.addSubscriber")}</DialogTitle>
+            <DialogDescription>
+              {t("subscribers.addSubscriberDesc")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="email">{t("subscribers.email")}</Label>
+              <Input
+                id="email"
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder={t("subscribers.emailPlaceholder")}
+                disabled={isAdding}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsAddDialogOpen(false)}
+              disabled={isAdding}
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button onClick={handleAddSubscriber} disabled={isAdding}>
+              {isAdding ? t("subscribers.adding") : t("subscribers.add")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Stats */}
       <div className="mt-6 grid grid-cols-4 gap-4">
@@ -238,7 +243,7 @@ export default function SubscribersPage() {
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="이메일로 검색..."
+            placeholder={t("subscribers.searchPlaceholder")}
             className="pl-10"
           />
         </div>
@@ -265,22 +270,22 @@ export default function SubscribersPage() {
       <div className="mt-6 rounded-lg border border-border">
         {/* Table Header */}
         <div className="grid grid-cols-12 gap-4 border-b border-border bg-muted/50 px-4 py-3 text-sm font-medium text-muted-foreground">
-          <div className="col-span-5">이메일</div>
-          <div className="col-span-2">상태</div>
-          <div className="col-span-3">구독일</div>
-          <div className="col-span-2 text-right">작업</div>
+          <div className="col-span-5">{t("subscribers.email")}</div>
+          <div className="col-span-2">{t("subscribers.status")}</div>
+          <div className="col-span-3">{t("subscribers.subscribedAt")}</div>
+          <div className="col-span-2 text-right">{t("subscribers.actions")}</div>
         </div>
 
         {/* Table Body */}
         {isLoading ? (
           <div className="px-4 py-12 text-center text-muted-foreground">
-            로딩 중...
+            {t("subscribers.loadingSubscribers")}
           </div>
         ) : filteredSubscribers.length === 0 ? (
           <div className="px-4 py-12 text-center text-muted-foreground">
             {searchQuery || statusFilter !== "all"
-              ? "검색 결과가 없습니다."
-              : "아직 구독자가 없습니다."}
+              ? t("subscribers.noResults")
+              : t("subscribers.noSubscribers")}
           </div>
         ) : (
           <div className="divide-y divide-border">
@@ -329,10 +334,9 @@ export default function SubscribersPage() {
 
       {/* Footer Info */}
       <div className="mt-4 text-sm text-muted-foreground">
-        총 {filteredSubscribers.length}명의 구독자
+        {t("subscribers.total")} {filteredSubscribers.length}
         {statusFilter !== "all" && ` (${STATUS_LABELS[statusFilter]})`}
       </div>
     </div>
   );
 }
-

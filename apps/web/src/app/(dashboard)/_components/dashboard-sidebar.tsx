@@ -24,6 +24,7 @@ import {
 import { useAtomValue, useSetAtom } from "jotai";
 import { userAtom } from "@/stores/auth.store";
 import { getMyNewsletters, type Newsletter } from "@/lib/api/newsletter";
+import { useT } from "@/hooks/use-translation";
 
 const MAX_FREE_NEWSLETTERS = 1;
 
@@ -71,6 +72,7 @@ export function DashboardSidebar() {
   const [selectedNewsletter, setSelectedNewsletter] = useState<Newsletter | null>(null);
   const [isNewsletterOpen, setIsNewsletterOpen] = useState(true);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+  const t = useT();
 
   // 뉴스레터 목록 가져오기
   useEffect(() => {
@@ -117,10 +119,10 @@ export function DashboardSidebar() {
 
   // 선택된 뉴스레터 기반으로 하위 메뉴 생성
   const getNewsletterSubItems = (newsletterId: string) => [
-    { label: "이슈", href: `/dashboard/newsletters/${newsletterId}/issues` },
-    { label: "구독자", href: `/dashboard/newsletters/${newsletterId}/subscribers` },
-    { label: "통계", href: `/dashboard/newsletters/${newsletterId}/analytics` },
-    { label: "설정", href: `/dashboard/newsletters/${newsletterId}/settings` },
+    { label: t("newsletterSub.issues"), href: `/dashboard/newsletters/${newsletterId}/issues` },
+    { label: t("newsletterSub.subscribers"), href: `/dashboard/newsletters/${newsletterId}/subscribers` },
+    { label: t("newsletterSub.analytics"), href: `/dashboard/newsletters/${newsletterId}/analytics` },
+    { label: t("newsletterSub.settings"), href: `/dashboard/newsletters/${newsletterId}/settings` },
   ];
 
   const newsletterSubItems = selectedNewsletter
@@ -148,7 +150,7 @@ export function DashboardSidebar() {
             )}
           >
             <HomeIcon className="h-5 w-5" />
-            Home
+            {t("sidebar.home")}
           </Link>
 
           {/* 대시보드 */}
@@ -162,7 +164,7 @@ export function DashboardSidebar() {
             )}
           >
             <DashboardIcon className="h-5 w-5" />
-            대시보드
+            {t("sidebar.dashboard")}
           </Link>
 
           {/* 뉴스레터 섹션 (아코디언) */}
@@ -178,10 +180,10 @@ export function DashboardSidebar() {
                     <NewsletterIcon className="h-5 w-5" />
                     <span className="truncate">
                       {isLoading
-                        ? "로딩 중..."
+                        ? t("sidebar.loading")
                         : selectedNewsletter
                         ? selectedNewsletter.name
-                        : "뉴스레터 없음"}
+                        : t("sidebar.noNewsletter")}
                     </span>
                   </button>
                 </DropdownMenuTrigger>
@@ -204,7 +206,7 @@ export function DashboardSidebar() {
                     className="flex items-center gap-2"
                   >
                     <PlusIcon className="h-4 w-4" />
-                    <span>새 뉴스레터 만들기</span>
+                    <span>{t("sidebar.createNewsletter")}</span>
                     {!canCreateNewsletter && (
                       <span className="ml-auto rounded bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">
                         Pro
@@ -260,7 +262,7 @@ export function DashboardSidebar() {
             <span className="flex h-5 w-5 items-center justify-center rounded bg-muted text-[10px] font-semibold">
               ₩
             </span>
-            구독 관리
+            {t("sidebar.subscription")}
           </Link>
 
           {/* 계정 설정 */}
@@ -274,15 +276,15 @@ export function DashboardSidebar() {
             )}
           >
             <SettingsIcon className="h-5 w-5" />
-            계정 설정
+            {t("sidebar.accountSettings")}
           </Link>
         </nav>
 
         {/* User Section */}
         <div className="border-t border-border p-4">
-          <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground">
+          <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground">
             <UserAvatar
-              name={user?.name || user?.email || "사용자"}
+              name={user?.name || user?.email || t("common.user")}
               email={user?.email || undefined}
               imageUrl={user?.imageUrl || undefined}
               showInfo
@@ -299,7 +301,7 @@ export function DashboardSidebar() {
               router.push("/");
             }}
           >
-            로그아웃
+            {t("sidebar.logout")}
           </Button>
         </div>
       </aside>
@@ -308,10 +310,9 @@ export function DashboardSidebar() {
       <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Pro로 업그레이드</DialogTitle>
+            <DialogTitle>{t("upgrade.title")}</DialogTitle>
             <DialogDescription>
-              Free 플랜에서는 1개의 뉴스레터만 운영할 수 있습니다.
-              Pro로 업그레이드하여 무제한 뉴스레터를 만들어보세요.
+              {t("upgrade.description")}
             </DialogDescription>
           </DialogHeader>
           <div className="mt-4 space-y-4">
@@ -320,33 +321,33 @@ export function DashboardSidebar() {
                 <h3 className="font-semibold">Pro</h3>
                 <div className="text-right">
                   <span className="text-2xl font-bold">₩9,900</span>
-                  <span className="text-sm text-muted-foreground">/월</span>
+                  <span className="text-sm text-muted-foreground">{t("upgrade.perMonth")}</span>
                 </div>
               </div>
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-center gap-2">
                   <CheckIcon className="h-4 w-4 text-primary" />
-                  무제한 뉴스레터
+                  {t("upgrade.unlimitedNewsletters")}
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckIcon className="h-4 w-4 text-primary" />
-                  무제한 구독자
+                  {t("upgrade.unlimitedSubscribers")}
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckIcon className="h-4 w-4 text-primary" />
-                  고급 분석
+                  {t("upgrade.advancedAnalytics")}
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckIcon className="h-4 w-4 text-primary" />
-                  커스텀 도메인
+                  {t("upgrade.customDomain")}
                 </li>
               </ul>
             </div>
             <Button className="w-full" onClick={() => setShowUpgradeDialog(false)}>
-              Pro 시작하기
+              {t("upgrade.startPro")}
             </Button>
             <p className="text-center text-xs text-muted-foreground">
-              언제든지 취소할 수 있습니다
+              {t("upgrade.cancelAnytime")}
             </p>
           </div>
         </DialogContent>

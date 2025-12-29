@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PageHeader, UserAvatar } from "@/components/common";
+import { UserAvatar } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,12 +18,14 @@ import {
 } from "@/lib/api/auth";
 import { getErrorMessage } from "@/lib/api/client";
 import { generatePresignedUrl, uploadImageToS3 } from "@/lib/api/upload";
+import { useT } from "@/hooks/use-translation";
 
 export default function SettingsPage() {
   const router = useRouter();
   const authLoading = useAtomValue(authLoadingAtom);
   const user = useAtomValue(userAtom);
   const setUser = useSetAtom(userAtom);
+  const t = useT();
 
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
@@ -86,11 +88,11 @@ export default function SettingsPage() {
     const check = async () => {
       const username = formData.username.trim().toLowerCase();
       if (!username) {
-        setUsernameError("사용자명을 입력하세요.");
+        setUsernameError(t("settings.usernameRequired"));
         return;
       }
       if (username.length < 3) {
-        setUsernameError("사용자명은 3자 이상이어야 합니다.");
+        setUsernameError(t("settings.usernameMinLength"));
         return;
       }
       if (user?.username === username) {
@@ -101,7 +103,7 @@ export default function SettingsPage() {
       setUsernameError(null);
       try {
         const available = await checkUsernameAvailability(username);
-        if (!available) setUsernameError("이미 사용 중인 사용자명입니다.");
+        if (!available) setUsernameError(t("settings.usernameTaken"));
       } catch (error) {
         console.error("Username check error:", error);
       } finally {
@@ -119,7 +121,7 @@ export default function SettingsPage() {
       return;
     }
     if (!formData.username || formData.username.trim().length < 3) {
-      toast.error("사용자명은 3자 이상이어야 합니다.");
+      toast.error(t("settings.usernameMinLength"));
       return;
     }
 
@@ -131,11 +133,11 @@ export default function SettingsPage() {
         bio: formData.bio || undefined,
       });
       setUser(updated);
-      toast.success("프로필이 저장되었습니다.");
+      toast.success(t("settings.profileSaved"));
     } catch (error) {
       console.error("Profile update error:", error);
       const msg = getErrorMessage(error);
-      toast.error(msg || "프로필 저장에 실패했습니다.");
+      toast.error(msg || t("settings.profileSaveFailed"));
     } finally {
       setIsLoading(false);
     }
@@ -148,13 +150,13 @@ export default function SettingsPage() {
     // 파일 검증
     const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
     if (!validTypes.includes(file.type)) {
-      toast.error("JPEG, PNG, GIF, WebP 형식만 업로드 가능합니다.");
+      toast.error(t("settings.imageFormats"));
       return;
     }
 
     const maxSize = 2 * 1024 * 1024; // 2MB
     if (file.size > maxSize) {
-      toast.error("파일 크기는 2MB 이하여야 합니다.");
+      toast.error(t("settings.imageSizeLimit"));
       return;
     }
 
@@ -188,12 +190,12 @@ export default function SettingsPage() {
       });
 
       setUser(updated);
-      toast.success("프로필 이미지가 업로드되었습니다.");
+      toast.success(t("settings.imageUploaded"));
       setPreviewImage(null);
     } catch (error) {
       console.error("Image upload error:", error);
       const msg = getErrorMessage(error);
-      toast.error(msg || "이미지 업로드에 실패했습니다.");
+      toast.error(msg || t("settings.imageUploadFailed"));
       setPreviewImage(null);
     } finally {
       setIsUploadingImage(false);
@@ -218,17 +220,20 @@ export default function SettingsPage() {
       });
       setUser(updated);
       setPreviewImage(null);
-      toast.success("프로필 이미지가 제거되었습니다.");
+      toast.success(t("settings.imageRemoved"));
     } catch (error) {
       console.error("Image remove error:", error);
       const msg = getErrorMessage(error);
-      toast.error(msg || "이미지 제거에 실패했습니다.");
+      toast.error(msg || t("settings.imageRemoveFailed"));
     }
   };
 
   const handleDeleteAccount = async () => {
-    if (deleteConfirmText !== "계정 삭제") {
-      toast.error('"계정 삭제"를 정확히 입력해주세요.');
+    // 한글/영어 모두 지원
+    const confirmTextKo = "계정 삭제";
+    const confirmTextEn = "Delete Account";
+    if (deleteConfirmText !== confirmTextKo && deleteConfirmText !== confirmTextEn) {
+      toast.error(t("settings.deleteConfirmInput"));
       return;
     }
 
@@ -238,33 +243,31 @@ export default function SettingsPage() {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       setUser(null);
-      toast.success("계정이 삭제되었습니다.");
+      toast.success(t("settings.deleteSuccess"));
       router.push("/login");
     } catch (error) {
       console.error("Delete account error:", error);
       const msg = getErrorMessage(error);
-      toast.error(msg || "계정 삭제에 실패했습니다.");
+      toast.error(msg || t("settings.deleteFailed"));
     } finally {
       setIsDeleteLoading(false);
     }
   };
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <PageHeader title="계정 설정" />
-
-      <div className="mt-8 space-y-6">
+    <div className="mx-auto max-w-4xl">
+      <div className="space-y-6">
         {/* Profile Section */}
         <section className="rounded-lg border border-border">
           <div className="border-b border-border px-6 py-4">
-            <h2 className="font-medium">프로필</h2>
+            <h2 className="font-medium">{t("settings.profile")}</h2>
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Profile Image */}
             <div className="flex items-center gap-4">
               <UserAvatar
-                name={formData.name || user?.name || user?.email || "사용자"}
+                name={formData.name || user?.name || user?.email || t("common.user")}
                 email={user?.email || undefined}
                 imageUrl={previewImage || user?.imageUrl || undefined}
                 size="lg"
@@ -286,7 +289,7 @@ export default function SettingsPage() {
                     onClick={handleImageUpload}
                     disabled={isUploadingImage}
                   >
-                    {isUploadingImage ? "업로드 중..." : "이미지 변경"}
+                    {isUploadingImage ? t("settings.uploading") : t("settings.uploadImage")}
                   </Button>
                   {(user?.imageUrl || previewImage) && (
                     <Button
@@ -297,32 +300,32 @@ export default function SettingsPage() {
                       onClick={handleImageRemove}
                       disabled={isUploadingImage}
                     >
-                      삭제
+                      {t("settings.removeImage")}
                     </Button>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  JPG, PNG, GIF, WebP 형식. 최대 2MB
+                  {t("settings.imageFormats")}
                 </p>
               </div>
             </div>
 
             {/* Name */}
             <div className="grid gap-2">
-              <Label htmlFor="name">이름</Label>
+              <Label htmlFor="name">{t("settings.name")}</Label>
               <Input
                 id="name"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="이름을 입력하세요"
+                placeholder={t("settings.namePlaceholder")}
                 disabled={isLoading}
               />
             </div>
 
             {/* Username */}
             <div className="grid gap-2">
-              <Label htmlFor="username">사용자명</Label>
+              <Label htmlFor="username">{t("settings.username")}</Label>
               <div className="flex">
                 <span className="inline-flex items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground">
                   @
@@ -332,7 +335,7 @@ export default function SettingsPage() {
                   name="username"
                   value={formData.username}
                   onChange={handleChange}
-                  placeholder="username"
+                  placeholder={t("settings.usernamePlaceholder")}
                   disabled={isLoading}
                   className="rounded-l-none"
                 />
@@ -349,7 +352,7 @@ export default function SettingsPage() {
             {/* Bio */}
             <div className="grid gap-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="bio">소개</Label>
+                <Label htmlFor="bio">{t("settings.bio")}</Label>
                 <span className="text-xs text-muted-foreground">
                   {formData.bio.length}/200
                 </span>
@@ -359,7 +362,7 @@ export default function SettingsPage() {
                 name="bio"
                 value={formData.bio}
                 onChange={handleChange}
-                placeholder="간단한 자기소개를 작성하세요"
+                placeholder={t("settings.bioPlaceholder")}
                 disabled={isLoading}
                 rows={3}
                 className="resize-none"
@@ -369,7 +372,7 @@ export default function SettingsPage() {
             {/* Submit */}
             <div className="flex justify-end pt-2">
               <Button type="submit" disabled={isLoading || isCheckingUsername}>
-                {isLoading ? "저장 중..." : "변경사항 저장"}
+                {isLoading ? t("settings.saving") : t("settings.saveChanges")}
               </Button>
             </div>
           </form>
@@ -378,14 +381,14 @@ export default function SettingsPage() {
         {/* Danger Zone */}
         <section className="rounded-lg border border-border">
           <div className="border-b border-border px-6 py-4">
-            <h2 className="font-medium">계정 삭제</h2>
+            <h2 className="font-medium">{t("settings.deleteAccount")}</h2>
           </div>
 
           <div className="p-6">
             {!showDeleteConfirm ? (
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
-                  계정과 소유한 모든 뉴스레터가 영구적으로 삭제됩니다.
+                  {t("settings.deleteAccountDesc")}
                 </p>
                 <Button
                   type="button"
@@ -394,23 +397,23 @@ export default function SettingsPage() {
                   className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
                   onClick={() => setShowDeleteConfirm(true)}
                 >
-                  계정 삭제
+                  {t("settings.deleteAccountButton")}
                 </Button>
               </div>
             ) : (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  정말로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+                  {t("settings.deleteConfirmDesc")}
                 </p>
                 <div className="grid gap-2">
                   <Label htmlFor="deleteConfirm" className="text-sm">
-                    확인을 위해 <strong>계정 삭제</strong>를 입력하세요
+                    {t("settings.deleteConfirmInput")}
                   </Label>
                   <Input
                     id="deleteConfirm"
                     value={deleteConfirmText}
                     onChange={(e) => setDeleteConfirmText(e.target.value)}
-                    placeholder="계정 삭제"
+                    placeholder={t("settings.deleteAccountButton")}
                     disabled={isDeleteLoading}
                   />
                 </div>
@@ -425,16 +428,16 @@ export default function SettingsPage() {
                     }}
                     disabled={isDeleteLoading}
                   >
-                    취소
+                    {t("common.cancel")}
                   </Button>
                   <Button
                     type="button"
                     variant="destructive"
                     size="sm"
                     onClick={handleDeleteAccount}
-                    disabled={isDeleteLoading || deleteConfirmText !== "계정 삭제"}
+                    disabled={isDeleteLoading || (deleteConfirmText !== "계정 삭제" && deleteConfirmText !== "Delete Account")}
                   >
-                    {isDeleteLoading ? "삭제 중..." : "영구 삭제"}
+                    {isDeleteLoading ? t("settings.deleting") : t("settings.permanentDelete")}
                   </Button>
                 </div>
               </div>

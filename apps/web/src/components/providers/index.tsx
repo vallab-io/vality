@@ -6,6 +6,7 @@ import { Provider as JotaiProvider, useSetAtom } from "jotai";
 import { useEffect, useState } from "react";
 import { userAtom, authLoadingAtom } from "@/stores/auth.store";
 import { getCurrentUser } from "@/lib/api/auth";
+import { LocaleProvider } from "./locale-provider";
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -85,10 +86,12 @@ export function Providers({ children }: ProvidersProps) {
 
   return (
     <JotaiProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthInitializer>{children}</AuthInitializer>
-        <ReactQueryDevtools initialIsOpen={false} />
-      </QueryClientProvider>
+      <LocaleProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthInitializer>{children}</AuthInitializer>
+          <ReactQueryDevtools initialIsOpen={false} />
+        </QueryClientProvider>
+      </LocaleProvider>
     </JotaiProvider>
   );
 }

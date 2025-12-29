@@ -37,9 +37,12 @@ class GoogleOAuthService(
 
     /**
      * OAuth2 인증 URL 생성
+     * @param state CSRF 방지용 state 값
+     * @param redirectUri 인증 완료 후 리다이렉트 URL
+     * @param locale 언어 설정 (예: "en", "ko"). null이면 기본값 "en" 사용
      */
-    fun getAuthorizationUrl(state: String, redirectUri: String): String {
-        val params = mapOf(
+    fun getAuthorizationUrl(state: String, redirectUri: String, locale: String? = null): String {
+        val params = mutableMapOf(
             "client_id" to clientId,
             "redirect_uri" to redirectUri,
             "response_type" to "code",
@@ -47,6 +50,7 @@ class GoogleOAuthService(
             "state" to state,
             "access_type" to "offline",
             "prompt" to "consent",
+            "hl" to (locale ?: "en"), // Google OAuth 페이지 언어 설정 (기본: 영어)
         )
 
         val queryString = params.entries.joinToString("&") { (key, value) ->

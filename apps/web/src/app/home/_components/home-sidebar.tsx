@@ -7,11 +7,13 @@ import { HomeIcon, DashboardIcon } from "@/components/icons";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/auth.store";
 import { cn } from "@/lib/utils";
+import { useT } from "@/hooks/use-translation";
 
 export function HomeSidebar() {
   const pathname = usePathname();
   const user = useAtomValue(userAtom);
   const isAuthenticated = !!user;
+  const t = useT();
 
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-border bg-background">
@@ -33,7 +35,7 @@ export function HomeSidebar() {
           )}
         >
           <HomeIcon className="h-5 w-5" />
-          Home
+          {t("sidebar.home")}
         </Link>
 
         {/* Dashboard - 인증된 경우만 표시 */}
@@ -48,7 +50,7 @@ export function HomeSidebar() {
             )}
           >
             <DashboardIcon className="h-5 w-5" />
-            Dashboard
+            {t("sidebar.dashboard")}
           </Link>
         )}
 
@@ -66,7 +68,7 @@ export function HomeSidebar() {
             {user.imageUrl ? (
               <img
                 src={user.imageUrl}
-                alt={user.name || user.email || "사용자"}
+                alt={user.name || user.email || t("common.user")}
                 className="h-5 w-5 rounded-full object-cover flex-shrink-0"
               />
             ) : (
@@ -74,7 +76,7 @@ export function HomeSidebar() {
                 {(user.name || user.email || "U")[0].toUpperCase()}
               </div>
             )}
-            Profile
+            {t("sidebar.profile")}
           </Link>
         )}
       </nav>
@@ -85,7 +87,7 @@ export function HomeSidebar() {
           href="/about"
           className="text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
-          About
+          {t("sidebar.about")}
         </Link>
       </div>
     </aside>

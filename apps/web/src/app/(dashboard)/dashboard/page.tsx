@@ -12,17 +12,19 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { PageHeader, EmptyState } from "@/components/common";
+import { EmptyState } from "@/components/common";
 import { NewsletterIcon } from "@/components/icons";
 import { useAtomValue } from "jotai";
 import { userAtom, isAuthenticatedAtom, authLoadingAtom } from "@/stores/auth.store";
 import { getDashboardStats, getRecentIssues, type DashboardStats, type RecentIssue } from "@/lib/api/dashboard";
+import { useT } from "@/hooks/use-translation";
 
 export default function DashboardPage() {
   const router = useRouter();
   const user = useAtomValue(userAtom);
   const isAuthenticated = useAtomValue(isAuthenticatedAtom);
   const authLoading = useAtomValue(authLoadingAtom);
+  const t = useT();
 
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentIssues, setRecentIssues] = useState<RecentIssue[]>([]);
@@ -83,7 +85,7 @@ export default function DashboardPage() {
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
-          <p className="text-muted-foreground">로딩 중...</p>
+          <p className="text-muted-foreground">{t("common.loading")}</p>
         </div>
       </div>
     );
@@ -92,39 +94,26 @@ export default function DashboardPage() {
   const displayStats = stats ?? { totalSubscribers: 0, publishedIssues: 0, draftIssues: 0 };
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <PageHeader
-        title="대시보드"
-        description="뉴스레터 현황을 확인하세요"
-      >
-        <Link href="/dashboard/newsletters">
-          <Button className="gap-2">
-            <NewsletterIcon className="h-4 w-4" />
-            뉴스레터 관리
-          </Button>
-        </Link>
-      </PageHeader>
-
+    <div className="mx-auto max-w-4xl space-y-8">
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatsCard
           icon={<NewsletterIcon className="h-5 w-5" />}
-          title="총 구독자"
+          title={t("dashboard.totalSubscribers")}
           value={isDataLoading ? "-" : displayStats.totalSubscribers.toLocaleString()}
-          description="활성 구독자 수"
+          description={t("dashboard.activeSubscribers")}
         />
         <StatsCard
           icon={<NewsletterIcon className="h-5 w-5" />}
-          title="발행된 이슈"
+          title={t("dashboard.publishedIssues")}
           value={isDataLoading ? "-" : displayStats.publishedIssues.toString()}
-          description="지금까지 발행한 이슈"
+          description={t("dashboard.publishedSoFar")}
         />
         <StatsCard
           icon={<NewsletterIcon className="h-5 w-5" />}
-          title="임시저장"
+          title={t("dashboard.drafts")}
           value={isDataLoading ? "-" : displayStats.draftIssues.toString()}
-          description="작성 중인 이슈"
+          description={t("dashboard.draftsInProgress")}
           className="sm:col-span-2 lg:col-span-1"
         />
       </div>
@@ -132,11 +121,11 @@ export default function DashboardPage() {
       {/* Recent Published Issues */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>최신 발행된 이슈</CardTitle>
+          <CardTitle>{t("dashboard.recentIssues")}</CardTitle>
           {recentIssues.length > 0 && (
             <Link href="/dashboard/newsletters">
               <Button variant="ghost" size="sm">
-                전체 보기
+                {t("common.viewAll")}
               </Button>
             </Link>
           )}
@@ -149,17 +138,17 @@ export default function DashboardPage() {
           ) : recentIssues.length > 0 ? (
             <div className="space-y-3">
               {recentIssues.map((issue) => (
-                <IssueItem key={issue.id} issue={issue} />
+                <IssueItem key={issue.id} issue={issue} t={t} />
               ))}
             </div>
           ) : (
             <EmptyState
               icon="📝"
-              title="아직 발행된 이슈가 없습니다"
-              description="첫 이슈를 작성하고 발행하세요"
+              title={t("dashboard.noPublishedIssues")}
+              description={t("dashboard.writeFirstIssue")}
             >
               <Link href="/dashboard/newsletters">
-                <Button>뉴스레터 관리하기</Button>
+                <Button>{t("common.manageNewsletter")}</Button>
               </Link>
             </EmptyState>
           )}
@@ -197,7 +186,7 @@ function StatsCard({ icon, title, value, description, className }: StatsCardProp
   );
 }
 
-function IssueItem({ issue }: { issue: RecentIssue }) {
+function IssueItem({ issue, t }: { issue: RecentIssue; t: (key: string) => string }) {
   // Public 이슈 페이지 URL 생성
   const issueUrl = `/@${issue.ownerUsername}/${issue.newsletterSlug}/${issue.slug}`;
   
@@ -210,10 +199,10 @@ function IssueItem({ issue }: { issue: RecentIssue }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="font-medium truncate text-foreground">
-              {issue.title || "Untitled"}
+              {issue.title || t("common.untitled")}
             </span>
             <span className="shrink-0 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium">
-              발행됨
+              {t("common.published")}
             </span>
           </div>
           <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">

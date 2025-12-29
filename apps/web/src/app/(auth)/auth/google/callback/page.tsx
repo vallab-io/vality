@@ -7,6 +7,7 @@ import { getMyNewsletters } from "@/lib/api/newsletter";
 import { userAtom } from "@/stores/auth.store";
 import { useSetAtom } from "jotai";
 import { toast } from "sonner";
+import { useT } from "@/hooks/use-translation";
 
 export default function GoogleCallbackPage() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function GoogleCallbackPage() {
   const setUser = useSetAtom(userAtom);
   const [error, setError] = useState<string | null>(null);
   const isProcessingRef = useRef(false);
+  const t = useT();
 
   useEffect(() => {
     // StrictMode 이중 호출/중복 실행 방지
@@ -31,7 +33,7 @@ export default function GoogleCallbackPage() {
       if (errorParam) {
         const errorMessage = errorDescription || errorParam;
         setError(errorMessage);
-        toast.error(`OAuth 인증 실패: ${errorMessage}`);
+        toast.error(`${t("auth.authFailedOAuth")}: ${errorMessage}`);
         setTimeout(() => {
           router.push("/login");
         }, 2000);
@@ -40,8 +42,8 @@ export default function GoogleCallbackPage() {
 
       // 필수 파라미터 확인 (code, state 검증)
       if (!code || !state) {
-        setError("필수 파라미터가 누락되었습니다.");
-        toast.error("인증 정보가 올바르지 않습니다.");
+        setError(t("auth.missingParams"));
+        toast.error(t("auth.invalidAuthInfo"));
         setTimeout(() => {
           router.push("/login");
         }, 2000);
@@ -63,29 +65,29 @@ export default function GoogleCallbackPage() {
         const needsProfileSetup = !authResponse.user.username;
         
         if (needsProfileSetup) {
-          toast.success("회원가입 성공! 프로필을 설정해주세요.");
+          toast.success(t("auth.signupSuccess"));
           router.push("/onboarding");
         } else {
           // username이 있으면 뉴스레터 확인
           try {
             const newsletters = await getMyNewsletters();
             if (newsletters.length === 0) {
-              toast.success("로그인 성공! 뉴스레터를 만들어보세요.");
+              toast.success(t("auth.createNewsletterPrompt"));
               router.push("/onboarding");
             } else {
-              toast.success("로그인 성공!");
+              toast.success(t("auth.loginSuccess"));
               router.push("/dashboard");
             }
           } catch (error) {
             console.error("Failed to check newsletters:", error);
             // 에러 발생 시 대시보드로 이동
-            toast.success("로그인 성공!");
+            toast.success(t("auth.loginSuccess"));
             router.push("/dashboard");
           }
         }
       } catch (err) {
         const errorMessage =
-          err instanceof Error ? err.message : "인증 처리 중 오류가 발생했습니다.";
+          err instanceof Error ? err.message : t("auth.processingError");
         setError(errorMessage);
         console.error("OAuth callback error:", err);
         toast.error(errorMessage);
@@ -96,15 +98,15 @@ export default function GoogleCallbackPage() {
     };
 
     processCallback();
-  }, [searchParams, router, setUser]);
+  }, [searchParams, router, setUser, t]);
 
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold text-destructive">인증 실패</h1>
+          <h1 className="text-2xl font-bold text-destructive">{t("auth.authFailed")}</h1>
           <p className="text-muted-foreground">{error}</p>
-          <p className="text-sm text-muted-foreground">로그인 페이지로 이동합니다...</p>
+          <p className="text-sm text-muted-foreground">{t("auth.redirectingToLogin")}</p>
         </div>
       </div>
     );
@@ -114,9 +116,8 @@ export default function GoogleCallbackPage() {
     <div className="flex min-h-screen items-center justify-center">
       <div className="text-center space-y-4">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
-        <p className="text-muted-foreground">인증 처리 중...</p>
+        <p className="text-muted-foreground">{t("auth.processing")}</p>
       </div>
     </div>
   );
 }
-
