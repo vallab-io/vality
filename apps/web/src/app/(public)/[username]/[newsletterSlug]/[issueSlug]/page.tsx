@@ -10,6 +10,8 @@ import {
   getPublicNewsletter,
   getPublicUserProfile,
 } from "@/lib/api/public";
+import { getTranslation } from "@/lib/i18n/utils";
+import { getLocaleFromCookieServer } from "@/lib/i18n/utils-server";
 
 interface IssuePageProps {
   params: Promise<{ username: string; newsletterSlug: string; issueSlug: string }>;
@@ -19,27 +21,30 @@ export async function generateMetadata({
   params,
 }: IssuePageProps): Promise<Metadata> {
   const { username, newsletterSlug, issueSlug } = await params;
+  const locale = await getLocaleFromCookieServer();
   
   try {
     const issue = await getPublicIssueDetail(username, newsletterSlug, issueSlug);
     const user = await getPublicUserProfile(username);
 
     return {
-      title: issue.title || "Untitled",
+      title: issue.title || getTranslation(locale, "common.untitled"),
       description: issue.excerpt || issue.content.slice(0, 160).replace(/<[^>]*>/g, " ").trim(),
       openGraph: {
-        title: issue.title || "Untitled",
+        title: issue.title || getTranslation(locale, "common.untitled"),
         type: "article",
         authors: issue.ownerName ? [issue.ownerName] : undefined,
       },
     };
   } catch {
-    return { title: "글을 찾을 수 없습니다" };
+    return { title: getTranslation(locale, "public.articleNotFound") };
   }
 }
 
 export default async function IssuePage({ params }: IssuePageProps) {
   const { username, newsletterSlug, issueSlug } = await params;
+  const locale = await getLocaleFromCookieServer();
+  const t = (key: string) => getTranslation(locale, key);
   
   try {
     const [issue, newsletter, user] = await Promise.all([
@@ -48,10 +53,19 @@ export default async function IssuePage({ params }: IssuePageProps) {
       getPublicUserProfile(username),
     ]);
 
+    const formatDate = (dateString: string): string => {
+      if (!dateString) return "";
+      return new Intl.DateTimeFormat(locale === "ko" ? "ko-KR" : "en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }).format(new Date(dateString));
+    };
+
     return (
     <>
-      {/* Newsletter Header */}
-      <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+      {/* Newsletter Header - Hidden on mobile since HomeSidebar handles it */}
+      <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-30 hidden md:block">
         <div className="mx-auto max-w-5xl px-6">
           <div className="flex h-16 items-center">
             <Link
@@ -64,18 +78,18 @@ export default async function IssuePage({ params }: IssuePageProps) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-12">
+      <main className="mx-auto max-w-5xl px-4 sm:px-6 py-6 sm:py-12">
         {/* Article Header */}
-        <header className="mb-10">
+        <header className="mb-6 sm:mb-10">
           <time className="text-sm text-muted-foreground">
             {formatDate(issue.publishedAt)}
           </time>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
-            {issue.title || "Untitled"}
+          <h1 className="mt-2 text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight">
+            {issue.title || t("common.untitled")}
           </h1>
 
           {/* Author */}
-          <div className="mt-6 flex items-center gap-3">
+          <div className="mt-4 sm:mt-6 flex items-center gap-3">
             <UserAvatar 
               name={issue.ownerName || issue.ownerUsername || ""} 
               imageUrl={issue.ownerImageUrl} 
@@ -96,21 +110,21 @@ export default async function IssuePage({ params }: IssuePageProps) {
 
         {/* Article Content */}
         <article 
-          className="prose prose-neutral max-w-none dark:prose-invert [&_img]:mx-auto [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:my-4"
+          className="prose prose-sm sm:prose prose-neutral max-w-none dark:prose-invert [&_img]:mx-auto [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:my-4"
           dangerouslySetInnerHTML={{ __html: issue.content }}
         />
 
         {/* Like & Share Buttons */}
-        <div className="mt-10 flex items-center justify-between">
+        <div className="mt-8 sm:mt-10 flex items-center justify-between">
           <LikeButton issueId={issue.id} initialLikeCount={issue.likeCount || 0} />
-          <ShareButtons title={issue.title || "Untitled"} />
+          <ShareButtons title={issue.title || t("common.untitled")} />
         </div>
 
         {/* Subscribe CTA */}
-        <div className="mx-auto mt-10 max-w-md rounded-xl border border-border bg-muted/30 p-6 text-center">
-          <h2 className="text-lg font-semibold">{newsletter.name} 구독하기</h2>
+        <div className="mx-auto mt-8 sm:mt-10 max-w-md rounded-xl border border-border bg-muted/30 p-4 sm:p-6 text-center">
+          <h2 className="text-base sm:text-lg font-semibold">{t("public.subscribeToNewsletter").replace("{name}", newsletter.name)}</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            새로운 글이 발행되면 이메일로 알려드립니다.
+            {t("public.subscribeDesc")}
           </p>
           <div className="mt-4">
             <SubscribeForm newsletterId={newsletter.id} />
@@ -125,13 +139,3 @@ export default async function IssuePage({ params }: IssuePageProps) {
     notFound();
   }
 }
-
-function formatDate(dateString: string): string {
-  if (!dateString) return "";
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(new Date(dateString));
-}
-

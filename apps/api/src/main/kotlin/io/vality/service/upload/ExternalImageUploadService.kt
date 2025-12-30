@@ -22,6 +22,7 @@ import java.net.URL
  */
 class ExternalImageUploadService(
     private val s3Service: S3Service,
+    private val imageUrlService: ImageUrlService,
     private val httpClient: HttpClient = HttpClient(CIO) {
         install(ContentNegotiation) {
             json()
@@ -35,7 +36,7 @@ class ExternalImageUploadService(
      * 
      * @param externalUrl 외부 이미지 URL (예: Google 프로필 이미지 URL)
      * @param userId 사용자 ID
-     * @return S3 Key (경로) 또는 null (실패 시)
+     * @return Full image URL 또는 null (실패 시)
      */
     suspend fun uploadFromExternalUrl(
         externalUrl: String,
@@ -80,9 +81,11 @@ class ExternalImageUploadService(
             // 5. S3에 업로드
             s3Service.putObject(key, imageBytes, contentType)
             
-            logger.info("Successfully uploaded external image to S3: $externalUrl -> $key")
-            // 파일명만 반환 (DB에 저장)
-            filename
+            // 6. Full URL 생성하여 반환 (DB에 저장)
+            val fullUrl = imageUrlService.getImageUrl(key)
+            
+            logger.info("Successfully uploaded external image to S3: $externalUrl -> $fullUrl")
+            fullUrl
         } catch (e: Exception) {
             logger.error("Failed to upload external image: $externalUrl", e)
             null  // 실패 시 null 반환 (원본 URL 유지)

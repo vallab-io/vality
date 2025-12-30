@@ -10,9 +10,9 @@ export function AboutPageClient() {
   return (
     <main>
       {/* Hero Section */}
-      <section className="mx-auto max-w-5xl px-6 py-24 md:py-32">
+      <section className="mx-auto max-w-5xl px-4 sm:px-6 py-16 sm:py-24 md:py-32">
         <div className="text-center">
-          <h1 className="text-4xl font-semibold leading-tight tracking-tight md:text-5xl lg:text-6xl">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight tracking-tight">
             {t("about.heroTitle1")}
             <br />
             <span className="bg-gradient-to-r from-primary to-[#38BDF8] bg-clip-text text-transparent">
@@ -40,13 +40,13 @@ export function AboutPageClient() {
 
       {/* Value Cards */}
       <section className="border-t border-border bg-muted/30">
-        <div className="mx-auto max-w-6xl px-6 py-24">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-semibold tracking-tight mb-4">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-4">
               {t("about.valueTitle")}
             </h2>
           </div>
-          <div className="grid gap-8 md:grid-cols-3">
+          <div className="grid gap-6 sm:gap-8 md:grid-cols-3">
             <ValueCard
               icon={<HeartIcon />}
               title={t("about.valueCard1Title")}
@@ -68,13 +68,13 @@ export function AboutPageClient() {
 
       {/* Core Features */}
       <section className="border-t border-border">
-        <div className="mx-auto max-w-3xl px-6 py-24">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-semibold tracking-tight mb-4">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 py-16 sm:py-24">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-4">
               {t("about.featuresTitle")}
             </h2>
           </div>
-          <div className="space-y-16">
+          <div className="space-y-10 sm:space-y-16">
             <FeatureDetail
               icon={<EditorIcon />}
               title={t("about.feature1Title")}
@@ -101,8 +101,8 @@ export function AboutPageClient() {
 
       {/* CTA Section */}
       <section className="border-t border-border bg-muted/30">
-        <div className="mx-auto max-w-3xl px-6 py-24 text-center">
-          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 py-16 sm:py-24 text-center">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight">
             {t("about.ctaTitle")}
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
@@ -137,12 +137,12 @@ function ValueCard({
   description: string;
 }) {
   return (
-    <div className="group relative rounded-xl border border-border bg-card p-8 transition-all duration-200 hover:border-primary/30 hover:shadow-lg">
-      <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform duration-200 group-hover:scale-110">
+    <div className="group relative rounded-xl border border-border bg-card p-6 sm:p-8 transition-all duration-200 hover:border-primary/30 hover:shadow-lg">
+      <div className="mb-4 sm:mb-6 flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform duration-200 group-hover:scale-110">
         {icon}
       </div>
-      <h3 className="text-xl font-semibold mb-4 text-foreground">{title}</h3>
-      <p className="text-muted-foreground leading-relaxed">{description}</p>
+      <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-foreground">{title}</h3>
+      <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">{description}</p>
     </div>
   );
 }
@@ -157,17 +157,17 @@ function FeatureDetail({
   description: string;
 }) {
   return (
-    <div className="flex gap-6">
+    <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
       {icon && (
         <div className="flex-shrink-0">
-          <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div className="flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-xl bg-primary/10 text-primary">
             {icon}
           </div>
         </div>
       )}
       <div className="flex-1">
-        <h3 className="text-2xl font-semibold mb-4">{title}</h3>
-        <p className="text-muted-foreground leading-relaxed text-lg">{description}</p>
+        <h3 className="text-xl sm:text-2xl font-semibold mb-2 sm:mb-4">{title}</h3>
+        <p className="text-sm sm:text-base md:text-lg text-muted-foreground leading-relaxed">{description}</p>
       </div>
     </div>
   );

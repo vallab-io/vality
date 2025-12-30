@@ -474,15 +474,31 @@ export interface Translations {
     subscribe: string;
     subscribeDesc: string;
     emailPlaceholder: string;
+    emailInputPlaceholder: string;
     subscribing: string;
     subscribed: string;
+    subscribedCompact: string;
+    subscribedFull: string;
     alreadySubscribed: string;
     subscribeFailed: string;
+    subscribeSuccess: string;
+    enterEmail: string;
     checkEmail: string;
     shareTwitter: string;
     copyLink: string;
     linkCopied: string;
     likes: string;
+    newsletters: string;
+    subscribersCount: string;
+    recentIssues: string;
+    articlesCount: string;
+    userNotFound: string;
+    subscribeToNewsletter: string;
+    publishedArticles: string;
+    noPublishedArticles: string;
+    newsletterNotFound: string;
+    articleNotFound: string;
+    coverImage: string;
   };
 
   // Legal Pages

@@ -143,6 +143,7 @@ fun Route.uploadRoutes() {
                                         presignedUrl = result.presignedUrl,
                                         filename = result.filename,
                                         key = result.key,
+                                        fullUrl = result.fullUrl,
                                     )
                                 )
                             )
@@ -169,6 +170,7 @@ fun Route.uploadRoutes() {
                                         presignedUrl = result.presignedUrl,
                                         filename = result.filename,
                                         key = result.key,
+                                        fullUrl = result.fullUrl,
                                     )
                                 )
                             )
