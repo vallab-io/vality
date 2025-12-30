@@ -171,7 +171,7 @@ export default function SettingsPageClient() {
     setIsUploadingImage(true);
     try {
       // 1. Presigned URL 요청
-      const { presignedUrl, filename } = await generatePresignedUrl({
+      const { presignedUrl, fullUrl } = await generatePresignedUrl({
         type: "user",
         filename: file.name,
         contentType: file.type,
@@ -181,12 +181,12 @@ export default function SettingsPageClient() {
       // 2. S3에 직접 업로드
       await uploadImageToS3(presignedUrl, file);
 
-      // 3. 프로필 업데이트 (파일명 저장)
+      // 3. 프로필 업데이트 (full URL 저장)
       const updated = await updateProfile({
         username: formData.username || user?.username || "",
         name: formData.name || undefined,
         bio: formData.bio || undefined,
-        imageUrl: filename, // 파일명만 저장
+        imageUrl: fullUrl, // full URL 저장
       });
 
       setUser(updated);

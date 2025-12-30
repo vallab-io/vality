@@ -11,6 +11,7 @@ import java.util.Locale
  */
 class ImageUploadService(
     private val s3Service: S3Service,
+    private val imageUrlService: ImageUrlService,
 ) {
     private val logger = LoggerFactory.getLogger(ImageUploadService::class.java)
 
@@ -57,12 +58,16 @@ class ImageUploadService(
             expiresIn = 3600 // 1시간
         )
 
-        logger.info("Generated presigned URL for user avatar: userId=$userId, filename=$finalFilename")
+        // Full URL 생성 (DB에 저장할 URL)
+        val fullUrl = imageUrlService.getImageUrl(key) ?: throw ImageUploadException("Failed to generate image URL")
+
+        logger.info("Generated presigned URL for user avatar: userId=$userId, filename=$finalFilename, fullUrl=$fullUrl")
 
         return PresignedUrlResult(
             presignedUrl = presignedUrl,
-            filename = finalFilename, // DB에 저장할 파일명
+            filename = finalFilename,
             key = key,
+            fullUrl = fullUrl, // DB에 저장할 full URL
         )
     }
 
@@ -97,12 +102,16 @@ class ImageUploadService(
             expiresIn = 3600 // 1시간
         )
 
-        logger.info("Generated presigned URL for issue image: issueId=$issueId, filename=$finalFilename")
+        // Full URL 생성 (DB에 저장할 URL)
+        val fullUrl = imageUrlService.getImageUrl(key) ?: throw ImageUploadException("Failed to generate image URL")
+
+        logger.info("Generated presigned URL for issue image: issueId=$issueId, filename=$finalFilename, fullUrl=$fullUrl")
 
         return PresignedUrlResult(
             presignedUrl = presignedUrl,
-            filename = finalFilename, // DB에 저장할 파일명
+            filename = finalFilename,
             key = key,
+            fullUrl = fullUrl, // DB에 저장할 full URL
         )
     }
 
@@ -188,8 +197,9 @@ class ImageUploadService(
  */
 data class PresignedUrlResult(
     val presignedUrl: String,
-    val filename: String, // DB에 저장할 파일명
+    val filename: String,
     val key: String, // S3 Key (전체 경로)
+    val fullUrl: String, // DB에 저장할 full URL
 )
 
 /**

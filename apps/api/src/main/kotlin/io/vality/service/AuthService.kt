@@ -162,16 +162,9 @@ class AuthService(
         // 기존 이미지가 있고 새 이미지가 다르거나 삭제되는 경우 S3에서 삭제
         if (oldImageUrl != null && oldImageUrl != newImageUrl) {
             try {
-                // 파일명만 있는 경우 S3 Key 생성
-                val oldKey = if (oldImageUrl.startsWith("http://") || oldImageUrl.startsWith("https://")) {
-                    // 절대 URL인 경우 Key 추출 (마이그레이션 전 호환성)
-                    // URL에서 파일명만 추출하여 경로 재구성
-                    val filename = oldImageUrl.substringAfterLast("/")
-                    S3Paths.userPath(userId, filename)
-                } else {
-                    // 파일명만 있는 경우
-                    S3Paths.userPath(userId, oldImageUrl)
-                }
+                // URL 또는 파일명에서 S3 Key 추출
+                val oldKey = imageUrlService.extractKeyFromUrl(oldImageUrl)
+                    ?: S3Paths.userPath(userId, oldImageUrl.substringAfterLast("/"))
                 s3Service.deleteFile(oldKey)
             } catch (e: Exception) {
                 // S3 삭제 실패는 로그만 남기고 계속 진행 (이미지가 없을 수도 있음)
