@@ -12,6 +12,8 @@ import {
   type PublicNewsletter,
   type PublicIssue,
 } from "@/lib/api/public";
+import { getTranslation } from "@/lib/i18n/utils";
+import { getLocaleFromCookieServer } from "@/lib/i18n/utils-server";
 
 interface ProfilePageProps {
   params: Promise<{ username: string }>;
@@ -21,6 +23,7 @@ export async function generateMetadata({
   params,
 }: ProfilePageProps): Promise<Metadata> {
   const { username } = await params;
+  const locale = await getLocaleFromCookieServer();
   
   try {
     const user = await getPublicUserProfile(username);
@@ -33,12 +36,14 @@ export async function generateMetadata({
       },
     };
   } catch (error) {
-    return { title: "사용자를 찾을 수 없습니다" };
+    return { title: getTranslation(locale, "public.userNotFound") };
   }
 }
 
 export default async function ProfilePage({ params }: ProfilePageProps) {
   const { username } = await params;
+  const locale = await getLocaleFromCookieServer();
+  const t = (key: string) => getTranslation(locale, key);
   
   try {
     const [user, newsletters, issues] = await Promise.all([
@@ -52,7 +57,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     }
 
     const formatDate = (dateString: string) => {
-      return new Date(dateString).toLocaleDateString("ko-KR", {
+      return new Date(dateString).toLocaleDateString(locale === "ko" ? "ko-KR" : "en-US", {
         year: "numeric",
         month: "long",
         day: "numeric",
@@ -80,7 +85,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         {/* 2. User가 가지고 있는 뉴스레터 소개 */}
         {newsletters.length > 0 && (
           <section className="mt-12">
-            <h2 className="text-lg font-semibold">뉴스레터</h2>
+            <h2 className="text-lg font-semibold">{t("public.newsletters")}</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {newsletters.map((newsletter) => (
                 <div
@@ -96,7 +101,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                     {newsletter.description}
                   </p>
                   <p className="mt-3 text-xs text-muted-foreground">
-                    {newsletter.subscriberCount.toLocaleString()}명 구독 중
+                    {newsletter.subscriberCount.toLocaleString()} {t("public.subscribersCount")}
                   </p>
                   <div className="mt-4">
                     <SubscribeForm
@@ -114,9 +119,9 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         {issues.length > 0 && (
           <section className="mt-12">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">최근 발행</h2>
+              <h2 className="text-lg font-semibold">{t("public.recentIssues")}</h2>
               <span className="text-sm text-muted-foreground">
-                {issues.length}개의 글
+                {issues.length} {t("public.articlesCount")}
               </span>
             </div>
             <div className="mt-4 space-y-4">
@@ -153,7 +158,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                         <div className="relative h-24 w-32 overflow-hidden rounded-lg bg-muted/50 border border-border/60">
                           <Image
                             src={issue.coverImageUrl}
-                            alt={issue.title || "cover image"}
+                            alt={issue.title || t("public.coverImage")}
                             fill
                             sizes="128px"
                             className="object-cover transition-transform duration-300 group-hover:scale-105"

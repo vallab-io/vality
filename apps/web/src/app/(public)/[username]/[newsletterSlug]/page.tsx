@@ -12,6 +12,8 @@ import {
   type PublicNewsletter,
   type PublicIssue,
 } from "@/lib/api/public";
+import { getTranslation } from "@/lib/i18n/utils";
+import { getLocaleFromCookieServer } from "@/lib/i18n/utils-server";
 
 interface NewsletterPageProps {
   params: Promise<{ username: string; newsletterSlug: string }>;
@@ -21,6 +23,7 @@ export async function generateMetadata({
   params,
 }: NewsletterPageProps): Promise<Metadata> {
   const { username, newsletterSlug } = await params;
+  const locale = await getLocaleFromCookieServer();
 
   try {
     const [user, newsletter] = await Promise.all([
@@ -37,12 +40,14 @@ export async function generateMetadata({
       },
     };
   } catch (error) {
-    return { title: "뉴스레터를 찾을 수 없습니다" };
+    return { title: getTranslation(locale, "public.newsletterNotFound") };
   }
 }
 
 export default async function NewsletterPage({ params }: NewsletterPageProps) {
   const { username, newsletterSlug } = await params;
+  const locale = await getLocaleFromCookieServer();
+  const t = (key: string) => getTranslation(locale, key);
 
   try {
     const [user, newsletter, issues] = await Promise.all([
@@ -52,7 +57,7 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
     ]);
 
     const formatDate = (dateString: string) => {
-      return new Date(dateString).toLocaleDateString("ko-KR", {
+      return new Date(dateString).toLocaleDateString(locale === "ko" ? "ko-KR" : "en-US", {
         year: "numeric",
         month: "long",
         day: "numeric",
@@ -82,15 +87,15 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
             </p>
           )}
           <p className="mt-3 text-sm text-muted-foreground">
-            {newsletter.subscriberCount.toLocaleString()}명이 구독 중
+            {newsletter.subscriberCount.toLocaleString()} {t("public.subscribersCount")}
           </p>
         </section>
 
         {/* 2. 구독 화면 */}
         <section className="mx-auto mt-8 max-w-md rounded-xl border border-border bg-muted/30 p-6">
-          <h2 className="text-center font-semibold">뉴스레터 구독하기</h2>
+          <h2 className="text-center font-semibold">{t("public.subscribeToNewsletter").replace("{name}", newsletter.name)}</h2>
           <p className="mt-2 text-center text-sm text-muted-foreground">
-            새로운 글이 발행되면 이메일로 알려드립니다.
+            {t("public.subscribeDesc")}
           </p>
           <div className="mt-4">
             <SubscribeForm newsletterId={newsletter.id} />
@@ -100,15 +105,15 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
         {/* 3. 발행한 이슈 전부 */}
         <section className="mt-12">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">발행된 글</h2>
+            <h2 className="text-lg font-semibold">{t("public.publishedArticles")}</h2>
             <span className="text-sm text-muted-foreground">
-              {issues.length}개의 글
+              {issues.length} {t("public.articlesCount")}
             </span>
           </div>
 
           {issues.length === 0 ? (
             <div className="mt-6 rounded-lg border border-border py-12 text-center">
-              <p className="text-muted-foreground">아직 발행된 글이 없습니다.</p>
+              <p className="text-muted-foreground">{t("public.noPublishedArticles")}</p>
             </div>
           ) : (
             <div className="mt-4 space-y-4">
@@ -141,7 +146,7 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
                         <div className="relative h-24 w-32 overflow-hidden rounded-lg bg-muted/50 border border-border/60">
                           <Image
                             src={issue.coverImageUrl}
-                            alt={issue.title || "cover image"}
+                            alt={issue.title || t("public.coverImage")}
                             fill
                             sizes="128px"
                             className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -162,4 +167,3 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
     notFound();
   }
 }
-

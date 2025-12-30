@@ -10,6 +10,8 @@ import {
   getPublicNewsletter,
   getPublicUserProfile,
 } from "@/lib/api/public";
+import { getTranslation } from "@/lib/i18n/utils";
+import { getLocaleFromCookieServer } from "@/lib/i18n/utils-server";
 
 interface IssuePageProps {
   params: Promise<{ username: string; newsletterSlug: string; issueSlug: string }>;
@@ -19,27 +21,30 @@ export async function generateMetadata({
   params,
 }: IssuePageProps): Promise<Metadata> {
   const { username, newsletterSlug, issueSlug } = await params;
+  const locale = await getLocaleFromCookieServer();
   
   try {
     const issue = await getPublicIssueDetail(username, newsletterSlug, issueSlug);
     const user = await getPublicUserProfile(username);
 
     return {
-      title: issue.title || "Untitled",
+      title: issue.title || getTranslation(locale, "common.untitled"),
       description: issue.excerpt || issue.content.slice(0, 160).replace(/<[^>]*>/g, " ").trim(),
       openGraph: {
-        title: issue.title || "Untitled",
+        title: issue.title || getTranslation(locale, "common.untitled"),
         type: "article",
         authors: issue.ownerName ? [issue.ownerName] : undefined,
       },
     };
   } catch {
-    return { title: "글을 찾을 수 없습니다" };
+    return { title: getTranslation(locale, "public.articleNotFound") };
   }
 }
 
 export default async function IssuePage({ params }: IssuePageProps) {
   const { username, newsletterSlug, issueSlug } = await params;
+  const locale = await getLocaleFromCookieServer();
+  const t = (key: string) => getTranslation(locale, key);
   
   try {
     const [issue, newsletter, user] = await Promise.all([
@@ -47,6 +52,15 @@ export default async function IssuePage({ params }: IssuePageProps) {
       getPublicNewsletter(username, newsletterSlug),
       getPublicUserProfile(username),
     ]);
+
+    const formatDate = (dateString: string): string => {
+      if (!dateString) return "";
+      return new Intl.DateTimeFormat(locale === "ko" ? "ko-KR" : "en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }).format(new Date(dateString));
+    };
 
     return (
     <>
@@ -71,7 +85,7 @@ export default async function IssuePage({ params }: IssuePageProps) {
             {formatDate(issue.publishedAt)}
           </time>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
-            {issue.title || "Untitled"}
+            {issue.title || t("common.untitled")}
           </h1>
 
           {/* Author */}
@@ -103,14 +117,14 @@ export default async function IssuePage({ params }: IssuePageProps) {
         {/* Like & Share Buttons */}
         <div className="mt-10 flex items-center justify-between">
           <LikeButton issueId={issue.id} initialLikeCount={issue.likeCount || 0} />
-          <ShareButtons title={issue.title || "Untitled"} />
+          <ShareButtons title={issue.title || t("common.untitled")} />
         </div>
 
         {/* Subscribe CTA */}
         <div className="mx-auto mt-10 max-w-md rounded-xl border border-border bg-muted/30 p-6 text-center">
-          <h2 className="text-lg font-semibold">{newsletter.name} 구독하기</h2>
+          <h2 className="text-lg font-semibold">{t("public.subscribeToNewsletter").replace("{name}", newsletter.name)}</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            새로운 글이 발행되면 이메일로 알려드립니다.
+            {t("public.subscribeDesc")}
           </p>
           <div className="mt-4">
             <SubscribeForm newsletterId={newsletter.id} />
@@ -125,13 +139,3 @@ export default async function IssuePage({ params }: IssuePageProps) {
     notFound();
   }
 }
-
-function formatDate(dateString: string): string {
-  if (!dateString) return "";
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(new Date(dateString));
-}
-
