@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { CheckIcon } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { publicSubscribe } from "@/lib/api/subscriber";
+import { useT } from "@/hooks/use-translation";
 
 interface SubscribeFormProps {
   newsletterId: string;
@@ -19,6 +20,7 @@ export function SubscribeForm({
   variant = "light",
   compact = false,
 }: SubscribeFormProps) {
+  const t = useT();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -27,7 +29,7 @@ export function SubscribeForm({
     e.preventDefault();
 
     if (!email) {
-      toast.error("이메일을 입력해주세요.");
+      toast.error(t("public.enterEmail"));
       return;
     }
 
@@ -38,7 +40,7 @@ export function SubscribeForm({
       
       // 성공: PENDING 또는 UNSUBSCRIBED 상태인 경우 이메일 검증 시작
       setIsSubscribed(true);
-      toast.success("구독 신청이 완료되었습니다! 이메일을 확인해주세요.");
+      toast.success(t("public.subscribeSuccess"));
     } catch (error: any) {
       console.error("Subscribe error:", error);
       
@@ -49,10 +51,10 @@ export function SubscribeForm({
         errorMessage.includes("already subscribed") ||
         errorMessage.includes("You are already subscribed")
       ) {
-        toast.error("이미 구독 중인 이메일입니다.");
+        toast.error(t("public.alreadySubscribed"));
       } else {
         // 기타 에러
-        toast.error(errorMessage || "구독 신청에 실패했습니다. 다시 시도해주세요.");
+        toast.error(errorMessage || t("public.subscribeFailed"));
       }
     } finally {
       setIsLoading(false);
@@ -72,7 +74,7 @@ export function SubscribeForm({
       >
         <CheckIcon className={cn(compact ? "h-4 w-4" : "h-5 w-5")} />
         <span className="font-medium">
-          {compact ? "구독 완료!" : "구독 신청 완료! 이메일을 확인해주세요."}
+          {compact ? t("public.subscribedCompact") : t("public.subscribedFull")}
         </span>
       </div>
     );
@@ -82,7 +84,7 @@ export function SubscribeForm({
     <form onSubmit={handleSubmit} className="flex gap-2">
       <Input
         type="email"
-        placeholder="이메일 입력"
+        placeholder={t("public.emailInputPlaceholder")}
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         disabled={isLoading}
@@ -103,7 +105,7 @@ export function SubscribeForm({
             "bg-background text-foreground hover:bg-background/90"
         )}
       >
-        {isLoading ? "..." : "구독"}
+        {isLoading ? "..." : t("public.subscribe")}
       </Button>
     </form>
   );

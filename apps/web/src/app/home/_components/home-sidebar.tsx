@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/common";
-import { HomeIcon, DashboardIcon } from "@/components/icons";
+import { HomeIcon, DashboardIcon, MenuIcon, CloseIcon } from "@/components/icons";
+import { Button } from "@/components/ui/button";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/auth.store";
 import { cn } from "@/lib/utils";
@@ -14,19 +16,19 @@ export function HomeSidebar() {
   const user = useAtomValue(userAtom);
   const isAuthenticated = !!user;
   const t = useT();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-border bg-background">
-      {/* Logo */}
-      <div className="flex h-16 items-center px-6 border-b border-border">
-        <Logo href="/home" />
-      </div>
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const closeMenu = () => setIsMenuOpen(false);
 
+  const NavContent = ({ onItemClick }: { onItemClick?: () => void }) => (
+    <>
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-3 py-4">
         {/* Home */}
         <Link
           href="/home"
+          onClick={onItemClick}
           className={cn(
             "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
             pathname === "/home"
@@ -42,6 +44,7 @@ export function HomeSidebar() {
         {isAuthenticated && (
           <Link
             href="/dashboard"
+            onClick={onItemClick}
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
               pathname?.startsWith("/dashboard")
@@ -58,6 +61,7 @@ export function HomeSidebar() {
         {isAuthenticated && user?.username && (
           <Link
             href={`/@${user.username}`}
+            onClick={onItemClick}
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
               pathname === `/@${user.username}`
@@ -85,12 +89,75 @@ export function HomeSidebar() {
       <div className="border-t border-border px-3 py-4">
         <Link
           href="/about"
+          onClick={onItemClick}
           className="text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           {t("sidebar.about")}
         </Link>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile Header */}
+      <header className="sticky top-0 z-50 flex h-14 items-center justify-between border-b border-border bg-background px-4 md:hidden">
+        <Logo href="/home" />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-9 w-9 p-0"
+          onClick={toggleMenu}
+          aria-label="Toggle menu"
+        >
+          {isMenuOpen ? (
+            <CloseIcon className="h-5 w-5" />
+          ) : (
+            <MenuIcon className="h-5 w-5" />
+          )}
+        </Button>
+      </header>
+
+      {/* Mobile Menu Overlay */}
+      {isMenuOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          onClick={closeMenu}
+        />
+      )}
+
+      {/* Mobile Menu */}
+      <div
+        className={cn(
+          "fixed left-0 top-0 z-50 flex h-full w-64 transform flex-col bg-background shadow-lg transition-transform duration-200 ease-in-out md:hidden",
+          isMenuOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        {/* Menu Header */}
+        <div className="flex h-14 items-center justify-between border-b border-border px-4">
+          <Logo href="/home" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9 w-9 p-0"
+            onClick={closeMenu}
+            aria-label="Close menu"
+          >
+            <CloseIcon className="h-5 w-5" />
+          </Button>
+        </div>
+        <NavContent onItemClick={closeMenu} />
+      </div>
+
+      {/* Desktop Sidebar */}
+      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col border-r border-border bg-background md:flex">
+        {/* Logo */}
+        <div className="flex h-16 items-center px-6 border-b border-border">
+          <Logo href="/home" />
+        </div>
+        <NavContent />
+      </aside>
+    </>
   );
 }
 

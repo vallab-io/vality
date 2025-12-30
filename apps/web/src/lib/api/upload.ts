@@ -13,6 +13,7 @@ export interface PresignedUrlResponse {
   presignedUrl: string;
   filename: string;
   key: string; // S3 Key (전체 경로)
+  fullUrl: string; // DB에 저장할 full URL
 }
 
 /**

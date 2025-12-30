@@ -64,5 +64,48 @@ class ImageUrlService(
     fun getImageUrl(user: User): String? {
         return getUserImageUrl(user.imageUrl, user.id)
     }
+    
+    /**
+     * 절대 URL에서 S3 Key 추출
+     * 
+     * @param url 절대 URL (예: "https://cdn.vality.io/users/user123/1234567890-avatar.jpg")
+     * @return S3 Key (예: "users/user123/1234567890-avatar.jpg") 또는 null
+     */
+    fun extractKeyFromUrl(url: String?): String? {
+        if (url == null || url.isBlank()) {
+            return null
+        }
+        
+        // URL이 아닌 경우 (이미 key인 경우) 그대로 반환
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            return url
+        }
+        
+        // Base URL을 제거하여 key 추출
+        val normalizedBaseUrl = baseUrl.removeSuffix("/")
+        if (url.startsWith(normalizedBaseUrl)) {
+            return url.removePrefix("$normalizedBaseUrl/")
+        }
+        
+        // S3 URL 형식에서 key 추출 (예: https://bucket.s3.region.amazonaws.com/key)
+        // 또는 https://s3.region.amazonaws.com/bucket/key
+        return try {
+            val urlObj = java.net.URL(url)
+            val path = urlObj.path.removePrefix("/")
+            
+            // 버킷이 호스트에 포함된 경우 (bucket.s3.region.amazonaws.com)
+            if (urlObj.host.contains(".s3.")) {
+                path
+            } else {
+                // 버킷이 경로에 포함된 경우 (s3.region.amazonaws.com/bucket/key)
+                // 첫 번째 경로 세그먼트(버킷)를 제거
+                val parts = path.split("/", limit = 2)
+                if (parts.size > 1) parts[1] else path
+            }
+        } catch (e: Exception) {
+            // URL 파싱 실패 시 파일명만 추출
+            url.substringAfterLast("/")
+        }
+    }
 }
 

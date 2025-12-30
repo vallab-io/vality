@@ -12,6 +12,8 @@ import {
   type PublicNewsletter,
   type PublicIssue,
 } from "@/lib/api/public";
+import { getTranslation } from "@/lib/i18n/utils";
+import { getLocaleFromCookieServer } from "@/lib/i18n/utils-server";
 
 interface NewsletterPageProps {
   params: Promise<{ username: string; newsletterSlug: string }>;
@@ -21,6 +23,7 @@ export async function generateMetadata({
   params,
 }: NewsletterPageProps): Promise<Metadata> {
   const { username, newsletterSlug } = await params;
+  const locale = await getLocaleFromCookieServer();
 
   try {
     const [user, newsletter] = await Promise.all([
@@ -37,12 +40,14 @@ export async function generateMetadata({
       },
     };
   } catch (error) {
-    return { title: "뉴스레터를 찾을 수 없습니다" };
+    return { title: getTranslation(locale, "public.newsletterNotFound") };
   }
 }
 
 export default async function NewsletterPage({ params }: NewsletterPageProps) {
   const { username, newsletterSlug } = await params;
+  const locale = await getLocaleFromCookieServer();
+  const t = (key: string) => getTranslation(locale, key);
 
   try {
     const [user, newsletter, issues] = await Promise.all([
@@ -52,7 +57,7 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
     ]);
 
     const formatDate = (dateString: string) => {
-      return new Date(dateString).toLocaleDateString("ko-KR", {
+      return new Date(dateString).toLocaleDateString(locale === "ko" ? "ko-KR" : "en-US", {
         year: "numeric",
         month: "long",
         day: "numeric",
@@ -61,7 +66,7 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
 
   return (
     <>
-      <main className="mx-auto max-w-5xl px-6 py-16">
+      <main className="mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-16">
         {/* 1. 뉴스레터 소개 */}
         <section className="text-center">
           <Link
@@ -75,22 +80,22 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
             />
             <span>{user.name || user.username}</span>
           </Link>
-          <h1 className="mt-4 text-3xl font-bold">{newsletter.name}</h1>
+          <h1 className="mt-4 text-2xl sm:text-3xl font-bold">{newsletter.name}</h1>
           {newsletter.description && (
-            <p className="mt-4 text-lg text-muted-foreground">
+            <p className="mt-4 text-base sm:text-lg text-muted-foreground">
               {newsletter.description}
             </p>
           )}
           <p className="mt-3 text-sm text-muted-foreground">
-            {newsletter.subscriberCount.toLocaleString()}명이 구독 중
+            {newsletter.subscriberCount.toLocaleString()} {t("public.subscribersCount")}
           </p>
         </section>
 
         {/* 2. 구독 화면 */}
         <section className="mx-auto mt-8 max-w-md rounded-xl border border-border bg-muted/30 p-6">
-          <h2 className="text-center font-semibold">뉴스레터 구독하기</h2>
+          <h2 className="text-center font-semibold">{t("public.subscribeToNewsletter").replace("{name}", newsletter.name)}</h2>
           <p className="mt-2 text-center text-sm text-muted-foreground">
-            새로운 글이 발행되면 이메일로 알려드립니다.
+            {t("public.subscribeDesc")}
           </p>
           <div className="mt-4">
             <SubscribeForm newsletterId={newsletter.id} />
@@ -100,25 +105,42 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
         {/* 3. 발행한 이슈 전부 */}
         <section className="mt-12">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">발행된 글</h2>
+            <h2 className="text-lg font-semibold">{t("public.publishedArticles")}</h2>
             <span className="text-sm text-muted-foreground">
-              {issues.length}개의 글
+              {issues.length} {t("public.articlesCount")}
             </span>
           </div>
 
           {issues.length === 0 ? (
             <div className="mt-6 rounded-lg border border-border py-12 text-center">
-              <p className="text-muted-foreground">아직 발행된 글이 없습니다.</p>
+              <p className="text-muted-foreground">{t("public.noPublishedArticles")}</p>
             </div>
           ) : (
             <div className="mt-4 space-y-4">
               {issues.map((issue) => (
                 <article
                   key={issue.id}
-                  className="group rounded-lg border border-border p-5 transition-colors hover:border-[#2563EB]/50 dark:hover:border-[#38BDF8]/50"
+                  className="group rounded-lg border border-border p-4 sm:p-5 transition-colors hover:border-[#2563EB]/50 dark:hover:border-[#38BDF8]/50"
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                    {/* Mobile: Image first */}
+                    {issue.coverImageUrl && (
+                      <Link
+                        href={`/@${username}/${newsletterSlug}/${issue.slug}`}
+                        className="flex-shrink-0 sm:order-2"
+                      >
+                        <div className="relative h-40 w-full sm:h-24 sm:w-32 overflow-hidden rounded-lg bg-muted/50 border border-border/60">
+                          <Image
+                            src={issue.coverImageUrl}
+                            alt={issue.title || t("public.coverImage")}
+                            fill
+                            sizes="(max-width: 640px) 100vw, 128px"
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        </div>
+                      </Link>
+                    )}
+                    <div className="min-w-0 flex-1 sm:order-1">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <time>{formatDate(issue.publishedAt)}</time>
                       </div>
@@ -133,22 +155,6 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
                         {issue.excerpt}
                       </p>
                     </div>
-                    {issue.coverImageUrl && (
-                      <Link
-                        href={`/@${username}/${newsletterSlug}/${issue.slug}`}
-                        className="flex-shrink-0"
-                      >
-                        <div className="relative h-24 w-32 overflow-hidden rounded-lg bg-muted/50 border border-border/60">
-                          <Image
-                            src={issue.coverImageUrl}
-                            alt={issue.title || "cover image"}
-                            fill
-                            sizes="128px"
-                            className="object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
-                        </div>
-                      </Link>
-                    )}
                   </div>
                 </article>
               ))}
@@ -162,4 +168,3 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
     notFound();
   }
 }
-

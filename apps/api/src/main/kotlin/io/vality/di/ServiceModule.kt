@@ -29,13 +29,15 @@ val serviceModule = module {
     // External Image Upload Service
     single<ExternalImageUploadService> {
         val s3Service = get<S3Service>()
-        ExternalImageUploadService(s3Service)
+        val imageUrlService = get<ImageUrlService>()
+        ExternalImageUploadService(s3Service, imageUrlService)
     }
 
     // Image Upload Service
     single<ImageUploadService> {
         val s3Service = get<S3Service>()
-        ImageUploadService(s3Service)
+        val imageUrlService = get<ImageUrlService>()
+        ImageUploadService(s3Service, imageUrlService)
     }
 
     // Email Service
