@@ -187,33 +187,34 @@ export function DashboardSidebar() {
                     </span>
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  {newsletters.map((newsletter) => (
-                    <DropdownMenuItem
-                      key={newsletter.id}
-                      onClick={() => setSelectedNewsletter(newsletter)}
-                      className="flex items-center justify-between"
-                    >
-                      <span className="truncate">{newsletter.name}</span>
-                      {selectedNewsletter?.id === newsletter.id && (
-                        <CheckIcon className="h-4 w-4 text-primary" />
-                      )}
-                    </DropdownMenuItem>
-                  ))}
-                  {newsletters.length > 0 && <DropdownMenuSeparator />}
-                  <DropdownMenuItem
-                    onClick={handleCreateNewsletter}
-                    className="flex items-center gap-2"
-                  >
-                    <PlusIcon className="h-4 w-4" />
-                    <span>{t("sidebar.createNewsletter")}</span>
-                    {!canCreateNewsletter && (
-                      <span className="ml-auto rounded bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">
-                        Pro
-                      </span>
-                    )}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
+                {/* todo: need to implement dropdown menu */}
+                {/*<DropdownMenuContent align="start" className="w-56">*/}
+                {/*  {newsletters.map((newsletter) => (*/}
+                {/*    <DropdownMenuItem*/}
+                {/*      key={newsletter.id}*/}
+                {/*      onClick={() => setSelectedNewsletter(newsletter)}*/}
+                {/*      className="flex items-center justify-between"*/}
+                {/*    >*/}
+                {/*      <span className="truncate">{newsletter.name}</span>*/}
+                {/*      {selectedNewsletter?.id === newsletter.id && (*/}
+                {/*        <CheckIcon className="h-4 w-4 text-primary" />*/}
+                {/*      )}*/}
+                {/*    </DropdownMenuItem>*/}
+                {/*  ))}*/}
+                {/*  {newsletters.length > 0 && <DropdownMenuSeparator />}*/}
+                {/*  <DropdownMenuItem*/}
+                {/*    onClick={handleCreateNewsletter}*/}
+                {/*    className="flex items-center gap-2"*/}
+                {/*  >*/}
+                {/*    <PlusIcon className="h-4 w-4" />*/}
+                {/*    <span>{t("sidebar.createNewsletter")}</span>*/}
+                {/*    {!canCreateNewsletter && (*/}
+                {/*      <span className="ml-auto rounded bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">*/}
+                {/*        Pro*/}
+                {/*      </span>*/}
+                {/*    )}*/}
+                {/*  </DropdownMenuItem>*/}
+                {/*</DropdownMenuContent>*/}
               </DropdownMenu>
               
               {/* 접기/펼치기 버튼 */}

@@ -4,8 +4,8 @@ import { MarketingFooter } from "../_components/marketing-footer";
 import { PricingPageClient } from "./_components/pricing-page-client";
 
 export const metadata: Metadata = {
-  title: "가격안내",
-  description: "Vality 가격 정책 - Early Access 가입자 한정 Pro 플랜 3개월 무료 혜택",
+  title: "Pricing",
+  description: "Vality pricing - Early Access members get 3 months of Pro plan free",
 };
 
 export default function PricingPage() {
