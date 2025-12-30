@@ -66,7 +66,7 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
 
   return (
     <>
-      <main className="mx-auto max-w-5xl px-6 py-16">
+      <main className="mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-16">
         {/* 1. 뉴스레터 소개 */}
         <section className="text-center">
           <Link
@@ -80,9 +80,9 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
             />
             <span>{user.name || user.username}</span>
           </Link>
-          <h1 className="mt-4 text-3xl font-bold">{newsletter.name}</h1>
+          <h1 className="mt-4 text-2xl sm:text-3xl font-bold">{newsletter.name}</h1>
           {newsletter.description && (
-            <p className="mt-4 text-lg text-muted-foreground">
+            <p className="mt-4 text-base sm:text-lg text-muted-foreground">
               {newsletter.description}
             </p>
           )}
@@ -120,10 +120,27 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
               {issues.map((issue) => (
                 <article
                   key={issue.id}
-                  className="group rounded-lg border border-border p-5 transition-colors hover:border-[#2563EB]/50 dark:hover:border-[#38BDF8]/50"
+                  className="group rounded-lg border border-border p-4 sm:p-5 transition-colors hover:border-[#2563EB]/50 dark:hover:border-[#38BDF8]/50"
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                    {/* Mobile: Image first */}
+                    {issue.coverImageUrl && (
+                      <Link
+                        href={`/@${username}/${newsletterSlug}/${issue.slug}`}
+                        className="flex-shrink-0 sm:order-2"
+                      >
+                        <div className="relative h-40 w-full sm:h-24 sm:w-32 overflow-hidden rounded-lg bg-muted/50 border border-border/60">
+                          <Image
+                            src={issue.coverImageUrl}
+                            alt={issue.title || t("public.coverImage")}
+                            fill
+                            sizes="(max-width: 640px) 100vw, 128px"
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        </div>
+                      </Link>
+                    )}
+                    <div className="min-w-0 flex-1 sm:order-1">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <time>{formatDate(issue.publishedAt)}</time>
                       </div>
@@ -138,22 +155,6 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
                         {issue.excerpt}
                       </p>
                     </div>
-                    {issue.coverImageUrl && (
-                      <Link
-                        href={`/@${username}/${newsletterSlug}/${issue.slug}`}
-                        className="flex-shrink-0"
-                      >
-                        <div className="relative h-24 w-32 overflow-hidden rounded-lg bg-muted/50 border border-border/60">
-                          <Image
-                            src={issue.coverImageUrl}
-                            alt={issue.title || t("public.coverImage")}
-                            fill
-                            sizes="128px"
-                            className="object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
-                        </div>
-                      </Link>
-                    )}
                   </div>
                 </article>
               ))}

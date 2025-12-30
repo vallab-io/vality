@@ -66,7 +66,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   return (
     <>
-      <main className="mx-auto max-w-5xl px-6 py-16">
+      <main className="mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-16">
         {/* 1. User 자기 소개 */}
         <section className="flex flex-col items-center text-center">
           <UserAvatar
@@ -75,10 +75,10 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
             size="lg"
             className="mb-4"
           />
-          <h1 className="text-2xl font-semibold">{user.name || user.username}</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold">{user.name || user.username}</h1>
           <p className="mt-1 text-sm text-muted-foreground">@{user.username}</p>
           {user.bio && (
-            <p className="mt-4 max-w-lg text-muted-foreground">{user.bio}</p>
+            <p className="mt-4 max-w-lg text-sm sm:text-base text-muted-foreground">{user.bio}</p>
           )}
         </section>
 
@@ -128,11 +128,28 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               {issues.map((issue) => (
                 <article
                   key={issue.id}
-                  className="group rounded-lg border border-border p-5 transition-colors hover:border-[#2563EB]/50 dark:hover:border-[#38BDF8]/50"
+                  className="group rounded-lg border border-border p-4 sm:p-5 transition-colors hover:border-[#2563EB]/50 dark:hover:border-[#38BDF8]/50"
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                    {/* Mobile: Image first */}
+                    {issue.coverImageUrl && (
+                      <Link
+                        href={`/@${username}/${issue.newsletterSlug}/${issue.slug}`}
+                        className="flex-shrink-0 sm:order-2"
+                      >
+                        <div className="relative h-40 w-full sm:h-24 sm:w-32 overflow-hidden rounded-lg bg-muted/50 border border-border/60">
+                          <Image
+                            src={issue.coverImageUrl}
+                            alt={issue.title || t("public.coverImage")}
+                            fill
+                            sizes="(max-width: 640px) 100vw, 128px"
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        </div>
+                      </Link>
+                    )}
+                    <div className="min-w-0 flex-1 sm:order-1">
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                         <span className="rounded bg-muted px-1.5 py-0.5">
                           {issue.newsletterName}
                         </span>
@@ -150,22 +167,6 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                         {issue.excerpt}
                       </p>
                     </div>
-                    {issue.coverImageUrl && (
-                      <Link
-                        href={`/@${username}/${issue.newsletterSlug}/${issue.slug}`}
-                        className="flex-shrink-0"
-                      >
-                        <div className="relative h-24 w-32 overflow-hidden rounded-lg bg-muted/50 border border-border/60">
-                          <Image
-                            src={issue.coverImageUrl}
-                            alt={issue.title || t("public.coverImage")}
-                            fill
-                            sizes="128px"
-                            className="object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
-                        </div>
-                      </Link>
-                    )}
                   </div>
                 </article>
               ))}

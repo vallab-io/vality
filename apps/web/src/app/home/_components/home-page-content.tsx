@@ -46,7 +46,7 @@ export default function HomePageContent() {
     return (
       <div className="min-h-screen bg-background">
         <HomeSidebar />
-        <div className="ml-64 flex min-h-screen items-center justify-center">
+        <div className="md:ml-64 flex min-h-screen items-center justify-center">
           <div className="text-muted-foreground">{t("common.loading")}</div>
         </div>
       </div>
@@ -57,8 +57,8 @@ export default function HomePageContent() {
     <div className="min-h-screen bg-background">
       <HomeSidebar />
       
-      <main className="ml-64 min-h-screen">
-        <div className="max-w-4xl mx-auto px-8 py-12">
+      <main className="md:ml-64 min-h-screen">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
           {/* Issues List */}
           {issues.length === 0 ? (
             <div className="mt-12 rounded-xl border border-border bg-card py-20 text-center shadow-sm">
@@ -79,14 +79,14 @@ export default function HomePageContent() {
                 <h2 className="text-lg font-semibold text-foreground">{t("home.forYou")}</h2>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {issues.map((issue) => (
                   <article
                     key={issue.id}
-                    className="group flex gap-6 p-6 rounded-xl border border-border bg-card hover:border-primary/20 hover:shadow-sm transition-all duration-200"
+                    className="group flex flex-col sm:flex-row gap-4 sm:gap-6 p-4 sm:p-6 rounded-xl border border-border bg-card hover:border-primary/20 hover:shadow-sm transition-all duration-200"
                   >
                   {/* Content */}
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 order-2 sm:order-1">
                   {/* Author Info */}
                   <div className="flex items-center gap-2 mb-2">
                     {issue.ownerImageUrl ? (
@@ -153,18 +153,18 @@ export default function HomePageContent() {
                     </div>
                   </div>
 
-                  {/* Thumbnail - 오른쪽, coverImageUrl이 있을 때만 표시 */}
+                  {/* Thumbnail - 모바일에서는 위, 데스크탑에서는 오른쪽 */}
                   {issue.coverImageUrl && (
                     <Link
                       href={`/@${issue.ownerUsername || "unknown"}/${issue.newsletterSlug}/${issue.slug}`}
-                      className="flex-shrink-0"
+                      className="flex-shrink-0 order-1 sm:order-2"
                     >
-                      <div className="relative h-40 w-40 overflow-hidden rounded-lg bg-gradient-to-br from-muted/60 to-muted/40 ring-1 ring-border/50">
+                      <div className="relative h-32 w-full sm:h-40 sm:w-40 overflow-hidden rounded-lg bg-gradient-to-br from-muted/60 to-muted/40 ring-1 ring-border/50">
                         <Image
                           src={issue.coverImageUrl}
                           alt={issue.newsletterName}
                           fill
-                          sizes="160px"
+                          sizes="(max-width: 640px) 100vw, 160px"
                           className="object-cover transition-transform duration-300 group-hover:scale-105"
                           priority={false}
                         />
@@ -179,7 +179,7 @@ export default function HomePageContent() {
         </div>
       </main>
 
-      <div className="ml-64">
+      <div className="md:ml-64">
         <MarketingFooter />
       </div>
     </div>
