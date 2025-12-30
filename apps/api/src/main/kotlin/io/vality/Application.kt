@@ -10,6 +10,7 @@ import io.vality.plugins.configureDefaultHeaders
 import io.vality.plugins.configureJWT
 import io.vality.plugins.configureKoin
 import io.vality.plugins.configureLogging
+import io.vality.plugins.configureRedis
 import io.vality.plugins.configureSerialization
 import io.vality.plugins.configureStatusPages
 import io.vality.routing.configureRouting
@@ -31,6 +32,7 @@ fun Application.module() {
     configureDefaultHeaders()
     configureLogging()
     configureJWT(config)
+    configureRedis()
 
     // Database
     configureDatabase(config)

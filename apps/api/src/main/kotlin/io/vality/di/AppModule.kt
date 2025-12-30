@@ -12,6 +12,7 @@ val appModule = module {
         configModule,
         repositoryModule,
         awsModule,
+        redisModule,
         serviceModule,
     )
 }

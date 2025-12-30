@@ -4,8 +4,8 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.vality.dto.ApiResponse
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 import java.time.Instant
 
 @Serializable
@@ -20,7 +20,7 @@ fun Route.healthRoutes() {
             call.respond(
                 ApiResponse.success(
                     data = HealthResponse(
-                        status = "UP",
+                        status = "Up",
                         timestamp = Instant.now()
                     )
                 )
