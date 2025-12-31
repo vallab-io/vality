@@ -1,5 +1,9 @@
 package io.vality.service.email
 
+import io.vality.domain.EmailLog
+import io.vality.domain.EmailStatus
+import io.vality.repository.EmailLogRepository
+import io.vality.repository.SubscriberRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -8,6 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
+import java.time.Instant
 
 /**
  * 이메일 발송 백그라운드 워커
@@ -18,6 +23,8 @@ import org.slf4j.LoggerFactory
 class EmailWorker(
     private val emailQueueService: EmailQueueService,
     private val emailService: EmailService,
+    private val emailLogRepository: EmailLogRepository,
+    private val subscriberRepository: SubscriberRepository,
     private val frontendUrl: String,
 ) {
     private val logger = LoggerFactory.getLogger(EmailWorker::class.java)
@@ -98,6 +105,13 @@ class EmailWorker(
         var failCount = 0
 
         for (email in recipients) {
+            // 구독자 찾기 (EmailLog 업데이트를 위해)
+            val subscriber = subscriberRepository.findByNewsletterIdAndEmail(job.newsletterId, email)
+            // 해당 구독자의 EmailLog 찾기
+            val emailLog = subscriber?.let {
+                emailLogRepository.findByIssueIdAndSubscriberId(job.issueId, subscriber.id)
+            }
+
             try {
                 // 구독 취소 URL 생성 (이메일별로 다름)
                 val unsubscribeUrl = job.unsubscribeUrlTemplate.replace("{email}", email)
@@ -133,6 +147,21 @@ class EmailWorker(
                     fromName = job.fromName,
                 )
 
+                // 이메일 발송 성공: EmailLog 업데이트
+                emailLog?.let {
+                    try {
+                        val now = Instant.now()
+                        val updatedLog = it.copy(
+                            status = EmailStatus.SENT,
+                            sentAt = now,
+                        )
+                        emailLogRepository.update(updatedLog)
+                    } catch (e: Exception) {
+                        logger.warn("Failed to update EmailLog after successful send: ${it.id}", e)
+                        // EmailLog 업데이트 실패해도 이메일 발송은 성공으로 처리
+                    }
+                }
+
                 successCount++
 
                 // Rate limiting: SES 제한을 피하기 위해 약간의 딜레이
@@ -142,6 +171,19 @@ class EmailWorker(
 
             } catch (e: Exception) {
                 logger.error("Failed to send email to: $email", e)
+                
+                // 이메일 발송 실패: EmailLog 업데이트
+                emailLog?.let {
+                    try {
+                        val updatedLog = it.copy(
+                            status = EmailStatus.FAILED,
+                        )
+                        emailLogRepository.update(updatedLog)
+                    } catch (updateException: Exception) {
+                        logger.warn("Failed to update EmailLog after failed send: ${it.id}", updateException)
+                    }
+                }
+                
                 failCount++
             }
         }

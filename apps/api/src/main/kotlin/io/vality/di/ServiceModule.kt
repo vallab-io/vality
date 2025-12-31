@@ -113,6 +113,7 @@ val serviceModule = module {
             subscriberRepository = get(),
             newsletterRepository = get(),
             userRepository = get(),
+            emailLogRepository = get(),
             frontendUrl = config.getString("ktor.web.url"),
         )
     }
@@ -175,6 +176,8 @@ val serviceModule = module {
         EmailWorker(
             emailQueueService = get(),
             emailService = get(),
+            emailLogRepository = get(),
+            subscriberRepository = get(),
             frontendUrl = config.getString("ktor.web.url"),
         )
     }

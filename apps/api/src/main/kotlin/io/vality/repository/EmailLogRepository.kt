@@ -95,6 +95,25 @@ class EmailLogRepository {
             .map { it.toEmailLog() }
     }
 
+    suspend fun findByIssueIdAndSubscriberId(issueId: String, subscriberId: String): EmailLog? = dbQuery {
+        EmailLogs.select(
+            listOf(
+                EmailLogs.id,
+                EmailLogs.status,
+                EmailLogs.sentAt,
+                EmailLogs.openedAt,
+                EmailLogs.clickedAt,
+                EmailLogs.createdAt,
+                EmailLogs.issueId,
+                EmailLogs.subscriberId
+            )
+        )
+            .where { (EmailLogs.issueId eq issueId) and (EmailLogs.subscriberId eq subscriberId) }
+            .orderBy(EmailLogs.createdAt to org.jetbrains.exposed.v1.core.SortOrder.DESC)
+            .map { it.toEmailLog() }
+            .firstOrNull()
+    }
+
     suspend fun create(emailLog: EmailLog): EmailLog = dbQuery {
         EmailLogs.insert {
             it[id] = emailLog.id

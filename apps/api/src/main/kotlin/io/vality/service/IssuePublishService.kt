@@ -4,6 +4,9 @@ import io.vality.domain.Issue
 import io.vality.domain.Newsletter
 import io.vality.domain.SubStatus
 import io.vality.domain.User
+import io.vality.domain.EmailLog
+import io.vality.domain.EmailStatus
+import io.vality.repository.EmailLogRepository
 import io.vality.repository.NewsletterRepository
 import io.vality.repository.SubscriberRepository
 import io.vality.repository.UserRepository
@@ -12,6 +15,7 @@ import io.vality.service.email.EmailJobType
 import io.vality.service.email.EmailQueueService
 import io.vality.util.CuidGenerator
 import org.slf4j.LoggerFactory
+import java.time.Instant
 
 /**
  * 이슈 발행 서비스
@@ -23,6 +27,7 @@ class IssuePublishService(
     private val subscriberRepository: SubscriberRepository,
     private val newsletterRepository: NewsletterRepository,
     private val userRepository: UserRepository,
+    private val emailLogRepository: EmailLogRepository,
     private val frontendUrl: String,
 ) {
     private val logger = LoggerFactory.getLogger(IssuePublishService::class.java)
@@ -62,6 +67,27 @@ class IssuePublishService(
 
             // 이메일 제목 생성
             val subject = "[${newsletter.name}] ${issue.title}"
+
+            // 각 구독자별 EmailLog 생성 (PENDING 상태)
+            val now = Instant.now()
+            activeSubscribers.forEach { subscriber ->
+                try {
+                    val emailLog = EmailLog(
+                        id = CuidGenerator.generate(),
+                        status = EmailStatus.PENDING,
+                        sentAt = null,
+                        openedAt = null,
+                        clickedAt = null,
+                        createdAt = now,
+                        issueId = issue.id,
+                        subscriberId = subscriber.id,
+                    )
+                    emailLogRepository.create(emailLog)
+                } catch (e: Exception) {
+                    logger.warn("Failed to create EmailLog for subscriber: ${subscriber.id}, issue: ${issue.id}", e)
+                    // EmailLog 생성 실패해도 이메일 발송은 계속 진행
+                }
+            }
 
             // 이메일 작업 생성
             val emailJob = EmailJob(
