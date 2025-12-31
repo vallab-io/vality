@@ -410,6 +410,8 @@ export const en: Translations = {
     scheduledSuccess: "Scheduled! Will be published on {date} {time}",
     publishSettings: "Publish Settings",
     publishSettingsDesc: "Review settings and publish your issue.",
+    emailNotice: "This issue will be sent to {count} active subscribers.",
+    emailNoticeZero: "No active subscribers yet. The issue will be published to your archive.",
     urlSlug: "URL Slug",
     urlSlugHint: "Only lowercase letters, numbers, and hyphens (-) allowed.",
     publishTiming: "Publish Timing",
@@ -473,6 +475,20 @@ export const en: Translations = {
   legal: {
     termsTitle: "Terms of Service",
     privacyTitle: "Privacy Policy",
+  },
+  unsubscribe: {
+    processing: "Processing unsubscribe...",
+    success: "Successfully Unsubscribed",
+    successDesc: "You have been unsubscribed from this newsletter.",
+    alreadyUnsubscribed: "Already Unsubscribed",
+    alreadyUnsubscribedDesc: "This email is already unsubscribed from this newsletter.",
+    errorTitle: "Unsubscribe Failed",
+    error: "Failed to unsubscribe. Please try again.",
+    invalidLink: "Invalid Unsubscribe Link",
+    invalidLinkDesc: "The unsubscribe link is invalid or has expired.",
+    notFound: "Subscriber not found.",
+    retry: "Try Again",
+    goHome: "Go to Home",
   },
 };
 

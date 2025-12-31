@@ -436,6 +436,8 @@ export interface Translations {
     scheduledSuccess: string;
     publishSettings: string;
     publishSettingsDesc: string;
+    emailNotice: string;
+    emailNoticeZero: string;
     urlSlug: string;
     urlSlugHint: string;
     publishTiming: string;
@@ -505,6 +507,20 @@ export interface Translations {
   legal: {
     termsTitle: string;
     privacyTitle: string;
+  };
+  unsubscribe: {
+    processing: string;
+    success: string;
+    successDesc: string;
+    alreadyUnsubscribed: string;
+    alreadyUnsubscribedDesc: string;
+    errorTitle: string;
+    error: string;
+    invalidLink: string;
+    invalidLinkDesc: string;
+    notFound: string;
+    retry: string;
+    goHome: string;
   };
 }
 

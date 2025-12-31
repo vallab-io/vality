@@ -1,6 +1,7 @@
 package io.vality.repository
 
 import io.vality.domain.Issue
+import io.vality.domain.IssueStatus
 import io.vality.domain.Issues
 import io.vality.domain.Newsletters
 import io.vality.domain.Users
@@ -26,7 +27,7 @@ class IssueRepository {
             content = this[Issues.content],
             excerpt = this[Issues.excerpt],
             coverImageUrl = this[Issues.coverImageUrl],
-            status = io.vality.domain.IssueStatus.valueOf(this[Issues.status]),
+            status = IssueStatus.valueOf(this[Issues.status]),
             publishedAt = this[Issues.publishedAt],
             scheduledAt = this[Issues.scheduledAt],
             likeCount = this[Issues.likeCount],
@@ -105,7 +106,7 @@ class IssueRepository {
             .singleOrNull()
     }
 
-    suspend fun findByNewsletterIdAndStatus(newsletterId: String, status: io.vality.domain.IssueStatus): List<Issue> = dbQuery {
+    suspend fun findByNewsletterIdAndStatus(newsletterId: String, status: IssueStatus): List<Issue> = dbQuery {
         Issues.select(
             listOf(
                 Issues.id,
@@ -145,7 +146,7 @@ class IssueRepository {
                 Issues.updatedAt
             )
         )
-            .where { (Issues.newsletterId eq newsletterId) and (Issues.status eq io.vality.domain.IssueStatus.PUBLISHED.name) }
+            .where { (Issues.newsletterId eq newsletterId) and (Issues.status eq IssueStatus.PUBLISHED.name) }
             .map { it.toIssue() }
     }
 
@@ -223,7 +224,7 @@ class IssueRepository {
             .where {
                 (Issues.newsletterId eq Newsletters.id) and
                         (Newsletters.ownerId eq Users.id) and
-                        (Issues.status eq io.vality.domain.IssueStatus.PUBLISHED.name) and
+                        (Issues.status eq IssueStatus.PUBLISHED.name) and
                         (Issues.publishedAt neq null)
             }
             .orderBy(Issues.publishedAt to SortOrder.DESC)

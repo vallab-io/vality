@@ -17,13 +17,11 @@ fun Application.configureEmailWorker() {
 
     // 워커 시작
     emailWorker.start()
-    log.info("Email worker started")
 
     // 애플리케이션 종료 시 워커 중지
     environment.monitor.subscribe(ApplicationStopped) {
         try {
             emailWorker.stop()
-            log.info("Email worker stopped")
         } catch (e: Exception) {
             log.error("Failed to stop email worker: ${e.message}", e)
         }

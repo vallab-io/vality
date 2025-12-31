@@ -63,11 +63,7 @@ class EmailWorker(
     private suspend fun processNextJob() {
         // 큐에서 작업 가져오기 (최대 5초 대기)
         val job = emailQueueService.dequeue(timeoutSeconds = 5)
-
-        if (job == null) {
-            // 큐가 비어있으면 잠시 대기
-            return
-        }
+            ?: return // 큐가 비어있으면 잠시 대기
 
         logger.info("Processing email job: jobId=${job.id}, type=${job.type}, recipients=${job.recipientEmails.size}")
 
@@ -78,7 +74,6 @@ class EmailWorker(
 
             // 작업 완료 처리
             emailQueueService.complete(job)
-
         } catch (e: Exception) {
             logger.error("Failed to process email job: ${job.id}", e)
             emailQueueService.fail(job, e.message ?: "Unknown error")
@@ -109,18 +104,22 @@ class EmailWorker(
 
                 val htmlBody = EmailTemplates.issuePublishedHtml(
                     newsletterName = job.newsletterName,
-                    senderName = job.senderName,
+                    senderName = job.fromName,
+                    ownerImageUrl = job.ownerImageUrl,
                     issueTitle = job.issueTitle,
                     issueExcerpt = job.issueExcerpt,
+                    issueContent = job.issueContent,
                     issueUrl = job.issueUrl,
                     unsubscribeUrl = unsubscribeUrl,
                 )
 
                 val textBody = EmailTemplates.issuePublishedText(
                     newsletterName = job.newsletterName,
-                    senderName = job.senderName,
+                    senderName = job.fromName,
+                    ownerImageUrl = job.ownerImageUrl,
                     issueTitle = job.issueTitle,
                     issueExcerpt = job.issueExcerpt,
+                    issueContent = job.issueContent,
                     issueUrl = job.issueUrl,
                     unsubscribeUrl = unsubscribeUrl,
                 )
@@ -130,6 +129,8 @@ class EmailWorker(
                     subject = job.subject,
                     htmlBody = htmlBody,
                     textBody = textBody,
+                    fromEmail = "${job.username}@vality.io",
+                    fromName = job.fromName,
                 )
 
                 successCount++

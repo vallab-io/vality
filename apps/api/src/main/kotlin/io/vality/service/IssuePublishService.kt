@@ -40,6 +40,7 @@ class IssuePublishService(
         owner: User,
     ) {
         try {
+            val username = owner.username ?: throw IllegalArgumentException("Owner username can not be null")
             // 활성 구독자 목록 가져오기
             val activeSubscribers = subscriberRepository.findByNewsletterIdAndStatus(
                 newsletterId = newsletter.id,
@@ -54,13 +55,13 @@ class IssuePublishService(
             val recipientEmails = activeSubscribers.map { it.email }
 
             // 이슈 URL 생성
-            val issueUrl = "$frontendUrl/@${owner.username}/${newsletter.slug}/${issue.slug}"
+            val issueUrl = "$frontendUrl/@${username}/${newsletter.slug}/${issue.slug}"
 
             // 구독 취소 URL 템플릿 ({email}을 실제 이메일로 치환)
             val unsubscribeUrlTemplate = "$frontendUrl/unsubscribe?newsletter=${newsletter.id}&email={email}"
 
             // 이메일 제목 생성
-            val subject = issue.title ?: "New post from ${newsletter.name}"
+            val subject = "[${newsletter.name}] ${issue.title}"
 
             // 이메일 작업 생성
             val emailJob = EmailJob(
@@ -72,9 +73,12 @@ class IssuePublishService(
                 subject = subject,
                 issueTitle = issue.title ?: "Untitled",
                 issueExcerpt = issue.excerpt,
+                issueContent = issue.content, // 이슈 전체 내용 포함
                 issueUrl = issueUrl,
                 newsletterName = newsletter.name,
-                senderName = newsletter.senderName ?: owner.name ?: owner.username ?: "Vality",
+                username = username,
+                fromName = owner.name ?: username,
+                ownerImageUrl = owner.imageUrl,
                 unsubscribeUrlTemplate = unsubscribeUrlTemplate,
             )
 

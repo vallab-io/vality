@@ -18,8 +18,8 @@ import software.amazon.awssdk.services.ses.model.SendEmailRequest
  */
 class EmailService(
     private val sesClient: SesClient,
-    private val fromEmail: String,
-    private val fromName: String,
+    private val defaultFromEmail: String,
+    private val defaultFromName: String,
 ) {
     private val logger = LoggerFactory.getLogger(EmailService::class.java)
 
@@ -37,6 +37,8 @@ class EmailService(
         subject: String,
         htmlBody: String,
         textBody: String? = null,
+        fromEmail: String = defaultFromEmail,
+        fromName: String = defaultFromName,
     ): String = withContext(Dispatchers.IO) {
         try {
             val destination = Destination.builder()
@@ -142,7 +144,7 @@ class EmailService(
                         .build()
 
                     val request = SendEmailRequest.builder()
-                        .source("$fromName <$fromEmail>")
+                        .source("$defaultFromName <$defaultFromEmail>")
                         .destination(destination)
                         .message(message)
                         .build()

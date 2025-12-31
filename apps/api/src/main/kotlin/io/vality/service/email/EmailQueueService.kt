@@ -2,7 +2,6 @@ package io.vality.service.email
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.vality.config.RedisConfig
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -21,9 +20,12 @@ data class EmailJob(
     val subject: String,
     val issueTitle: String,
     val issueExcerpt: String?,
+    val issueContent: String?, // 이슈 전체 내용 (HTML)
     val issueUrl: String,
     val newsletterName: String,
-    val senderName: String,
+    val username: String,
+    val fromName: String,
+    val ownerImageUrl: String?, // 소유자 이미지 URL
     val unsubscribeUrlTemplate: String, // {email}을 실제 이메일로 치환
     val createdAt: Long = System.currentTimeMillis(),
     val retryCount: Int = 0,
@@ -101,6 +103,7 @@ class EmailQueueService(
     /**
      * 작업 완료 처리 (처리 중 목록에서 제거)
      */
+    @OptIn(ExperimentalLettuceCoroutinesApi::class)
     suspend fun complete(job: EmailJob): Boolean {
         return try {
             val commands = redisConfig.getCoroutinesCommands()

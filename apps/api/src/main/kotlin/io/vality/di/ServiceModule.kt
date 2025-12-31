@@ -1,7 +1,6 @@
 package io.vality.di
 
 import com.typesafe.config.Config
-import io.vality.config.RedisConfig
 import io.vality.service.AuthService
 import io.vality.service.DashboardService
 import io.vality.service.IssuePublishService
@@ -50,8 +49,8 @@ val serviceModule = module {
         val sesClient = get<SesClient>()
         EmailService(
             sesClient = sesClient,
-            fromEmail = config.getString("ktor.aws.ses.fromEmail"),
-            fromName = config.getString("ktor.aws.ses.fromName")
+            defaultFromEmail = config.getString("ktor.aws.ses.fromEmail"),
+            defaultFromName = config.getString("ktor.aws.ses.fromName")
         )
     }
 

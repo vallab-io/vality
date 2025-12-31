@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { ArrowLeftIcon } from "@/components/icons";
 import { createIssue, getIssueById, updateIssue, type CreateIssueRequest, type UpdateIssueRequest } from "@/lib/api/issue";
 import { getNewsletterById, type Newsletter } from "@/lib/api/newsletter";
+import { getSubscribers } from "@/lib/api/subscriber";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/auth.store";
 import { ValityEditor } from "@/components/editor/vality-editor";
@@ -35,6 +36,7 @@ export default function IssuePage() {
   const t = useT();
 
   const [newsletter, setNewsletter] = useState<Newsletter | null>(null);
+  const [activeSubscriberCount, setActiveSubscriberCount] = useState<number>(0);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("email");
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -60,6 +62,15 @@ export default function IssuePage() {
         setIsLoading(true);
         const newsletterData = await getNewsletterById(newsletterId);
         setNewsletter(newsletterData);
+
+        // 활성 구독자 수 가져오기
+        try {
+          const activeSubscribers = await getSubscribers(newsletterId, "ACTIVE");
+          setActiveSubscriberCount(activeSubscribers.length);
+        } catch {
+          // 구독자 로드 실패해도 에디터는 사용 가능
+          setActiveSubscriberCount(0);
+        }
 
         if (issueId && issueId !== "new") {
           const issueData = await getIssueById(newsletterId, issueId);
@@ -361,6 +372,34 @@ export default function IssuePage() {
           </DialogHeader>
 
           <div className="space-y-6 py-4">
+            {/* Email Notice */}
+            <div className={cn(
+              "rounded-lg border p-4",
+              activeSubscriberCount > 0 
+                ? "border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950" 
+                : "border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950"
+            )}>
+              <div className="flex items-start gap-3">
+                <div className={cn(
+                  "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs",
+                  activeSubscriberCount > 0 
+                    ? "bg-blue-500 text-white" 
+                    : "bg-amber-500 text-white"
+                )}>
+                  {activeSubscriberCount > 0 ? "✉" : "!"}
+                </div>
+                <p className={cn(
+                  "text-sm",
+                  activeSubscriberCount > 0 
+                    ? "text-blue-800 dark:text-blue-200" 
+                    : "text-amber-800 dark:text-amber-200"
+                )}>
+                  {activeSubscriberCount > 0
+                    ? t("editor.emailNotice").replace("{count}", activeSubscriberCount.toString())
+                    : t("editor.emailNoticeZero")}
+                </p>
+              </div>
+            </div>
             {/* URL Slug */}
             <div className="space-y-2">
               <Label htmlFor="slug">{t("editor.urlSlug")}</Label>
