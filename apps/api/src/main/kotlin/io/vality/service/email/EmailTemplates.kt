@@ -218,18 +218,12 @@ $confirmationUrl
         }
 
         // 이미지 또는 초기 표시 섹션
-        val avatarSection = if (!ownerImageUrl.isNullOrBlank()) {
-            """
-                            <img src="$ownerImageUrl" alt="$senderName" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; display: block; margin-bottom: 12px;" />
-            """.trimIndent()
-        } else {
-            val initials = getInitials(senderName)
-            """
+        val initials = getInitials(senderName)
+        val avatarSection = """
                             <div style="width: 40px; height: 40px; border-radius: 50%; background-color: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; color: #64748b; margin-bottom: 12px;">
                                 $initials
                             </div>
             """.trimIndent()
-        }
 
         // 이슈 내용이 있으면 본문에 포함, 없으면 excerpt만 표시
         val contentSection = if (!issueContent.isNullOrBlank()) {
