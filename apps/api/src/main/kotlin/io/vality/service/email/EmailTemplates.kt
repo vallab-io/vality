@@ -190,5 +190,133 @@ $confirmationUrl
 © ${java.time.Year.now()} Vality
         """.trimIndent()
     }
+
+    /**
+     * 뉴스레터 이슈 발행 이메일 HTML 템플릿
+     * 
+     * 새 이슈가 발행되었을 때 구독자들에게 보내는 이메일
+     */
+    fun issuePublishedHtml(
+        newsletterName: String,
+        senderName: String,
+        issueTitle: String,
+        issueExcerpt: String?,
+        issueUrl: String,
+        unsubscribeUrl: String,
+    ): String {
+        val excerptSection = if (!issueExcerpt.isNullOrBlank()) {
+            """
+                            <p style="margin: 0 0 32px 0; font-size: 15px; line-height: 1.7; color: #64748b;">
+                                $issueExcerpt
+                            </p>
+            """.trimIndent()
+        } else {
+            ""
+        }
+
+        return """
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>$issueTitle</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #F8FAFC;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #F8FAFC;">
+        <tr>
+            <td align="center" style="padding: 48px 20px;">
+                <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 32px 32px 24px 32px; border-bottom: 1px solid #e2e8f0;">
+                            <p style="margin: 0; font-size: 14px; color: #64748b;">
+                                $newsletterName
+                            </p>
+                            <p style="margin: 4px 0 0 0; font-size: 13px; color: #94a3b8;">
+                                by $senderName
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 32px;">
+                            <h1 style="margin: 0 0 24px 0; font-size: 24px; font-weight: 600; line-height: 1.4; color: #1e293b; letter-spacing: -0.02em;">
+                                $issueTitle
+                            </h1>
+                            
+                            $excerptSection
+                            
+                            <!-- Read More Button -->
+                            <div style="text-align: center; margin: 32px 0;">
+                                <a href="$issueUrl" style="display: inline-block; padding: 14px 28px; background-color: #1e293b; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 15px; font-weight: 500;">
+                                    Read Full Article →
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 24px 32px; background-color: #f8f9fa; border-top: 1px solid #e2e8f0; border-radius: 0 0 6px 6px;">
+                            <p style="margin: 0 0 12px 0; font-size: 12px; line-height: 1.5; color: #64748b; text-align: center;">
+                                You received this email because you subscribed to $newsletterName.
+                            </p>
+                            <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #94a3b8; text-align: center;">
+                                <a href="$unsubscribeUrl" style="color: #64748b; text-decoration: underline;">Unsubscribe</a>
+                                &nbsp;•&nbsp;
+                                Powered by <a href="https://vality.io" style="color: #64748b; text-decoration: none;">Vality</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+        """.trimIndent()
+    }
+
+    /**
+     * 뉴스레터 이슈 발행 이메일 텍스트 템플릿
+     */
+    fun issuePublishedText(
+        newsletterName: String,
+        senderName: String,
+        issueTitle: String,
+        issueExcerpt: String?,
+        issueUrl: String,
+        unsubscribeUrl: String,
+    ): String {
+        val excerptSection = if (!issueExcerpt.isNullOrBlank()) {
+            """
+$issueExcerpt
+
+---
+            """.trimIndent()
+        } else {
+            ""
+        }
+
+        return """
+$newsletterName
+by $senderName
+
+$issueTitle
+
+$excerptSection
+
+Read the full article: $issueUrl
+
+---
+
+You received this email because you subscribed to $newsletterName.
+Unsubscribe: $unsubscribeUrl
+
+Powered by Vality (https://vality.io)
+        """.trimIndent()
+    }
 }
 

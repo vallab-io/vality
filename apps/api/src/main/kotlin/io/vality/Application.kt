@@ -7,6 +7,7 @@ import io.ktor.server.netty.Netty
 import io.vality.plugins.configureCORS
 import io.vality.plugins.configureDatabase
 import io.vality.plugins.configureDefaultHeaders
+import io.vality.plugins.configureEmailWorker
 import io.vality.plugins.configureJWT
 import io.vality.plugins.configureKoin
 import io.vality.plugins.configureLogging
@@ -36,6 +37,9 @@ fun Application.module() {
 
     // Database
     configureDatabase(config)
+
+    // Background Workers
+    configureEmailWorker()
 
     // Routing
     configureRouting()

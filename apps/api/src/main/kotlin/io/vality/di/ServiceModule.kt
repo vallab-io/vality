@@ -1,15 +1,19 @@
 package io.vality.di
 
 import com.typesafe.config.Config
+import io.vality.config.RedisConfig
 import io.vality.service.AuthService
 import io.vality.service.DashboardService
+import io.vality.service.IssuePublishService
 import io.vality.service.IssueService
 import io.vality.service.LemonSqueezyService
 import io.vality.service.NewsletterService
 import io.vality.service.SubscriberService
 import io.vality.service.SubscriptionService
 import io.vality.service.UserService
+import io.vality.service.email.EmailQueueService
 import io.vality.service.email.EmailService
+import io.vality.service.email.EmailWorker
 import io.vality.service.oauth.GoogleOAuthService
 import io.vality.service.upload.ExternalImageUploadService
 import io.vality.service.upload.ImageUploadService
@@ -95,6 +99,25 @@ val serviceModule = module {
         )
     }
 
+    // Email Queue Service (Redis 기반)
+    single<EmailQueueService> {
+        EmailQueueService(
+            redisConfig = get(),
+        )
+    }
+
+    // Issue Publish Service (이슈 발행 시 이메일 큐잉)
+    single<IssuePublishService> {
+        val config = get<Config>()
+        IssuePublishService(
+            emailQueueService = get(),
+            subscriberRepository = get(),
+            newsletterRepository = get(),
+            userRepository = get(),
+            frontendUrl = config.getString("ktor.web.url"),
+        )
+    }
+
     // Issue Service
     single<IssueService> {
         IssueService(
@@ -102,6 +125,7 @@ val serviceModule = module {
             newsletterRepository = get(),
             userRepository = get(),
             imageUrlService = get(),
+            issuePublishService = get(),
         )
     }
 
@@ -143,6 +167,16 @@ val serviceModule = module {
             issueRepository = get(),
             subscriberRepository = get(),
             userRepository = get(),
+        )
+    }
+
+    // Email Worker (백그라운드 이메일 발송)
+    single<EmailWorker> {
+        val config = get<Config>()
+        EmailWorker(
+            emailQueueService = get(),
+            emailService = get(),
+            frontendUrl = config.getString("ktor.web.url"),
         )
     }
 }
