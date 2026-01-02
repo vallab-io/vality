@@ -124,11 +124,13 @@ class SubscriberService(
      *
      * @param newsletterId 뉴스레터 ID
      * @param ownerId 소유자 ID (권한 확인용)
+     * @param status 구독자 상태 (선택사항, null이면 모든 상태 조회)
      * @return 구독자 목록
      */
     suspend fun getSubscribersByNewsletter(
         newsletterId: String,
         ownerId: String,
+        status: SubStatus? = null,
     ): List<Subscriber> {
         // 뉴스레터 소유자 확인
         val newsletter =
@@ -138,7 +140,11 @@ class SubscriberService(
             throw IllegalArgumentException("You don't have permission to access this newsletter")
         }
 
-        return subscriberRepository.findByNewsletterId(newsletterId)
+        return if (status != null) {
+            subscriberRepository.findByNewsletterIdAndStatus(newsletterId, status)
+        } else {
+            subscriberRepository.findByNewsletterId(newsletterId)
+        }
     }
 
     /**

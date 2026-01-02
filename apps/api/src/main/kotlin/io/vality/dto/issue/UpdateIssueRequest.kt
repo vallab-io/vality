@@ -8,7 +8,7 @@ import java.time.Instant
 data class UpdateIssueRequest(
     val title: String? = null,
     val slug: String? = null,
-    val content: String? = null,
+    val content: String,
     val excerpt: String? = null,
     val coverImageUrl: String? = null,
     val status: String? = null, // "DRAFT", "SCHEDULED", "PUBLISHED"

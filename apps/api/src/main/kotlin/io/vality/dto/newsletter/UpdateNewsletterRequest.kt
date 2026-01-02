@@ -7,7 +7,6 @@ data class UpdateNewsletterRequest(
     val name: String,
     val slug: String,
     val description: String? = null,
-    val senderName: String? = null,
     val timezone: String,
 )
 

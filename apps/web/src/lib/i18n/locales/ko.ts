@@ -408,6 +408,8 @@ export const ko: Translations = {
     scheduledSuccess: "발행 예약 완료! {date} {time}에 발행됩니다.",
     publishSettings: "발행 설정",
     publishSettingsDesc: "발행 설정을 확인하고 이슈를 발행하세요.",
+    emailNotice: "이 이슈는 {count}명의 활성 구독자에게 이메일로 발송됩니다.",
+    emailNoticeZero: "아직 활성 구독자가 없습니다. 이슈는 아카이브에만 게시됩니다.",
     urlSlug: "URL 슬러그",
     urlSlugHint: "영문 소문자, 숫자, 하이픈(-)만 사용 가능합니다.",
     publishTiming: "발행 시점",
@@ -471,6 +473,20 @@ export const ko: Translations = {
   legal: {
     termsTitle: "이용약관",
     privacyTitle: "개인정보처리방침",
+  },
+  unsubscribe: {
+    processing: "구독 취소 처리 중...",
+    success: "구독이 취소되었습니다",
+    successDesc: "더 이상 이 뉴스레터의 이메일을 받지 않습니다.",
+    alreadyUnsubscribed: "이미 구독 취소됨",
+    alreadyUnsubscribedDesc: "이 이메일은 이미 구독이 취소된 상태입니다.",
+    errorTitle: "구독 취소 실패",
+    error: "구독 취소에 실패했습니다. 다시 시도해주세요.",
+    invalidLink: "잘못된 구독 취소 링크",
+    invalidLinkDesc: "구독 취소 링크가 유효하지 않거나 만료되었습니다.",
+    notFound: "구독자를 찾을 수 없습니다.",
+    retry: "다시 시도",
+    goHome: "홈으로 이동",
   },
 };
 

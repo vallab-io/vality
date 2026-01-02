@@ -52,7 +52,6 @@ export default function NewsletterSettingsPage() {
     name: "",
     slug: "",
     description: "",
-    senderName: "",
     timezone: "Asia/Seoul",
   });
 
@@ -66,7 +65,6 @@ export default function NewsletterSettingsPage() {
           name: newsletter.name,
           slug: newsletter.slug,
           description: newsletter.description || "",
-          senderName: newsletter.senderName || "",
           timezone: newsletter.timezone,
         });
       } catch (error) {
@@ -127,7 +125,6 @@ export default function NewsletterSettingsPage() {
         name: formData.name,
         slug: formData.slug,
         description: formData.description || undefined,
-        senderName: formData.senderName || undefined,
         timezone: formData.timezone,
       });
       
@@ -136,7 +133,6 @@ export default function NewsletterSettingsPage() {
         name: updatedNewsletter.name,
         slug: updatedNewsletter.slug,
         description: updatedNewsletter.description || "",
-        senderName: updatedNewsletter.senderName || "",
         timezone: updatedNewsletter.timezone,
       });
       
@@ -244,22 +240,6 @@ export default function NewsletterSettingsPage() {
           </div>
 
           <div className="p-6 space-y-6">
-            {/* Sender Name */}
-            <div className="grid gap-2">
-              <Label htmlFor="senderName">{t("settings.senderName")}</Label>
-              <Input
-                id="senderName"
-                name="senderName"
-                value={formData.senderName}
-                onChange={handleChange}
-                placeholder={t("settings.senderNamePlaceholder")}
-                disabled={isLoading || isFetching}
-              />
-              <p className="text-xs text-muted-foreground">
-                {t("settings.senderNameHint")}
-              </p>
-            </div>
-
             {/* Timezone */}
             <div className="grid gap-2">
               <Label htmlFor="timezone">{t("settings.timezone")}</Label>

@@ -29,11 +29,17 @@ export interface CreateSubscriberRequest {
 
 // 구독자 목록 조회
 export async function getSubscribers(
-  newsletterId: string
+  newsletterId: string,
+  status?: "PENDING" | "ACTIVE" | "UNSUBSCRIBED"
 ): Promise<Subscriber[]> {
-  const response = await apiClient.get<ApiResponse<Subscriber[]>>(
-    `/newsletters/${newsletterId}/subscribers`
-  );
+  const params = new URLSearchParams();
+  if (status) {
+    params.append("status", status);
+  }
+  const queryString = params.toString();
+  const url = `/newsletters/${newsletterId}/subscribers${queryString ? `?${queryString}` : ""}`;
+  
+  const response = await apiClient.get<ApiResponse<Subscriber[]>>(url);
   if (!response.data.data) {
     throw new Error(response.data.message || "Failed to get subscribers");
   }
@@ -97,6 +103,35 @@ export async function confirmSubscribe(
   );
   if (!response.data.data) {
     throw new Error(response.data.message || "Failed to confirm subscribe");
+  }
+  return response.data.data;
+}
+
+// 구독 취소 요청
+export interface UnsubscribeRequest {
+  email: string;
+}
+
+export interface UnsubscribeResponse {
+  id: string;
+  email: string;
+  status: "UNSUBSCRIBED";
+  newsletterId: string;
+}
+
+/**
+ * 구독 취소 (Public API - JWT 불필요)
+ */
+export async function unsubscribe(
+  newsletterId: string,
+  data: UnsubscribeRequest
+): Promise<UnsubscribeResponse> {
+  const response = await apiClient.post<ApiResponse<UnsubscribeResponse>>(
+    `/public/newsletter/${newsletterId}/unsubscribe`,
+    data
+  );
+  if (!response.data.data) {
+    throw new Error(response.data.message || "Failed to unsubscribe");
   }
   return response.data.data;
 }

@@ -21,7 +21,6 @@ class NewsletterRepository {
             name = this[Newsletters.name],
             slug = this[Newsletters.slug],
             description = this[Newsletters.description],
-            senderName = this[Newsletters.senderName],
             timezone = this[Newsletters.timezone],
             ownerId = this[Newsletters.ownerId],
             createdAt = this[Newsletters.createdAt],
@@ -36,7 +35,6 @@ class NewsletterRepository {
                 Newsletters.name,
                 Newsletters.slug,
                 Newsletters.description,
-                Newsletters.senderName,
                 Newsletters.timezone,
                 Newsletters.ownerId,
                 Newsletters.createdAt,
@@ -55,7 +53,6 @@ class NewsletterRepository {
                 Newsletters.name,
                 Newsletters.slug,
                 Newsletters.description,
-                Newsletters.senderName,
                 Newsletters.timezone,
                 Newsletters.ownerId,
                 Newsletters.createdAt,
@@ -74,7 +71,6 @@ class NewsletterRepository {
                 Newsletters.name,
                 Newsletters.slug,
                 Newsletters.description,
-                Newsletters.senderName,
                 Newsletters.timezone,
                 Newsletters.ownerId,
                 Newsletters.createdAt,
@@ -115,7 +111,6 @@ class NewsletterRepository {
                 Newsletters.name,
                 Newsletters.slug,
                 Newsletters.description,
-                Newsletters.senderName,
                 Newsletters.timezone,
                 Newsletters.ownerId,
                 Newsletters.createdAt,
@@ -133,7 +128,6 @@ class NewsletterRepository {
             it[name] = newsletter.name
             it[slug] = newsletter.slug
             it[description] = newsletter.description
-            it[senderName] = newsletter.senderName
             it[timezone] = newsletter.timezone
             it[ownerId] = newsletter.ownerId
             it[createdAt] = newsletter.createdAt
@@ -147,7 +141,6 @@ class NewsletterRepository {
             it[name] = newsletter.name
             it[slug] = newsletter.slug
             it[description] = newsletter.description
-            it[senderName] = newsletter.senderName
             it[timezone] = newsletter.timezone
             it[updatedAt] = newsletter.updatedAt
         }
