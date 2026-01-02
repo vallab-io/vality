@@ -64,7 +64,6 @@ fun Route.newsletterRoutes() {
                         name = request.name,
                         slug = request.slug,
                         description = request.description,
-                        senderName = request.senderName,
                     )
 
                     call.respond(
@@ -187,7 +186,6 @@ fun Route.newsletterRoutes() {
                         name = request.name,
                         slug = request.slug,
                         description = request.description,
-                        senderName = request.senderName,
                         timezone = request.timezone,
                     )
 

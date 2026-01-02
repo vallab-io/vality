@@ -367,7 +367,6 @@ class IssueService(
             newsletterSlug = newsletter.slug,
             newsletterName = newsletter.name,
             newsletterDescription = newsletter.description,
-            newsletterSenderName = newsletter.senderName,
             ownerId = user.id,
             ownerUsername = user.username,
             ownerName = user.name,

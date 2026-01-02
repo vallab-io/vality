@@ -7,7 +7,6 @@ export interface Newsletter {
   name: string;
   slug: string;
   description: string | null;
-  senderName: string | null;
   timezone: string;
   createdAt: string;
   updatedAt: string;
@@ -18,7 +17,6 @@ export interface CreateNewsletterRequest {
   name: string;
   slug: string;
   description?: string;
-  senderName?: string;
 }
 
 // 뉴스레터 생성
@@ -64,7 +62,6 @@ export interface UpdateNewsletterRequest {
   name: string;
   slug: string;
   description?: string;
-  senderName?: string;
   timezone: string;
 }
 

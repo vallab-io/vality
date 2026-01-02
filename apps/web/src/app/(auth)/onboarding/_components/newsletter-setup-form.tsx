@@ -29,7 +29,6 @@ export function NewsletterSetupForm({
     name: "",
     slug: "",
     description: "",
-    senderName: "",
   });
 
   // Slug 유효성 검증
@@ -96,7 +95,6 @@ export function NewsletterSetupForm({
         name: formData.name,
         slug: formData.slug,
         description: formData.description || undefined,
-        senderName: formData.senderName || undefined,
       });
 
       toast.success(t("onboarding.newsletterCreated"));
@@ -179,24 +177,6 @@ export function NewsletterSetupForm({
           rows={3}
           className="resize-none"
         />
-      </div>
-
-      {/* 발신자 이름 */}
-      <div className="space-y-2">
-        <Label htmlFor="senderName">{t("onboarding.senderNameOptional")}</Label>
-        <Input
-          id="senderName"
-          name="senderName"
-          type="text"
-          placeholder={t("onboarding.senderNamePlaceholder")}
-          value={formData.senderName}
-          onChange={handleChange}
-          disabled={isLoading}
-          className="h-11"
-        />
-        <p className="text-xs text-muted-foreground">
-          {t("onboarding.senderNameHint")}
-        </p>
       </div>
 
       {/* 제출 버튼 */}

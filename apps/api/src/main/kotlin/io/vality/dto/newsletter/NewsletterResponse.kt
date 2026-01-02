@@ -11,7 +11,6 @@ data class NewsletterResponse(
     val name: String,
     val slug: String,
     val description: String?,
-    val senderName: String?,
     val timezone: String,
     @Contextual
     val createdAt: Instant,
@@ -28,7 +27,6 @@ fun Newsletter.toNewsletterResponse(): NewsletterResponse {
         name = name,
         slug = slug,
         description = description,
-        senderName = senderName,
         timezone = timezone,
         createdAt = createdAt,
         updatedAt = updatedAt,

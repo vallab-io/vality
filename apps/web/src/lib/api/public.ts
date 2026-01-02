@@ -67,7 +67,6 @@ export interface PublicIssueDetail {
   newsletterSlug: string;
   newsletterName: string;
   newsletterDescription: string | null;
-  newsletterSenderName: string | null;
   
   // Owner (User) 정보
   ownerId: string;
