@@ -20,7 +20,6 @@ class NewsletterService(
      * @param name 뉴스레터 이름
      * @param slug 뉴스레터 슬러그 (URL에 사용)
      * @param description 뉴스레터 설명 (선택)
-     * @param senderName 발신자 이름 (선택)
      * @return 생성된 뉴스레터
      */
     suspend fun createNewsletter(
@@ -28,7 +27,6 @@ class NewsletterService(
         name: String,
         slug: String,
         description: String? = null,
-        senderName: String? = null,
     ): Newsletter {
         // Slug 중복 확인
         val existingNewsletter = newsletterRepository.findByOwnerIdAndSlug(ownerId, slug)
@@ -42,7 +40,6 @@ class NewsletterService(
             name = name,
             slug = slug,
             description = description,
-            senderName = senderName,
             timezone = "Asia/Seoul",
             ownerId = ownerId,
             createdAt = now,
@@ -86,7 +83,6 @@ class NewsletterService(
      * @param name 뉴스레터 이름
      * @param slug 뉴스레터 슬러그
      * @param description 뉴스레터 설명
-     * @param senderName 발신자 이름
      * @param timezone 시간대
      * @return 업데이트된 뉴스레터
      */
@@ -96,7 +92,6 @@ class NewsletterService(
         name: String,
         slug: String,
         description: String? = null,
-        senderName: String? = null,
         timezone: String,
     ): Newsletter {
         // 뉴스레터 존재 및 소유자 확인
@@ -124,7 +119,6 @@ class NewsletterService(
             name = name,
             slug = slug,
             description = description,
-            senderName = senderName,
             timezone = timezone,
             updatedAt = java.time.Instant.now(),
         )

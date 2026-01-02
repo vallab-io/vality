@@ -26,7 +26,6 @@ data class PublicIssueDetailResponse(
     val newsletterSlug: String,
     val newsletterName: String,
     val newsletterDescription: String?,
-    val newsletterSenderName: String?,
     
     // Owner (User) 정보
     val ownerId: String,

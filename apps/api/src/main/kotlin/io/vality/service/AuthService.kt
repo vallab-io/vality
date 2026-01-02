@@ -65,7 +65,7 @@ class AuthService(
                 to = email,
                 subject = "$code is your Vality verification code.",
                 htmlBody = htmlBody,
-                textBody = textBody
+                textBody = textBody,
             )
             
             return true

@@ -104,6 +104,55 @@ fun Route.publicSubscriberRoutes() {
                 )
             }
         }
+
+        /**
+         * 구독 취소
+         * POST /api/public/newsletter/{newsletterId}/unsubscribe
+         * JWT 인증 불필요 - 이메일 주소로 바로 취소
+         */
+        post("/newsletter/{newsletterId}/unsubscribe") {
+            val newsletterId = call.parameters["newsletterId"]
+                ?: return@post call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiResponse.error<Nothing>(message = "Newsletter ID is required"),
+                )
+
+            val request = call.receive<PublicSubscribeRequest>()
+
+            try {
+                if (request.email.isBlank()) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        ApiResponse.error<Nothing>(message = "Email is required"),
+                    )
+                    return@post
+                }
+
+                val subscriber = subscriberService.unsubscribeByEmail(
+                    newsletterId = newsletterId,
+                    email = request.email,
+                )
+
+                call.respond(
+                    HttpStatusCode.OK,
+                    ApiResponse.success(
+                        data = subscriber.toSubscriberResponse(),
+                        message = "Successfully unsubscribed.",
+                    )
+                )
+            } catch (e: IllegalArgumentException) {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiResponse.error<Nothing>(message = e.message ?: "Invalid request"),
+                )
+            } catch (e: Exception) {
+                call.application.log.error("Failed to unsubscribe", e)
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    ApiResponse.error<Nothing>(message = "Failed to unsubscribe: ${e.message}"),
+                )
+            }
+        }
     }
 }
 

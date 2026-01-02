@@ -1512,9 +1512,6 @@ components:
         newsletterDescription:
           type: string
           nullable: true
-        newsletterSenderName:
-          type: string
-          nullable: true
         ownerId:
           type: string
         ownerUsername:
@@ -1558,10 +1555,6 @@ components:
           type: string
           nullable: true
           description: 뉴스레터 설명
-        senderName:
-          type: string
-          nullable: true
-          description: 발신자 이름
 
     UpdateNewsletterRequest:
       type: object
@@ -1571,9 +1564,6 @@ components:
         slug:
           type: string
         description:
-          type: string
-          nullable: true
-        senderName:
           type: string
           nullable: true
 
@@ -1587,9 +1577,6 @@ components:
         slug:
           type: string
         description:
-          type: string
-          nullable: true
-        senderName:
           type: string
           nullable: true
         timezone:

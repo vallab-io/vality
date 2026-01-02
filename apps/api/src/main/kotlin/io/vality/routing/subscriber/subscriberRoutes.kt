@@ -13,6 +13,7 @@ import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import io.vality.domain.SubStatus
 import io.vality.dto.ApiResponse
 import io.vality.dto.subscriber.CreateSubscriberRequest
 import io.vality.dto.subscriber.toSubscriberResponse
@@ -26,7 +27,7 @@ fun Route.subscriberRoutes() {
         route("/api/newsletters/{newsletterId}/subscribers") {
             /**
              * 구독자 목록 조회
-             * GET /api/newsletters/{newsletterId}/subscribers
+             * GET /api/newsletters/{newsletterId}/subscribers?status=ACTIVE
              */
             get {
                 val principal = call.principal<JWTPrincipal>() ?: return@get call.respond(
@@ -39,8 +40,21 @@ fun Route.subscriberRoutes() {
                     HttpStatusCode.BadRequest, ApiResponse.error<Nothing>(message = "Newsletter ID is required")
                 )
 
+                // status query parameter 파싱 (선택사항)
+                val statusParam = call.request.queryParameters["status"]
+                val status = statusParam?.let {
+                    try {
+                        SubStatus.valueOf(it.uppercase())
+                    } catch (e: IllegalArgumentException) {
+                        return@get call.respond(
+                            HttpStatusCode.BadRequest,
+                            ApiResponse.error<Nothing>(message = "Invalid status. Must be PENDING, ACTIVE, or UNSUBSCRIBED"),
+                        )
+                    }
+                }
+
                 try {
-                    val subscribers = subscriberService.getSubscribersByNewsletter(newsletterId, userId)
+                    val subscribers = subscriberService.getSubscribersByNewsletter(newsletterId, userId, status)
                     call.respond(
                         HttpStatusCode.OK,
                         ApiResponse.success(data = subscribers.map { it.toSubscriberResponse() }),
