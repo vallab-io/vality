@@ -1,27 +1,59 @@
 package io.vality.service.email
 
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.headers
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.contentType
+import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
-import software.amazon.awssdk.services.ses.SesClient
-import software.amazon.awssdk.services.ses.model.Body
-import software.amazon.awssdk.services.ses.model.Content
-import software.amazon.awssdk.services.ses.model.Destination
-import software.amazon.awssdk.services.ses.model.Message
-import software.amazon.awssdk.services.ses.model.SendEmailRequest
 
 /**
- * AWS SES 이메일 발송 서비스
+ * Resend 이메일 발송 서비스
  *
  * - 단일 이메일 발송
  * - 대량 이메일 발송 (최대 50명씩 배치 처리)
  */
 class EmailService(
-    private val sesClient: SesClient,
+    private val apiKey: String,
     private val defaultFromEmail: String,
     private val defaultFromName: String,
 ) {
     private val logger = LoggerFactory.getLogger(EmailService::class.java)
+    private val httpClient = HttpClient(CIO) {
+        install(ContentNegotiation) {
+            json(Json {
+                ignoreUnknownKeys = true
+            })
+        }
+    }
+
+    companion object {
+        private const val RESEND_API_URL = "https://api.resend.com/emails"
+    }
+
+    @Serializable
+    private data class ResendEmailRequest(
+        val from: String,
+        val to: List<String>,
+        val subject: String,
+        val html: String? = null,
+        val text: String? = null,
+    )
+
+    @Serializable
+    private data class ResendEmailResponse(
+        val id: String,
+    )
 
     /**
      * 단일 이메일 발송
@@ -30,6 +62,8 @@ class EmailService(
      * @param subject 이메일 제목
      * @param htmlBody HTML 본문
      * @param textBody 텍스트 본문 (선택사항)
+     * @param fromEmail 발신자 이메일 주소
+     * @param fromName 발신자 이름
      * @return 발송 성공 시 MessageId
      */
     suspend fun sendEmail(
@@ -41,48 +75,25 @@ class EmailService(
         fromName: String = defaultFromName,
     ): String = withContext(Dispatchers.IO) {
         try {
-            val destination = Destination.builder()
-                .toAddresses(to)
-                .build()
-
-            val subjectContent = Content.builder()
-                .data(subject)
-                .charset("UTF-8")
-                .build()
-
-            val bodyBuilder = Body.builder()
-            bodyBuilder.html(
-                Content.builder()
-                    .data(htmlBody)
-                    .charset("UTF-8")
-                    .build()
+            val request = ResendEmailRequest(
+                from = "$fromName <$fromEmail>",
+                to = listOf(to),
+                subject = subject,
+                html = htmlBody,
+                text = textBody,
             )
 
-            textBody?.let {
-                bodyBuilder.text(
-                    Content.builder()
-                        .data(it)
-                        .charset("UTF-8")
-                        .build()
-                )
+            val response = httpClient.post(RESEND_API_URL) {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $apiKey")
+                }
+                contentType(ContentType.Application.Json)
+                setBody(request)
             }
 
-            val message = Message.builder()
-                .subject(subjectContent)
-                .body(bodyBuilder.build())
-                .build()
-
-            val request = SendEmailRequest.builder()
-                .source("$fromName <$fromEmail>")
-                .destination(destination)
-                .message(message)
-                .build()
-
-            val response = sesClient.sendEmail(request)
-            val messageId = response.messageId()
-
-            logger.info("Email sent successfully to: $to, MessageId: $messageId")
-            messageId
+            val result = response.body<ResendEmailResponse>()
+            logger.info("Email sent successfully to: $to, MessageId: ${result.id}")
+            result.id
         } catch (e: Exception) {
             logger.error("Failed to send email to: $to", e)
             throw EmailServiceException("Failed to send email", e)
@@ -90,81 +101,10 @@ class EmailService(
     }
 
     /**
-     * 대량 이메일 발송
-     *
-     * SES는 한 번에 최대 50명까지 발송 가능하므로, 50명씩 배치로 나누어 발송합니다.
-     *
-     * @param recipients 수신자 이메일 주소 목록
-     * @param subject 이메일 제목
-     * @param htmlBody HTML 본문
-     * @param textBody 텍스트 본문 (선택사항)
-     * @return 각 수신자별 MessageId 맵
+     * 리소스 정리
      */
-    suspend fun sendBulkEmail(
-        recipients: List<String>,
-        subject: String,
-        htmlBody: String,
-        textBody: String? = null,
-    ): Map<String, String> = withContext(Dispatchers.IO) {
-        try {
-            val results = mutableMapOf<String, String>()
-
-            // SES는 한 번에 최대 50명까지 발송 가능
-            recipients.chunked(50)
-                .forEach { chunk ->
-                    val destination = Destination.builder()
-                        .toAddresses(chunk)
-                        .build()
-
-                    val subjectContent = Content.builder()
-                        .data(subject)
-                        .charset("UTF-8")
-                        .build()
-
-                    val bodyBuilder = Body.builder()
-                    bodyBuilder.html(
-                        Content.builder()
-                            .data(htmlBody)
-                            .charset("UTF-8")
-                            .build()
-                    )
-
-                    textBody?.let {
-                        bodyBuilder.text(
-                            Content.builder()
-                                .data(it)
-                                .charset("UTF-8")
-                                .build()
-                        )
-                    }
-
-                    val message = Message.builder()
-                        .subject(subjectContent)
-                        .body(bodyBuilder.build())
-                        .build()
-
-                    val request = SendEmailRequest.builder()
-                        .source("$defaultFromName <$defaultFromEmail>")
-                        .destination(destination)
-                        .message(message)
-                        .build()
-
-                    val response = sesClient.sendEmail(request)
-                    val messageId = response.messageId()
-
-                    // 모든 수신자에게 동일한 MessageId 할당
-                    chunk.forEach { email ->
-                        results[email] = messageId
-                    }
-
-                    logger.info("Bulk email sent to ${chunk.size} recipients, MessageId: $messageId")
-                }
-
-            results
-        } catch (e: Exception) {
-            logger.error("Failed to send bulk email to ${recipients.size} recipients", e)
-            throw EmailServiceException("Failed to send bulk email", e)
-        }
+    fun close() {
+        httpClient.close()
     }
 }
 
