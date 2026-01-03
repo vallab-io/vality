@@ -25,7 +25,6 @@ class EmailWorker(
     private val emailService: EmailService,
     private val emailLogRepository: EmailLogRepository,
     private val subscriberRepository: SubscriberRepository,
-    private val frontendUrl: String,
 ) {
     private val logger = LoggerFactory.getLogger(EmailWorker::class.java)
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -143,7 +142,7 @@ class EmailWorker(
                     subject = job.subject,
                     htmlBody = htmlBody,
                     textBody = textBody,
-                    fromEmail = "${job.username}@vality.io",
+                    fromEmail = "${job.username}@mail.vality.io",
                     fromName = job.fromName,
                 )
 

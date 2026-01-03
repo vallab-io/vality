@@ -19,7 +19,6 @@ import io.vality.service.upload.ImageUploadService
 import io.vality.service.upload.ImageUrlService
 import io.vality.service.upload.S3Service
 import org.koin.dsl.module
-import software.amazon.awssdk.services.ses.SesClient
 
 val serviceModule = module {
     // Image URL Service
@@ -43,14 +42,13 @@ val serviceModule = module {
         ImageUploadService(s3Service, imageUrlService)
     }
 
-    // Email Service
+    // Email Service (Resend)
     single<EmailService> {
         val config = get<Config>()
-        val sesClient = get<SesClient>()
         EmailService(
-            sesClient = sesClient,
-            defaultFromEmail = config.getString("ktor.aws.ses.fromEmail"),
-            defaultFromName = config.getString("ktor.aws.ses.fromName")
+            apiKey = config.getString("ktor.resend.apiKey"),
+            defaultFromEmail = config.getString("ktor.resend.fromEmail"),
+            defaultFromName = config.getString("ktor.resend.fromName")
         )
     }
 
@@ -178,7 +176,6 @@ val serviceModule = module {
             emailService = get(),
             emailLogRepository = get(),
             subscriberRepository = get(),
-            frontendUrl = config.getString("ktor.web.url"),
         )
     }
 }
