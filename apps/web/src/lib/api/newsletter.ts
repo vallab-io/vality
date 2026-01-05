@@ -17,6 +17,7 @@ export interface CreateNewsletterRequest {
   name: string;
   slug: string;
   description?: string;
+  timezone: string;
 }
 
 // 뉴스레터 생성

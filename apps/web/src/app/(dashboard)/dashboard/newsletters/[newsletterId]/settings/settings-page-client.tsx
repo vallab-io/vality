@@ -18,27 +18,7 @@ import { getNewsletterById, updateNewsletter } from "@/lib/api/newsletter";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/auth.store";
 import { useT } from "@/hooks/use-translation";
-
-// 주요 Timezone 목록 (IANA timezone format)
-const TIMEZONES = [
-  { value: "Asia/Seoul", label: "Asia/Seoul", offset: "GMT+09:00" },
-  { value: "Asia/Tokyo", label: "Asia/Tokyo", offset: "GMT+09:00" },
-  { value: "Asia/Shanghai", label: "Asia/Shanghai", offset: "GMT+08:00" },
-  { value: "Asia/Singapore", label: "Asia/Singapore", offset: "GMT+08:00" },
-  { value: "Asia/Hong_Kong", label: "Asia/Hong_Kong", offset: "GMT+08:00" },
-  { value: "Asia/Bangkok", label: "Asia/Bangkok", offset: "GMT+07:00" },
-  { value: "Asia/Kolkata", label: "Asia/Kolkata", offset: "GMT+05:30" },
-  { value: "Asia/Dubai", label: "Asia/Dubai", offset: "GMT+04:00" },
-  { value: "Europe/London", label: "Europe/London", offset: "GMT+00:00" },
-  { value: "Europe/Paris", label: "Europe/Paris", offset: "GMT+01:00" },
-  { value: "Europe/Berlin", label: "Europe/Berlin", offset: "GMT+01:00" },
-  { value: "America/New_York", label: "America/New_York", offset: "GMT-05:00" },
-  { value: "America/Chicago", label: "America/Chicago", offset: "GMT-06:00" },
-  { value: "America/Los_Angeles", label: "America/Los_Angeles", offset: "GMT-08:00" },
-  { value: "Pacific/Honolulu", label: "Pacific/Honolulu", offset: "GMT-10:00" },
-  { value: "Australia/Sydney", label: "Australia/Sydney", offset: "GMT+11:00" },
-  { value: "Pacific/Auckland", label: "Pacific/Auckland", offset: "GMT+13:00" },
-];
+import { TIMEZONES } from "@/lib/utils/timezone";
 
 export default function NewsletterSettingsPage() {
   const params = useParams();
@@ -52,7 +32,7 @@ export default function NewsletterSettingsPage() {
     name: "",
     slug: "",
     description: "",
-    timezone: "Asia/Seoul",
+    timezone: "",
   });
 
   // 뉴스레터 데이터 가져오기

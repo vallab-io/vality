@@ -14,6 +14,7 @@ import {
 } from "@/lib/api/public";
 import { getTranslation } from "@/lib/i18n/utils";
 import { getLocaleFromCookieServer } from "@/lib/i18n/utils-server";
+import { formatRelativeTime } from "@/lib/utils/date";
 
 interface ProfilePageProps {
   params: Promise<{ username: string }>;
@@ -57,11 +58,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     }
 
     const formatDate = (dateString: string) => {
-      return new Date(dateString).toLocaleDateString(locale === "ko" ? "ko-KR" : "en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
+      return formatRelativeTime(dateString, locale);
     };
 
   return (

@@ -7,11 +7,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { createNewsletter } from "@/lib/api/newsletter";
 import { getErrorMessage } from "@/lib/api/client";
 import { userAtom } from "@/stores/auth.store";
 import { useT } from "@/hooks/use-translation";
+import { useAtomValue as useAtom } from "jotai";
+import { localeAtom } from "@/stores/locale.store";
+import { TIMEZONES, getBrowserTimezone } from "@/lib/utils/timezone";
 
 interface NewsletterSetupFormProps {
   onComplete: () => void;
@@ -21,14 +31,23 @@ export function NewsletterSetupForm({
   onComplete,
 }: NewsletterSetupFormProps) {
   const t = useT();
-  const router = useRouter();
   const user = useAtomValue(userAtom);
   const [isLoading, setIsLoading] = useState(false);
   const [slugError, setSlugError] = useState<string | null>(null);
+  
+  // 브라우저 timezone으로 기본 timezone 설정
+  const defaultTimezone = (() => {
+    const browserTimezone = getBrowserTimezone();
+    // TIMEZONES에 있는 timezone인지 확인
+    const isValidTimezone = TIMEZONES.some(tz => tz.value === browserTimezone);
+    return isValidTimezone ? browserTimezone : "Asia/Seoul";
+  })();
+  
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
     description: "",
+    timezone: defaultTimezone,
   });
 
   // Slug 유효성 검증
@@ -95,6 +114,7 @@ export function NewsletterSetupForm({
         name: formData.name,
         slug: formData.slug,
         description: formData.description || undefined,
+        timezone: formData.timezone,
       });
 
       toast.success(t("onboarding.newsletterCreated"));
@@ -179,6 +199,37 @@ export function NewsletterSetupForm({
         />
       </div>
 
+      {/* Timezone 선택 */}
+      <div className="space-y-2">
+        <Label htmlFor="timezone">
+          {t("settings.timezone")} <span className="text-destructive">*</span>
+        </Label>
+        <Select
+          value={formData.timezone}
+          onValueChange={(value) => setFormData((prev) => ({ ...prev, timezone: value }))}
+          disabled={isLoading}
+        >
+          <SelectTrigger id="timezone" className="h-11">
+            <SelectValue placeholder={t("settings.timezoneSelect")} />
+          </SelectTrigger>
+          <SelectContent>
+            {TIMEZONES.map((tz) => (
+              <SelectItem key={tz.value} value={tz.value}>
+                <span className="flex items-center gap-2">
+                  <span>{tz.label}</span>
+                  <span className="text-muted-foreground text-xs">
+                    {tz.offset}
+                  </span>
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          {t("settings.timezoneHint")}
+        </p>
+      </div>
+
       {/* 제출 버튼 */}
       <Button
         type="submit"
@@ -188,6 +239,7 @@ export function NewsletterSetupForm({
           !formData.name ||
           !formData.slug ||
           formData.slug.length < 3 ||
+          !formData.timezone ||
           !!slugError
         }
       >

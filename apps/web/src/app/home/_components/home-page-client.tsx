@@ -8,6 +8,8 @@ import { getCurrentUser } from "@/lib/api/auth";
 import { getPublicIssues, type PublicIssue } from "@/lib/api/public";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/auth.store";
+import { localeAtom } from "@/stores/locale.store";
+import { formatRelativeTime } from "@/lib/utils/date";
 
 export default function HomePageClient() {
   const router = useRouter();
@@ -45,12 +47,9 @@ export default function HomePageClient() {
     loadData();
   }, [user, router]);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+  const locale = useAtomValue(localeAtom);
+  const formatDateLocal = (dateString: string) => {
+    return formatRelativeTime(dateString, locale);
   };
 
   if (isLoading) {
@@ -126,7 +125,7 @@ export default function HomePageClient() {
                       </Link>
                       <span className="text-muted-foreground">·</span>
                       <time className="text-sm text-muted-foreground">
-                        {formatDate(issue.publishedAt)}
+                        {formatDateLocal(issue.publishedAt)}
                       </time>
                     </div>
                     <Link

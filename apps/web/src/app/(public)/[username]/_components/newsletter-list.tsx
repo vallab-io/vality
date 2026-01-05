@@ -1,4 +1,6 @@
 import Link from "next/link";
+import type { Locale } from "@/lib/i18n/locales/types";
+import { formatRelativeTime } from "@/lib/utils/date";
 
 interface Newsletter {
   id: string;
@@ -11,9 +13,10 @@ interface Newsletter {
 interface NewsletterListProps {
   newsletters: Newsletter[];
   username: string;
+  locale: Locale;
 }
 
-export function NewsletterList({ newsletters, username }: NewsletterListProps) {
+export function NewsletterList({ newsletters, username, locale }: NewsletterListProps) {
   if (newsletters.length === 0) {
     return (
       <p className="py-8 text-center text-muted-foreground">
@@ -31,7 +34,7 @@ export function NewsletterList({ newsletters, username }: NewsletterListProps) {
           className="group flex flex-col rounded-xl border border-border bg-card p-5 transition-all hover:border-foreground/20 hover:shadow-sm"
         >
           <time className="text-xs font-medium text-muted-foreground">
-            {formatDate(newsletter.publishedAt)}
+            {formatRelativeTime(newsletter.publishedAt, locale)}
           </time>
           <h3 className="mt-2 font-semibold leading-snug group-hover:text-primary line-clamp-2">
             {newsletter.title}
@@ -48,11 +51,3 @@ export function NewsletterList({ newsletters, username }: NewsletterListProps) {
   );
 }
 
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(date);
-}
