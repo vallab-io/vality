@@ -14,6 +14,8 @@ import {
 } from "@/lib/api/public";
 import { getTranslation } from "@/lib/i18n/utils";
 import { getLocaleFromCookieServer } from "@/lib/i18n/utils-server";
+import { formatRelativeTime } from "@/lib/utils/date";
+import type { Locale } from "@/lib/i18n/locales/types";
 
 interface NewsletterPageProps {
   params: Promise<{ username: string; newsletterSlug: string }>;
@@ -46,7 +48,7 @@ export async function generateMetadata({
 
 export default async function NewsletterPage({ params }: NewsletterPageProps) {
   const { username, newsletterSlug } = await params;
-  const locale = await getLocaleFromCookieServer();
+  const locale = (await getLocaleFromCookieServer()) as Locale;
   const t = (key: string) => getTranslation(locale, key);
 
   try {
@@ -56,12 +58,8 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
       getPublicNewsletterIssues(username, newsletterSlug),
     ]);
 
-    const formatDate = (dateString: string) => {
-      return new Date(dateString).toLocaleDateString(locale === "ko" ? "ko-KR" : "en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
+    const formatDateLocal = (dateString: string) => {
+      return formatRelativeTime(dateString, locale);
     };
 
   return (
@@ -142,7 +140,7 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
                     )}
                     <div className="min-w-0 flex-1 sm:order-1">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <time>{formatDate(issue.publishedAt)}</time>
+                        <time>{formatDateLocal(issue.publishedAt)}</time>
                       </div>
                       <Link
                         href={`/@${username}/${newsletterSlug}/${issue.slug}`}
@@ -165,6 +163,8 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
     </>
     );
   } catch (error) {
+    console.error("NewsletterPage error:", error);
+    // API 호출 실패 시 404 반환
     notFound();
   }
 }

@@ -16,14 +16,17 @@ import { EmptyState } from "@/components/common";
 import { NewsletterIcon } from "@/components/icons";
 import { useAtomValue } from "jotai";
 import { userAtom, isAuthenticatedAtom, authLoadingAtom } from "@/stores/auth.store";
+import { localeAtom } from "@/stores/locale.store";
 import { getDashboardStats, getRecentIssues, type DashboardStats, type RecentIssue } from "@/lib/api/dashboard";
 import { useT } from "@/hooks/use-translation";
+import { formatRelativeTime } from "@/lib/utils/date";
 
 export default function DashboardPageClient() {
   const router = useRouter();
   const user = useAtomValue(userAtom);
   const isAuthenticated = useAtomValue(isAuthenticatedAtom);
   const authLoading = useAtomValue(authLoadingAtom);
+  const locale = useAtomValue(localeAtom);
   const t = useT();
 
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -138,7 +141,7 @@ export default function DashboardPageClient() {
           ) : recentIssues.length > 0 ? (
             <div className="space-y-3">
               {recentIssues.map((issue) => (
-                <IssueItem key={issue.id} issue={issue} t={t} />
+                <IssueItem key={issue.id} issue={issue} t={t} locale={locale} />
               ))}
             </div>
           ) : (
@@ -186,7 +189,7 @@ function StatsCard({ icon, title, value, description, className }: StatsCardProp
   );
 }
 
-function IssueItem({ issue, t }: { issue: RecentIssue; t: (key: string) => string }) {
+function IssueItem({ issue, t, locale }: { issue: RecentIssue; t: (key: string) => string; locale: "ko" | "en" }) {
   // Public 이슈 페이지 URL 생성
   const issueUrl = `/@${issue.ownerUsername}/${issue.newsletterSlug}/${issue.slug}`;
   
@@ -208,20 +211,11 @@ function IssueItem({ issue, t }: { issue: RecentIssue; t: (key: string) => strin
           <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
             <span>{issue.newsletterName}</span>
             {issue.publishedAt && (
-              <span>· {formatDateShort(issue.publishedAt)}</span>
+              <span>· {formatRelativeTime(issue.publishedAt, locale)}</span>
             )}
           </div>
         </div>
       </div>
     </Link>
   );
-}
-
-function formatDateShort(dateString: string): string {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(date);
 }

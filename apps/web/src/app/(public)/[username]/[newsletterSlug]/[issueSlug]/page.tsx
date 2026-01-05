@@ -12,6 +12,7 @@ import {
 } from "@/lib/api/public";
 import { getTranslation } from "@/lib/i18n/utils";
 import { getLocaleFromCookieServer } from "@/lib/i18n/utils-server";
+import { formatRelativeTime } from "@/lib/utils/date";
 
 interface IssuePageProps {
   params: Promise<{ username: string; newsletterSlug: string; issueSlug: string }>;
@@ -53,13 +54,9 @@ export default async function IssuePage({ params }: IssuePageProps) {
       getPublicUserProfile(username),
     ]);
 
-    const formatDate = (dateString: string): string => {
+    const formatDateLocal = (dateString: string): string => {
       if (!dateString) return "";
-      return new Intl.DateTimeFormat(locale === "ko" ? "ko-KR" : "en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }).format(new Date(dateString));
+      return formatRelativeTime(dateString, locale);
     };
 
     return (
@@ -82,7 +79,7 @@ export default async function IssuePage({ params }: IssuePageProps) {
         {/* Article Header */}
         <header className="mb-6 sm:mb-10">
           <time className="text-sm text-muted-foreground">
-            {formatDate(issue.publishedAt)}
+            {formatDateLocal(issue.publishedAt)}
           </time>
           <h1 className="mt-2 text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight">
             {issue.title || t("common.untitled")}
