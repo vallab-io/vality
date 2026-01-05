@@ -8,8 +8,10 @@ import { MarketingFooter } from "@/app/(marketing)/_components/marketing-footer"
 import { getAllPublicIssues, type PublicIssue } from "@/lib/api/public";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/auth.store";
+import { localeAtom } from "@/stores/locale.store";
 import { Heart } from "lucide-react";
 import { useT } from "@/hooks/use-translation";
+import { formatRelativeTime } from "@/lib/utils/date";
 
 export default function HomePageContent() {
   const user = useAtomValue(userAtom);
@@ -33,13 +35,9 @@ export default function HomePageContent() {
     });
   }, []);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+  const locale = useAtomValue(localeAtom);
+  const formatDateLocal = (dateString: string) => {
+    return formatRelativeTime(dateString, locale);
   };
 
   if (isLoading || isPending) {
@@ -144,7 +142,7 @@ export default function HomePageContent() {
 
                     {/* Footer */}
                     <div className="flex items-center gap-4 text-xs text-muted-foreground mt-3">
-                      <time>{formatDate(issue.publishedAt)}</time>
+                      <time>{formatDateLocal(issue.publishedAt)}</time>
                       <span>·</span>
                       <div className="flex items-center gap-1.5">
                         <Heart className="h-3.5 w-3.5" />

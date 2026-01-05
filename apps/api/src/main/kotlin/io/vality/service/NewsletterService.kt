@@ -27,6 +27,7 @@ class NewsletterService(
         name: String,
         slug: String,
         description: String? = null,
+        timezone: String,
     ): Newsletter {
         // Slug 중복 확인
         val existingNewsletter = newsletterRepository.findByOwnerIdAndSlug(ownerId, slug)
@@ -40,7 +41,7 @@ class NewsletterService(
             name = name,
             slug = slug,
             description = description,
-            timezone = "Asia/Seoul",
+            timezone = timezone,
             ownerId = ownerId,
             createdAt = now,
             updatedAt = now,

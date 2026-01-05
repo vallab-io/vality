@@ -375,6 +375,9 @@ export const ko: Translations = {
     enterUsername: "사용자명을 입력해주세요.",
     enterNewsletterName: "뉴스레터 이름을 입력해주세요.",
     enterSlug: "슬러그를 입력해주세요.",
+    country: "나라",
+    countrySelect: "나라를 선택하세요",
+    countryHint: "선택한 나라의 시간대가 자동으로 설정됩니다.",
   },
   editor: {
     title: "제목",

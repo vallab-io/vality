@@ -10,7 +10,7 @@ data class Newsletter(
     val name: String,
     val slug: String,
     val description: String? = null,
-    val timezone: String = "Asia/Seoul",
+    val timezone: String,
     val ownerId: String,
     @Contextual
     val createdAt: Instant,

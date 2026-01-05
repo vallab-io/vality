@@ -401,6 +401,9 @@ export interface Translations {
     enterUsername: string;
     enterNewsletterName: string;
     enterSlug: string;
+    country: string;
+    countrySelect: string;
+    countryHint: string;
   };
 
   // Issue Editor

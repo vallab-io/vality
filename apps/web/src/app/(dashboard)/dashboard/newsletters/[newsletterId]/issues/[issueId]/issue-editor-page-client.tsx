@@ -21,8 +21,10 @@ import { getNewsletterById, type Newsletter } from "@/lib/api/newsletter";
 import { getSubscribers } from "@/lib/api/subscriber";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/auth.store";
+import { localeAtom } from "@/stores/locale.store";
 import { ValityEditor } from "@/components/editor/vality-editor";
 import { useT } from "@/hooks/use-translation";
+import { formatRelativeTime } from "@/lib/utils/date";
 
 type PreviewMode = "archive" | "email";
 type SendOption = "now" | "scheduled";
@@ -516,11 +518,8 @@ function ArchivePreview({
   author: string;
   noTitle: string;
 }) {
-  const today = new Date().toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const locale = useAtomValue(localeAtom);
+  const today = formatRelativeTime(new Date().toISOString(), locale);
 
   return (
     <div className="w-full max-w-[360px] rounded-lg border border-border bg-background shadow-sm">
@@ -555,11 +554,8 @@ function EmailPreview({
   noTitle: string;
   emailPreview: string;
 }) {
-  const today = new Date().toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const locale = useAtomValue(localeAtom);
+  const today = formatRelativeTime(new Date().toISOString(), locale);
 
   return (
     <div className="w-full max-w-[360px] rounded-lg border border-border bg-background shadow-sm">

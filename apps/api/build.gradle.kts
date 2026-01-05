@@ -75,9 +75,8 @@ dependencies {
     implementation("io.ktor:ktor-server-core:2.3.12")
     implementation("io.ktor:ktor-server-double-receive:2.3.12")
     
-    // AWS SDK for Java v2
+    // AWS SDK for Java v2 (S3만 사용, SES는 Resend로 마이그레이션)
     implementation("software.amazon.awssdk:s3:2.17.106")
-    implementation("software.amazon.awssdk:ses:2.17.106")
     
     // Redis - Lettuce (비동기 지원)
     implementation("io.lettuce:lettuce-core:6.3.1.RELEASE")

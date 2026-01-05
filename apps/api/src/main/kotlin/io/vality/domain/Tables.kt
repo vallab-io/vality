@@ -63,7 +63,7 @@ object Newsletters : Table("newsletters") {
     val name = varchar("name", 255)
     val slug = varchar("slug", 255)
     val description = text("description").nullable()
-    val timezone = varchar("timezone", 50).default("Asia/Seoul")
+    val timezone = varchar("timezone", 50)
     val ownerId = varchar("owner_id", 24).references(Users.id, onDelete = ReferenceOption.CASCADE)
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")

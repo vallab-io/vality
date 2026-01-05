@@ -377,6 +377,9 @@ export const en: Translations = {
     enterUsername: "Please enter a username.",
     enterNewsletterName: "Please enter a newsletter name.",
     enterSlug: "Please enter a slug.",
+    country: "Country",
+    countrySelect: "Select country",
+    countryHint: "Timezone will be automatically set based on the selected country.",
   },
   editor: {
     title: "Title",

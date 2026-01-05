@@ -30,6 +30,9 @@ import {
 } from "@/lib/api/subscriber";
 import { useT } from "@/hooks/use-translation";
 import { useTopbarAction } from "../../../../_components/topbar-action-context";
+import { useAtomValue } from "jotai";
+import { localeAtom } from "@/stores/locale.store";
+import { formatRelativeTime } from "@/lib/utils/date";
 
 type SubscriberStatus = "all" | "active" | "pending" | "unsubscribed";
 
@@ -153,12 +156,9 @@ export default function SubscribersPageClient() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+  const locale = useAtomValue(localeAtom);
+  const formatDateLocal = (dateString: string) => {
+    return formatRelativeTime(dateString, locale);
   };
 
   return (
@@ -293,7 +293,7 @@ export default function SubscribersPageClient() {
                   </span>
                 </div>
                 <div className="col-span-3 text-muted-foreground">
-                  {formatDate(subscriber.subscribedAt)}
+                  {formatDateLocal(subscriber.subscribedAt)}
                 </div>
                 <div className="col-span-2 flex justify-end">
                   <Button

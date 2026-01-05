@@ -8,7 +8,6 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
-import software.amazon.awssdk.services.ses.SesClient
 
 val awsModule = module {
     // AWS S3 Client (vality-s3-user)
@@ -82,34 +81,6 @@ val awsModule = module {
             bucketName = bucketName,
             region = region,
         )
-    }
-
-    // AWS SES Client (vality-ses-user)
-    single<SesClient> {
-        val config = get<Config>()
-        val accessKeyId = config.getString("ktor.aws.ses.accessKeyId")
-        val secretAccessKey = config.getString("ktor.aws.ses.secretAccessKey")
-        val regionStr = config.getString("ktor.aws.region")
-        val region = Region.of(regionStr)
-
-        // AWS 자격 증명 설정 (SES 전용)
-        val credentialsProvider = if (accessKeyId.isNotEmpty() && secretAccessKey.isNotEmpty()) {
-            StaticCredentialsProvider.create(
-                AwsBasicCredentials.create(accessKeyId, secretAccessKey)
-            )
-        } else {
-            null // 환경 변수나 시스템 프로퍼티에서 자동으로 읽음
-        }
-
-        // SesClient 빌더
-        val clientBuilder = SesClient.builder()
-            .region(region)
-
-        credentialsProvider?.let {
-            clientBuilder.credentialsProvider(it)
-        }
-
-        clientBuilder.build()
     }
 }
 

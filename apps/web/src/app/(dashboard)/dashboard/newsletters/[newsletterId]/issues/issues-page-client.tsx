@@ -26,7 +26,9 @@ import { getIssues, deleteIssue, createIssue, type Issue } from "@/lib/api/issue
 import { getNewsletterById, type Newsletter } from "@/lib/api/newsletter";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/auth.store";
+import { localeAtom } from "@/stores/locale.store";
 import { useT } from "@/hooks/use-translation";
+import { formatRelativeTime } from "@/lib/utils/date";
 import { useTopbarAction } from "../../../../_components/topbar-action-context";
 
 type IssueStatus = "all" | "draft" | "published";
@@ -165,13 +167,10 @@ export default function IssuesPageClient() {
     }
   };
 
-  const formatDate = (dateString: string | null) => {
+  const locale = useAtomValue(localeAtom);
+  const formatDateLocal = (dateString: string | null) => {
     if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    return formatRelativeTime(dateString, locale);
   };
 
   // 공개 URL 생성
@@ -328,11 +327,11 @@ export default function IssuesPageClient() {
                     )}
                     <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
                       {issue.status === "PUBLISHED" && issue.publishedAt ? (
-                        <span>{t("issues.publishedAt")}: {formatDate(issue.publishedAt)}</span>
+                        <span>{t("issues.publishedAt")}: {formatDateLocal(issue.publishedAt)}</span>
                       ) : issue.scheduledAt ? (
-                        <span>{t("issues.scheduledAt")}: {formatDate(issue.scheduledAt)}</span>
+                        <span>{t("issues.scheduledAt")}: {formatDateLocal(issue.scheduledAt)}</span>
                       ) : (
-                        <span>{t("issues.createdAt")}: {formatDate(issue.createdAt)}</span>
+                        <span>{t("issues.createdAt")}: {formatDateLocal(issue.createdAt)}</span>
                       )}
                     </div>
                   </div>
