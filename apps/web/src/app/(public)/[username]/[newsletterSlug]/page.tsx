@@ -80,7 +80,7 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
           </Link>
           <h1 className="mt-4 text-2xl sm:text-3xl font-bold">{newsletter.name}</h1>
           {newsletter.description && (
-            <p className="mt-4 text-base sm:text-lg text-muted-foreground">
+            <p className="mt-4 text-base sm:text-lg text-muted-foreground whitespace-pre-wrap">
               {newsletter.description}
             </p>
           )}
