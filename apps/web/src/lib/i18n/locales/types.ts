@@ -451,6 +451,29 @@ export interface Translations {
     date: string;
     time: string;
     scheduledDateRequired: string;
+    // Slash Commands
+    slashHeading1: string;
+    slashHeading1Desc: string;
+    slashHeading2: string;
+    slashHeading2Desc: string;
+    slashHeading3: string;
+    slashHeading3Desc: string;
+    slashBulletList: string;
+    slashBulletListDesc: string;
+    slashNumberedList: string;
+    slashNumberedListDesc: string;
+    slashQuote: string;
+    slashQuoteDesc: string;
+    slashDivider: string;
+    slashDividerDesc: string;
+    slashImage: string;
+    slashImageDesc: string;
+    slashImageSaveFirst: string;
+    slashImageInvalidFormat: string;
+    slashImageTooLarge: string;
+    slashImageUploading: string;
+    slashImageUploaded: string;
+    slashImageUploadFailed: string;
   };
 
   // Embed Widget

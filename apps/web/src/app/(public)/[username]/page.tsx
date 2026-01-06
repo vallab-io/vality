@@ -75,7 +75,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           <h1 className="text-xl sm:text-2xl font-semibold">{user.name || user.username}</h1>
           <p className="mt-1 text-sm text-muted-foreground">@{user.username}</p>
           {user.bio && (
-            <p className="mt-4 max-w-lg text-sm sm:text-base text-muted-foreground">{user.bio}</p>
+            <p className="mt-4 max-w-lg text-sm sm:text-base text-muted-foreground whitespace-pre-wrap">{user.bio}</p>
           )}
         </section>
 
@@ -94,7 +94,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                       {newsletter.name}
                     </h3>
                   </Link>
-                  <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
+                  <p className="mt-2 text-sm text-muted-foreground line-clamp-2 whitespace-pre-wrap">
                     {newsletter.description}
                   </p>
                   <p className="mt-3 text-xs text-muted-foreground">
