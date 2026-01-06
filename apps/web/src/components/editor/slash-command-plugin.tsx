@@ -12,7 +12,7 @@ import {
 import { $createHeadingNode } from "@lexical/rich-text";
 import { $createListNode, $createListItemNode } from "@lexical/list";
 import { $createQuoteNode } from "@lexical/rich-text";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { $getRoot, COMMAND_PRIORITY_LOW, KEY_ENTER_COMMAND } from "lexical";
 import {
   Heading1,
@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { $createImageNode } from "./image-node";
 import { uploadIssueImage } from "@/lib/api/upload";
 import { toast } from "sonner";
+import { useT } from "@/hooks/use-translation";
 
 interface CommandItem {
   title: string;
@@ -43,16 +44,17 @@ interface SlashCommandPluginProps {
 
 export function SlashCommandPlugin({ issueId }: SlashCommandPluginProps = {}) {
   const [editor] = useLexicalComposerContext();
+  const t = useT();
   const [showMenu, setShowMenu] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const [query, setQuery] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const allCommands: CommandItem[] = [
+  const allCommands: CommandItem[] = useMemo(() => [
     {
-      title: "제목 1",
-      description: "큰 제목",
+      title: t("editor.slashHeading1"),
+      description: t("editor.slashHeading1Desc"),
       icon: Heading1,
       command: () => {
         editor.update(() => {
@@ -73,8 +75,8 @@ export function SlashCommandPlugin({ issueId }: SlashCommandPluginProps = {}) {
       },
     },
     {
-      title: "제목 2",
-      description: "중간 제목",
+      title: t("editor.slashHeading2"),
+      description: t("editor.slashHeading2Desc"),
       icon: Heading2,
       command: () => {
         editor.update(() => {
@@ -95,8 +97,8 @@ export function SlashCommandPlugin({ issueId }: SlashCommandPluginProps = {}) {
       },
     },
     {
-      title: "제목 3",
-      description: "작은 제목",
+      title: t("editor.slashHeading3"),
+      description: t("editor.slashHeading3Desc"),
       icon: Heading3,
       command: () => {
         editor.update(() => {
@@ -117,8 +119,8 @@ export function SlashCommandPlugin({ issueId }: SlashCommandPluginProps = {}) {
       },
     },
     {
-      title: "글머리 기호",
-      description: "글머리 기호 목록",
+      title: t("editor.slashBulletList"),
+      description: t("editor.slashBulletListDesc"),
       icon: List,
       command: () => {
         editor.update(() => {
@@ -141,8 +143,8 @@ export function SlashCommandPlugin({ issueId }: SlashCommandPluginProps = {}) {
       },
     },
     {
-      title: "번호 매기기",
-      description: "번호 매기기 목록",
+      title: t("editor.slashNumberedList"),
+      description: t("editor.slashNumberedListDesc"),
       icon: ListOrdered,
       command: () => {
         editor.update(() => {
@@ -165,8 +167,8 @@ export function SlashCommandPlugin({ issueId }: SlashCommandPluginProps = {}) {
       },
     },
     {
-      title: "인용",
-      description: "인용 블록",
+      title: t("editor.slashQuote"),
+      description: t("editor.slashQuoteDesc"),
       icon: Quote,
       command: () => {
         editor.update(() => {
@@ -187,8 +189,8 @@ export function SlashCommandPlugin({ issueId }: SlashCommandPluginProps = {}) {
       },
     },
     {
-      title: "구분선",
-      description: "수평선",
+      title: t("editor.slashDivider"),
+      description: t("editor.slashDividerDesc"),
       icon: Minus,
       command: () => {
         editor.update(() => {
@@ -213,8 +215,8 @@ export function SlashCommandPlugin({ issueId }: SlashCommandPluginProps = {}) {
       },
     },
     {
-      title: "이미지",
-      description: "이미지 삽입",
+      title: t("editor.slashImage"),
+      description: t("editor.slashImageDesc"),
       icon: ImageIcon,
       command: () => {
         setShowMenu(false);
@@ -222,7 +224,7 @@ export function SlashCommandPlugin({ issueId }: SlashCommandPluginProps = {}) {
         
         // issueId가 없으면 에러 메시지
         if (!issueId) {
-          toast.error("이미지 업로드를 위해서는 먼저 이슈를 저장해주세요.");
+          toast.error(t("editor.slashImageSaveFirst"));
           return;
         }
         
@@ -243,28 +245,28 @@ export function SlashCommandPlugin({ issueId }: SlashCommandPluginProps = {}) {
           // 파일 검증
           const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
           if (!validTypes.includes(file.type)) {
-            toast.error("JPG, PNG, GIF, WEBP 형식만 업로드 가능합니다.");
+            toast.error(t("editor.slashImageInvalidFormat"));
             document.body.removeChild(fileInput);
             return;
           }
 
           const maxSize = 5 * 1024 * 1024; // 5MB
           if (file.size > maxSize) {
-            toast.error("이미지 크기는 5MB 이하여야 합니다.");
+            toast.error(t("editor.slashImageTooLarge"));
             document.body.removeChild(fileInput);
             return;
           }
 
           try {
             // 업로드 시작 토스트
-            const uploadToast = toast.loading("이미지 업로드 중...");
+            const uploadToast = toast.loading(t("editor.slashImageUploading"));
 
             // 이미지 업로드
             const imageUrl = await uploadIssueImage(issueId, file);
 
             // 업로드 완료 토스트
             toast.dismiss(uploadToast);
-            toast.success("이미지가 업로드되었습니다.");
+            toast.success(t("editor.slashImageUploaded"));
 
             // 에디터에 이미지 삽입
             editor.update(() => {
@@ -289,7 +291,7 @@ export function SlashCommandPlugin({ issueId }: SlashCommandPluginProps = {}) {
             });
           } catch (error: any) {
             console.error("Image upload error:", error);
-            toast.error(error.message || "이미지 업로드에 실패했습니다.");
+            toast.error(error.message || t("editor.slashImageUploadFailed"));
           } finally {
             // 파일 입력 제거
             document.body.removeChild(fileInput);
@@ -303,7 +305,7 @@ export function SlashCommandPlugin({ issueId }: SlashCommandPluginProps = {}) {
         fileInput.click();
       },
     },
-  ];
+  ], [editor, issueId, t]);
 
   // 쿼리에 따라 명령어 필터링
   const filteredCommands = query
