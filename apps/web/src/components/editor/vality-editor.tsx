@@ -78,107 +78,49 @@ function InitialContentPlugin({content}: { content: string }) {
   useEffect(() => {
     if (!isInitialized && content) {
       editor.update(() => {
-        const parser = new DOMParser();
-        const dom = parser.parseFromString(content, "text/html");
-        
-        // img 태그를 찾아서 ImageNode로 변환
-        const images = dom.querySelectorAll("img");
-        if (images.length > 0) {
-          // 이미지가 있으면 DOM을 수정하여 ImageNode로 변환
-          images.forEach((img) => {
-            const src = img.getAttribute("src");
-            const alt = img.getAttribute("alt") || "";
-            const width = img.getAttribute("width") ? parseInt(img.getAttribute("width")!) : undefined;
-            const height = img.getAttribute("height") ? parseInt(img.getAttribute("height")!) : undefined;
-            
-            if (src) {
-              // img 태그를 data-lexical-image 속성을 가진 span으로 변환
-              const span = document.createElement("span");
-              span.setAttribute("data-lexical-image", "true");
-              span.setAttribute("data-src", src);
-              span.setAttribute("data-alt", alt);
-              if (width) span.setAttribute("data-width", width.toString());
-              if (height) span.setAttribute("data-height", height.toString());
-              img.parentNode?.replaceChild(span, img);
-            }
-          });
-        }
-        
-        const nodes = $generateNodesFromDOM(editor, dom);
         const root = $getRoot();
         root.clear();
         
-        // data-lexical-image 속성을 가진 span을 ImageNode로 변환
-        const processedNodes: any[] = [];
-        for (const node of nodes) {
-          if (node.getType() === "text") {
-            const textNode = node as any;
-            const textContent = textNode.getTextContent();
-            // HTML에서 이미지 추출
-            if (textContent.includes("data-lexical-image")) {
-              const imgRegex = /data-src="([^"]+)"/g;
-              let match;
-              while ((match = imgRegex.exec(textContent)) !== null) {
-                const src = match[1];
-                const altMatch = textContent.match(/data-alt="([^"]*)"/);
-                const alt = altMatch ? altMatch[1] : "";
-                const widthMatch = textContent.match(/data-width="(\d+)"/);
-                const heightMatch = textContent.match(/data-height="(\d+)"/);
-                const width = widthMatch ? parseInt(widthMatch[1]) : undefined;
-                const height = heightMatch ? parseInt(heightMatch[1]) : undefined;
-                processedNodes.push($createImageNode(src, alt, width, height));
-                processedNodes.push($createParagraphNode());
-              }
-            } else {
-              processedNodes.push(node);
-            }
-          } else {
-            processedNodes.push(node);
-          }
-        }
+        const parser = new DOMParser();
+        const finalNodes: any[] = [];
         
-        // 이미지가 HTML에 직접 포함된 경우 처리
-        if (content.includes("<img")) {
-          const imgRegex = /<img[^>]+src="([^"]+)"[^>]*>/g;
-          let match;
-          const imageNodes: any[] = [];
-          while ((match = imgRegex.exec(content)) !== null) {
-            const src = match[1];
-            const altMatch = content.substring(match.index).match(/alt="([^"]*)"/);
-            const alt = altMatch ? altMatch[1] : "";
-            const widthMatch = content.substring(match.index).match(/width="(\d+)"/);
-            const heightMatch = content.substring(match.index).match(/height="(\d+)"/);
-            const width = widthMatch ? parseInt(widthMatch[1]) : undefined;
-            const height = heightMatch ? parseInt(heightMatch[1]) : undefined;
-            imageNodes.push($createImageNode(src, alt, width, height));
+        // HTML을 <hr>과 <img> 태그로 분할
+        const htmlParts = content.split(/(<hr[^>]*>|<img[^>]+>)/gi);
+        
+        for (const part of htmlParts) {
+          if (!part.trim()) continue;
+          
+          // <hr> 태그 처리
+          if (part.match(/^<hr/i)) {
+            finalNodes.push(new DividerNode());
+            continue;
           }
           
-          if (imageNodes.length > 0) {
-            // 이미지가 있으면 이미지 노드와 기존 노드를 병합
-            const finalNodes: any[] = [];
-            let contentIndex = 0;
+          // <img> 태그 처리
+          if (part.match(/^<img/i)) {
+            const srcMatch = part.match(/src="([^"]+)"/);
+            const altMatch = part.match(/alt="([^"]*)"/);
+            const widthMatch = part.match(/width="(\d+)"/);
+            const heightMatch = part.match(/height="(\d+)"/);
             
-            for (const imageNode of imageNodes) {
-              // 이미지 앞의 텍스트 노드 추가
-              if (contentIndex < processedNodes.length) {
-                finalNodes.push(...processedNodes.slice(contentIndex));
-              }
-              finalNodes.push(imageNode);
-              finalNodes.push($createParagraphNode());
-              contentIndex++;
+            if (srcMatch) {
+              const src = srcMatch[1];
+              const alt = altMatch ? altMatch[1] : "";
+              const width = widthMatch ? parseInt(widthMatch[1]) : undefined;
+              const height = heightMatch ? parseInt(heightMatch[1]) : undefined;
+              finalNodes.push($createImageNode(src, alt, width, height));
             }
-            
-            // 남은 노드 추가
-            if (contentIndex < processedNodes.length) {
-              finalNodes.push(...processedNodes.slice(contentIndex));
-            }
-            
-            root.append(...finalNodes);
-          } else {
-            root.append(...processedNodes);
+            continue;
           }
-        } else {
-          root.append(...processedNodes);
+          
+          // 일반 HTML 콘텐츠 처리
+          const dom = parser.parseFromString(part, "text/html");
+          const domNodes = $generateNodesFromDOM(editor, dom);
+          finalNodes.push(...domNodes);
+        }
+        
+        if (finalNodes.length > 0) {
+          root.append(...finalNodes);
         }
       });
       setIsInitialized(true);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,7 @@ export default function IssuePage() {
   });
 
   const [publishSlug, setPublishSlug] = useState("");
+  const [issueStatus, setIssueStatus] = useState<"DRAFT" | "SCHEDULED" | "PUBLISHED" | "ARCHIVED" | null>(null);
 
   // 뉴스레터 및 이슈 정보 로드
   useEffect(() => {
@@ -81,6 +82,10 @@ export default function IssuePage() {
             content: issueData.content,
           });
           setPublishSlug(issueData.slug);
+          setIssueStatus(issueData.status);
+        } else {
+          // 새 이슈는 기본적으로 DRAFT
+          setIssueStatus("DRAFT");
         }
       } catch (error: any) {
         console.error("Failed to load data:", error);
@@ -110,15 +115,7 @@ export default function IssuePage() {
     return cleaned || `issue-${Date.now()}`;
   };
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, title: e.target.value });
-  };
-
-  const handleContentChange = (html: string) => {
-    setFormData({ ...formData, content: html });
-  };
-
-  const handleSaveDraft = async () => {
+  const handleSaveDraft = useCallback(async () => {
     if (!formData.content.trim() || formData.content === "<p></p>") {
       toast.error(t("editor.contentRequired"));
       return;
@@ -154,6 +151,122 @@ export default function IssuePage() {
     } finally {
       setIsSaving(false);
     }
+  }, [formData, issueId, newsletterId, publishSlug, router, t]);
+
+  // Command/Ctrl+S 키보드 단축키로 draft 저장
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Command+S (Mac) 또는 Ctrl+S (Windows/Linux)
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault();
+        
+        // status가 DRAFT일 때만 저장
+        if (issueStatus === "DRAFT" && !isSaving && !isPublishing) {
+          handleSaveDraft();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [issueStatus, isSaving, isPublishing, handleSaveDraft]);
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, title: e.target.value });
+  };
+
+  const handleContentChange = (html: string) => {
+    setFormData({ ...formData, content: html });
+  };
+
+  // 마지막 <br> 태그들과 빈 <p><br></p> 태그들을 제거하는 함수
+  const removeTrailingBrTags = (html: string): string => {
+    if (!html || !html.trim()) return html;
+    
+    // HTML을 파싱하여 마지막 <br> 태그들을 제거
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    const body = doc.body;
+    
+    // <p> 태그가 <br>만 포함하고 있는지 확인하는 함수
+    const isEmptyParagraph = (pElement: HTMLElement): boolean => {
+      if (pElement.tagName !== "P") return false;
+      
+      const children = Array.from(pElement.childNodes);
+      // 모든 자식이 <br> 태그이거나 공백 텍스트인지 확인
+      return children.every((child) => {
+        if (child.nodeType === Node.TEXT_NODE) {
+          return !child.textContent?.trim();
+        }
+        if (child.nodeType === Node.ELEMENT_NODE) {
+          return (child as HTMLElement).tagName === "BR";
+        }
+        return false;
+      });
+    };
+    
+    // 재귀적으로 마지막 <br> 태그들을 제거하는 함수
+    const removeBrFromElement = (element: HTMLElement): void => {
+      // 자식 요소가 있으면 재귀적으로 처리
+      if (element.children.length > 0) {
+        const lastChild = element.lastElementChild;
+        if (lastChild) {
+          removeBrFromElement(lastChild as HTMLElement);
+        }
+      }
+      
+      // 마지막 자식 노드들을 순회하면서 <br> 태그와 빈 <p><br></p> 제거
+      while (element.lastChild) {
+        const lastChild = element.lastChild;
+        
+        // 텍스트 노드인 경우 공백만 있으면 제거
+        if (lastChild.nodeType === Node.TEXT_NODE) {
+          const text = lastChild.textContent?.trim();
+          if (!text) {
+            element.removeChild(lastChild);
+            continue;
+          }
+          break; // 실제 텍스트가 있으면 중단
+        }
+        
+        // 요소 노드인 경우
+        if (lastChild.nodeType === Node.ELEMENT_NODE) {
+          const childElement = lastChild as HTMLElement;
+          
+          // <br> 또는 <br/> 태그인 경우 제거
+          if (childElement.tagName === "BR") {
+            element.removeChild(lastChild);
+            continue;
+          }
+          
+          // <p><br></p> 같은 빈 paragraph 태그 제거
+          if (isEmptyParagraph(childElement)) {
+            element.removeChild(lastChild);
+            continue;
+          }
+          
+          // 빈 <p> 태그인 경우 제거
+          if (childElement.tagName === "P" && !childElement.textContent?.trim() && childElement.children.length === 0) {
+            element.removeChild(lastChild);
+            continue;
+          }
+          
+          // 실제 콘텐츠가 있는 요소면 중단
+          if (childElement.textContent?.trim() || childElement.children.length > 0) {
+            break;
+          }
+        }
+        
+        break;
+      }
+    };
+    
+    // body에서 마지막 <br> 태그들 제거
+    removeBrFromElement(body);
+    
+    return body.innerHTML;
   };
 
   const openPublishDialog = () => {
@@ -197,11 +310,14 @@ export default function IssuePage() {
         scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
       }
 
+      // 발행 전에 마지막 <br> 태그들 제거
+      const cleanedContent = removeTrailingBrTags(formData.content);
+
       if (issueId && issueId !== "new") {
         const request: UpdateIssueRequest = {
           title: formData.title.trim(),
           slug: publishSlug.trim(),
-          content: formData.content,
+          content: cleanedContent,
           status: status,
           scheduledAt: scheduledAt,
         };
@@ -210,7 +326,7 @@ export default function IssuePage() {
         const request: CreateIssueRequest = {
           title: formData.title.trim(),
           slug: publishSlug.trim(),
-          content: formData.content,
+          content: cleanedContent,
           status: status,
           scheduledAt: scheduledAt,
         };
