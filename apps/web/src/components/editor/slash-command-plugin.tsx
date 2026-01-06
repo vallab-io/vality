@@ -331,21 +331,67 @@ export function SlashCommandPlugin({ issueId }: SlashCommandPluginProps = {}) {
           const textContent = paragraph.getTextContent();
           const anchorOffset = selection.anchor.offset;
 
-          // '/' 입력 감지
-          if (textContent[anchorOffset - 1] === "/" && anchorOffset === textContent.indexOf("/") + 1) {
-            const domSelection = window.getSelection();
-            if (domSelection && domSelection.rangeCount > 0) {
+          // 커서 위치 계산 함수
+          const calculateMenuPosition = () => {
+            requestAnimationFrame(() => {
+              const domSelection = window.getSelection();
+              if (!domSelection || domSelection.rangeCount === 0) return;
+              
               const range = domSelection.getRangeAt(0);
-              const rect = range.getBoundingClientRect();
+              
+              // 커서 위치를 정확히 계산하기 위해 collapsed range 사용
+              const clonedRange = range.cloneRange();
+              clonedRange.collapse(true);
+              
+              const rect = clonedRange.getBoundingClientRect();
+              
+              // 뷰포트 기준 위치 (fixed positioning 사용)
+              const viewportTop = rect.bottom;
+              const viewportLeft = rect.left;
+              
+              // 메뉴 크기 추정 (실제로는 메뉴가 렌더링된 후에 정확히 알 수 있음)
+              const menuHeight = 300; // max-h-[300px]
+              const menuWidth = 280; // min-w-[280px]
+              
+              // 화면 밖으로 나가지 않도록 조정
+              const windowHeight = window.innerHeight;
+              const windowWidth = window.innerWidth;
+              
+              let finalTop = viewportTop + 5;
+              let finalLeft = viewportLeft;
+              
+              // 하단이 화면 밖으로 나가면 위에 표시
+              if (finalTop + menuHeight > windowHeight) {
+                finalTop = rect.top - menuHeight - 5;
+                // 위에도 공간이 없으면 화면 중앙에 표시
+                if (finalTop < 0) {
+                  finalTop = Math.max(10, (windowHeight - menuHeight) / 2);
+                }
+              }
+              
+              // 우측이 화면 밖으로 나가면 조정
+              if (finalLeft + menuWidth > windowWidth) {
+                finalLeft = windowWidth - menuWidth - 10;
+              }
+              
+              // 좌측이 화면 밖으로 나가면 조정
+              if (finalLeft < 0) {
+                finalLeft = 10;
+              }
               
               setMenuPosition({
-                top: rect.bottom + window.scrollY + 5,
-                left: rect.left + window.scrollX,
+                top: finalTop,
+                left: finalLeft,
               });
-              setShowMenu(true);
-              setSelectedIndex(0);
-              setQuery("");
-            }
+            });
+          };
+          
+          // '/' 입력 감지
+          if (textContent[anchorOffset - 1] === "/" && anchorOffset === textContent.indexOf("/") + 1) {
+            calculateMenuPosition();
+            setShowMenu(true);
+            setSelectedIndex(0);
+            setQuery("");
           } 
           // '/' 이후 텍스트 입력 감지 (검색)
           else if (textContent.includes("/")) {
@@ -355,17 +401,8 @@ export function SlashCommandPlugin({ issueId }: SlashCommandPluginProps = {}) {
               setQuery(queryText);
               
               if (queryText.length > 0 || anchorOffset === slashIndex + 1) {
-                const domSelection = window.getSelection();
-                if (domSelection && domSelection.rangeCount > 0) {
-                  const range = domSelection.getRangeAt(0);
-                  const rect = range.getBoundingClientRect();
-                  
-                  setMenuPosition({
-                    top: rect.bottom + window.scrollY + 5,
-                    left: rect.left + window.scrollX,
-                  });
-                  setShowMenu(true);
-                }
+                calculateMenuPosition();
+                setShowMenu(true);
               }
             } else {
               setShowMenu(false);
@@ -386,20 +423,43 @@ export function SlashCommandPlugin({ issueId }: SlashCommandPluginProps = {}) {
     if (!menuRef.current) return;
 
     const menuContainer = menuRef.current;
-    const buttons = menuContainer.querySelectorAll("button");
+    // 스크롤 가능한 내부 컨테이너 찾기 (overflow-y-auto 클래스를 가진 첫 번째 자식)
+    let scrollContainer: HTMLElement | null = null;
+    for (const child of Array.from(menuContainer.children)) {
+      const childElement = child as HTMLElement;
+      const computedStyle = getComputedStyle(childElement);
+      if (computedStyle.overflowY === "auto" || computedStyle.overflowY === "scroll") {
+        scrollContainer = childElement;
+        break;
+      }
+    }
+    
+    // 스크롤 컨테이너를 찾지 못하면 메뉴 컨테이너 자체 사용
+    if (!scrollContainer) {
+      scrollContainer = menuContainer;
+    }
+    
+    const buttons = scrollContainer.querySelectorAll("button");
     const selectedButton = buttons[index] as HTMLElement;
     if (!selectedButton) return;
 
-    const containerRect = menuContainer.getBoundingClientRect();
-    const buttonRect = selectedButton.getBoundingClientRect();
-
+    // 버튼의 상대적 위치 계산 (스크롤 컨테이너의 첫 번째 자식 기준)
+    const buttonOffsetTop = selectedButton.offsetTop;
+    const containerScrollTop = scrollContainer.scrollTop;
+    const containerHeight = scrollContainer.clientHeight;
+    const buttonHeight = selectedButton.offsetHeight;
+    
+    // 버튼이 보이는 영역 밖에 있는지 확인
+    const buttonTop = buttonOffsetTop - containerScrollTop;
+    const buttonBottom = buttonTop + buttonHeight;
+    
     // 버튼이 컨테이너 상단 밖에 있으면 스크롤
-    if (buttonRect.top < containerRect.top) {
-      menuContainer.scrollTop = selectedButton.offsetTop - menuContainer.offsetTop;
+    if (buttonTop < 0) {
+      scrollContainer.scrollTop = buttonOffsetTop - 10; // 상단 여백
     }
     // 버튼이 컨테이너 하단 밖에 있으면 스크롤
-    else if (buttonRect.bottom > containerRect.bottom) {
-      menuContainer.scrollTop = selectedButton.offsetTop - menuContainer.offsetTop - (containerRect.height - buttonRect.height);
+    else if (buttonBottom > containerHeight) {
+      scrollContainer.scrollTop = buttonOffsetTop - containerHeight + buttonHeight + 10; // 하단 여백
     }
   };
 
@@ -428,15 +488,23 @@ export function SlashCommandPlugin({ issueId }: SlashCommandPluginProps = {}) {
         e.stopPropagation();
         const newIndex = selectedIndex > 0 ? selectedIndex - 1 : filteredCommands.length - 1;
         setSelectedIndex(newIndex);
-        // 스크롤 이동
-        setTimeout(() => scrollToSelected(newIndex), 0);
+        // 스크롤 이동 (다음 프레임에서 실행하여 DOM 업데이트 대기)
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            scrollToSelected(newIndex);
+          });
+        });
       } else if (e.key === "ArrowDown") {
         e.preventDefault();
         e.stopPropagation();
         const newIndex = selectedIndex < filteredCommands.length - 1 ? selectedIndex + 1 : 0;
         setSelectedIndex(newIndex);
-        // 스크롤 이동
-        setTimeout(() => scrollToSelected(newIndex), 0);
+        // 스크롤 이동 (다음 프레임에서 실행하여 DOM 업데이트 대기)
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            scrollToSelected(newIndex);
+          });
+        });
       } else if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
@@ -452,17 +520,104 @@ export function SlashCommandPlugin({ issueId }: SlashCommandPluginProps = {}) {
     };
   }, [editor, showMenu, selectedIndex, filteredCommands]);
 
+  // selectedIndex가 변경될 때마다 스크롤
+  useEffect(() => {
+    if (showMenu && filteredCommands.length > 0) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollToSelected(selectedIndex);
+        });
+      });
+    }
+  }, [showMenu, selectedIndex, filteredCommands.length]);
+
+  // 메뉴가 표시될 때마다 위치 재계산
+  useEffect(() => {
+    if (showMenu) {
+      const updatePosition = () => {
+        const domSelection = window.getSelection();
+        if (!domSelection || domSelection.rangeCount === 0) return;
+        
+        const range = domSelection.getRangeAt(0);
+        const clonedRange = range.cloneRange();
+        clonedRange.collapse(true);
+        
+        const rect = clonedRange.getBoundingClientRect();
+        
+        // 메뉴 크기 (실제 렌더링된 크기)
+        const menuElement = menuRef.current;
+        const menuHeight = menuElement?.offsetHeight || 300;
+        const menuWidth = menuElement?.offsetWidth || 280;
+        
+        // 뷰포트 기준 위치
+        let finalTop = rect.bottom + 5;
+        let finalLeft = rect.left;
+        
+        // 화면 밖으로 나가지 않도록 조정
+        const windowHeight = window.innerHeight;
+        const windowWidth = window.innerWidth;
+        
+        // 하단이 화면 밖으로 나가면 위에 표시
+        if (finalTop + menuHeight > windowHeight) {
+          finalTop = rect.top - menuHeight - 5;
+          // 위에도 공간이 없으면 화면 중앙에 표시
+          if (finalTop < 0) {
+            finalTop = Math.max(10, (windowHeight - menuHeight) / 2);
+          }
+        }
+        
+        // 우측이 화면 밖으로 나가면 조정
+        if (finalLeft + menuWidth > windowWidth) {
+          finalLeft = windowWidth - menuWidth - 10;
+        }
+        
+        // 좌측이 화면 밖으로 나가면 조정
+        if (finalLeft < 0) {
+          finalLeft = 10;
+        }
+        
+        setMenuPosition({
+          top: finalTop,
+          left: finalLeft,
+        });
+      };
+      
+      // 즉시 위치 계산
+      requestAnimationFrame(updatePosition);
+      
+      // 스크롤 이벤트 리스너 추가
+      const handleScroll = () => {
+        updatePosition();
+      };
+      
+      window.addEventListener("scroll", handleScroll, true);
+      const editorElement = document.querySelector('[contenteditable="true"]');
+      const editorContainer = editorElement?.closest('.relative') || editorElement?.parentElement;
+      if (editorContainer) {
+        editorContainer.addEventListener("scroll", handleScroll, true);
+      }
+      
+      return () => {
+        window.removeEventListener("scroll", handleScroll, true);
+        if (editorContainer) {
+          editorContainer.removeEventListener("scroll", handleScroll, true);
+        }
+      };
+    }
+  }, [showMenu]);
+
   if (!showMenu || filteredCommands.length === 0) return null;
 
   return (
     <div
+      ref={menuRef}
       className="fixed z-50 min-w-[280px] overflow-hidden rounded-lg border border-border bg-background shadow-lg"
       style={{
         top: `${menuPosition.top}px`,
         left: `${menuPosition.left}px`,
       }}
     >
-      <div ref={menuRef} className="max-h-[300px] overflow-y-auto p-1">
+      <div className="max-h-[300px] overflow-y-auto p-1">
         {filteredCommands.map((item, index) => {
           const Icon = item.icon;
           return (
