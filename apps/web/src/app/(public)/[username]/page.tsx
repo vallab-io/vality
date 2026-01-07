@@ -146,7 +146,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                       </Link>
                     )}
                     <div className="min-w-0 flex-1 sm:order-1">
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                         <span className="rounded bg-muted px-1.5 py-0.5">
                           {issue.newsletterName}
                         </span>
@@ -156,13 +156,15 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                       <Link
                         href={`/@${username}/${issue.newsletterSlug}/${issue.slug}`}
                       >
-                        <h3 className="mt-2 font-semibold group-hover:underline">
+                        <h3 className="mt-2 text-lg font-semibold group-hover:underline leading-snug">
                           {issue.title}
                         </h3>
                       </Link>
-                      <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
-                        {issue.excerpt}
-                      </p>
+                      {issue.excerpt && (
+                        <p className="mt-2 text-base text-muted-foreground line-clamp-2 leading-relaxed">
+                          {issue.excerpt}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </article>
