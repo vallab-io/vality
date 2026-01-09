@@ -112,7 +112,7 @@ export function HomeSidebar() {
         </Link>
       </nav>
 
-      {/* Footer - About & Sign In/Out */}
+      {/* Footer - About & Sign Out */}
       <div className="border-t border-border px-3 py-4 space-y-2">
         <Link
           href="/about"
@@ -121,7 +121,7 @@ export function HomeSidebar() {
         >
           {t("sidebar.about")}
         </Link>
-        {isAuthenticated ? (
+        {isAuthenticated && (
           <Button
             variant="ghost"
             size="sm"
@@ -133,14 +133,6 @@ export function HomeSidebar() {
           >
             {t("sidebar.logout")}
           </Button>
-        ) : (
-          <Link
-            href="/login"
-            onClick={onItemClick}
-            className="block text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {t("sidebar.signIn")}
-          </Link>
         )}
       </div>
     </>
