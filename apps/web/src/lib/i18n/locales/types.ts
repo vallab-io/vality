@@ -100,6 +100,7 @@ export interface Translations {
     heroTitle2: string;
     heroDescription: string;
     valueTitle: string;
+    valueSubtitle: string;
     valueCard1Title: string;
     valueCard1Desc: string;
     valueCard2Title: string;
@@ -107,6 +108,7 @@ export interface Translations {
     valueCard3Title: string;
     valueCard3Desc: string;
     featuresTitle: string;
+    featuresSubtitle: string;
     feature1Title: string;
     feature1Desc: string;
     feature2Title: string;

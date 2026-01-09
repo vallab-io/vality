@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/hooks/use-translation";
+import { cn } from "@/lib/utils";
 
 export function AboutPageClient() {
   const t = useT();
@@ -10,27 +11,30 @@ export function AboutPageClient() {
   return (
     <main>
       {/* Hero Section */}
-      <section className="mx-auto max-w-5xl px-4 sm:px-6 py-16 sm:py-24 md:py-32">
+      <section className="mx-auto max-w-6xl px-4 sm:px-6 py-20 sm:py-28 md:py-36">
         <div className="text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight tracking-tight">
+          <div className="inline-flex items-center justify-center mb-6">
+            <span className="text-5xl sm:text-6xl">🚀</span>
+          </div>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight tracking-tight">
             {t("about.heroTitle1")}
             <br />
             <span className="bg-gradient-to-r from-primary to-[#38BDF8] bg-clip-text text-transparent">
               {t("about.heroTitle2")}
             </span>
           </h1>
-          <p className="mt-8 text-lg leading-relaxed text-muted-foreground max-w-2xl mx-auto">
+          <p className="mt-8 text-xl sm:text-2xl leading-relaxed text-muted-foreground max-w-3xl mx-auto font-medium">
             {t("about.heroDescription")}
           </p>
-          <div className="mt-10 flex flex-col items-center gap-4">
+          <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/signup">
-              <Button size="lg" className="h-12 px-8 text-base font-medium">
+              <Button size="lg" className="h-14 px-10 text-lg font-semibold">
                 {t("common.startFree")}
               </Button>
             </Link>
             <Link
               href="/home"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4"
+              className="text-base text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4"
             >
               {t("common.viewNewsletters")}
             </Link>
@@ -40,11 +44,14 @@ export function AboutPageClient() {
 
       {/* Value Cards */}
       <section className="border-t border-border bg-muted/30">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24">
-          <div className="text-center mb-12 sm:mb-16">
-            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-4">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-20 sm:py-28">
+          <div className="text-center mb-16 sm:mb-20">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4">
               {t("about.valueTitle")}
             </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              {t("about.valueSubtitle")}
+            </p>
           </div>
           <div className="grid gap-6 sm:gap-8 md:grid-cols-3">
             <ValueCard
@@ -68,29 +75,39 @@ export function AboutPageClient() {
 
       {/* Core Features */}
       <section className="border-t border-border">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 py-16 sm:py-24">
-          <div className="text-center mb-12 sm:mb-16">
-            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-4">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-20 sm:py-28">
+          <div className="text-center mb-16 sm:mb-20">
+            <div className="inline-flex items-center justify-center mb-4">
+              <span className="text-4xl">✨</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4">
               {t("about.featuresTitle")}
             </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              {t("about.featuresSubtitle")}
+            </p>
           </div>
-          <div className="space-y-10 sm:space-y-16">
-            <FeatureDetail
+          <div className="grid gap-8 sm:gap-10 md:grid-cols-2 lg:grid-cols-2">
+            <FeatureCard
+              emoji="✍️"
               icon={<EditorIcon />}
               title={t("about.feature1Title")}
               description={t("about.feature1Desc")}
             />
-            <FeatureDetail
+            <FeatureCard
+              emoji="🔍"
               icon={<SearchIcon />}
               title={t("about.feature2Title")}
               description={t("about.feature2Desc")}
             />
-            <FeatureDetail
+            <FeatureCard
+              emoji="📊"
               icon={<ChartIcon />}
               title={t("about.feature3Title")}
               description={t("about.feature3Desc")}
             />
-            <FeatureDetail
+            <FeatureCard
+              emoji="👥"
               icon={<UsersIcon />}
               title={t("about.feature4Title")}
               description={t("about.feature4Desc")}
@@ -101,24 +118,27 @@ export function AboutPageClient() {
 
       {/* CTA Section */}
       <section className="border-t border-border bg-muted/30">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 py-16 sm:py-24 text-center">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 py-20 sm:py-28 text-center">
+          <div className="inline-flex items-center justify-center mb-6">
+            <span className="text-5xl">🚀</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
             {t("about.ctaTitle")}
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
+          <p className="mt-6 text-xl sm:text-2xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
             {t("about.ctaDesc1")}
           </p>
-          <p className="mt-4 text-lg text-foreground font-medium">
-            {t("about.ctaDesc2")}
-          </p>
-          <p className="mt-2 text-lg text-foreground font-medium">
-            {t("about.ctaDesc3")}
-          </p>
-          <div className="mt-10">
+          <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/signup">
-              <Button size="lg" className="h-12 px-8 text-base font-medium">
+              <Button size="lg" className="h-14 px-10 text-lg font-semibold">
                 {t("common.startFree")}
               </Button>
+            </Link>
+            <Link
+              href="/home"
+              className="text-base text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4"
+            >
+              {t("common.viewNewsletters")}
             </Link>
           </div>
         </div>
@@ -137,37 +157,44 @@ function ValueCard({
   description: string;
 }) {
   return (
-    <div className="group relative rounded-xl border border-border bg-card p-6 sm:p-8 transition-all duration-200 hover:border-primary/30 hover:shadow-lg">
-      <div className="mb-4 sm:mb-6 flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform duration-200 group-hover:scale-110">
+    <div className="group relative rounded-2xl border border-border bg-card p-8 sm:p-10 transition-all duration-300 hover:border-primary/50 hover:shadow-xl hover:-translate-y-1">
+      <div className="mb-6 flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-transform duration-300 group-hover:scale-110 group-hover:bg-primary/20">
         {icon}
       </div>
-      <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-foreground">{title}</h3>
-      <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">{description}</p>
+      <h3 className="text-xl sm:text-2xl font-bold mb-4 text-foreground">{title}</h3>
+      <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">{description}</p>
     </div>
   );
 }
 
-function FeatureDetail({
+function FeatureCard({
+  emoji,
   icon,
   title,
   description,
 }: {
+  emoji?: string;
   icon?: React.ReactElement;
   title: string;
   description: string;
 }) {
   return (
-    <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-      {icon && (
-        <div className="flex-shrink-0">
-          <div className="flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            {icon}
+    <div className="group relative rounded-2xl border border-border bg-card p-8 transition-all duration-300 hover:border-primary/50 hover:shadow-xl hover:-translate-y-1">
+      <div className="flex items-start gap-4">
+        {emoji && (
+          <div className="text-4xl flex-shrink-0">{emoji}</div>
+        )}
+        {icon && !emoji && (
+          <div className="flex-shrink-0">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform duration-300 group-hover:scale-110">
+              {icon}
+            </div>
           </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <h3 className="text-xl sm:text-2xl font-bold mb-3">{title}</h3>
+          <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">{description}</p>
         </div>
-      )}
-      <div className="flex-1">
-        <h3 className="text-xl sm:text-2xl font-semibold mb-2 sm:mb-4">{title}</h3>
-        <p className="text-sm sm:text-base md:text-lg text-muted-foreground leading-relaxed">{description}</p>
       </div>
     </div>
   );

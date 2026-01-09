@@ -89,6 +89,7 @@ export const en: Translations = {
     heroDescription:
       "A newsletter platform for individual creators. Designed to let you focus solely on writing without technical complexity, easy to start on your own.",
     valueTitle: "Delivering true value to individual creators",
+    valueSubtitle: "All-in-one solution for individual creators",
     valueCard1Title: "Deliver your authenticity to subscribers",
     valueCard1Desc:
       "Share the authenticity you truly want to tell the world. Create deeper connections with content that provides value to your subscribers.",
@@ -99,6 +100,7 @@ export const en: Translations = {
     valueCard3Desc:
       "We're planning various services to help individual creators. We have truly long-term plans. Longer, and even longer, we'll be with you.",
     featuresTitle: "Vality will help you",
+    featuresSubtitle: "Simplify newsletter creation and revolutionize communication with readers",
     feature1Title: "Easy Publishing",
     feature1Desc:
       "Write with an intuitive editor and publish your newsletter with a single button. We provide image upload and real-time preview. Focus on writing without technical complexity.",

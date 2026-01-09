@@ -89,6 +89,7 @@ export const ko: Translations = {
     heroDescription:
       "개인 창작자를 위한 뉴스레터 플랫폼입니다. 기술적 복잡성 없이 글쓰기에만 집중할 수 있도록 설계되었으며, 혼자서도 쉽게 시작할 수 있습니다.",
     valueTitle: "개인 창작자를 위한 진정한 가치를 전달합니다",
+    valueSubtitle: "개인 창작자를 위한 올인원 솔루션",
     valueCard1Title: "구독자들에게 당신의 진정성을 전달하세요",
     valueCard1Desc:
       "여러분이 진짜로 세상에 알리고 싶은 진정성을 전달하세요. 구독자들에게 가치를 주는 콘텐츠로 깊이 있는 소통을 만들어보세요.",
@@ -99,6 +100,7 @@ export const ko: Translations = {
     valueCard3Desc:
       "개인 창작자를 도울 수 있는 여러 서비스를 계획하고 있습니다. 정말 장기적인 계획을 가지고 있습니다. 더 오래, 그보다 더 오래 함께하겠습니다.",
     featuresTitle: "Vality가 도와드리겠습니다",
+    featuresSubtitle: "뉴스레터 작성을 단순화하고, 독자와의 소통을 혁신하세요",
     feature1Title: "쉽게 발행",
     feature1Desc:
       "직관적인 에디터로 글을 작성하고, 발행 버튼 하나로 뉴스레터를 발행할 수 있습니다. 이미지 업로드와 실시간 미리보기 기능을 제공합니다. 기술적 복잡성 없이 글쓰기에만 집중하세요.",
