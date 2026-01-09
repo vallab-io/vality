@@ -382,7 +382,6 @@ export const ko: Translations = {
     countryHint: "선택한 나라의 시간대가 자동으로 설정됩니다.",
   },
   editor: {
-    title: "제목",
     titlePlaceholder: "제목을 입력하세요",
     contentPlaceholder: "글을 작성하세요...",
     slashPlaceholder: "'/'를 눌러주세요",
@@ -425,6 +424,8 @@ export const ko: Translations = {
     date: "날짜",
     time: "시간",
     scheduledDateRequired: "예약 날짜와 시간을 입력해주세요.",
+    showPreview: "미리보기 보기",
+    hidePreview: "미리보기 숨기기",
     // Slash Commands
     slashHeading1: "제목 1",
     slashHeading1Desc: "큰 제목",

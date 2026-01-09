@@ -410,7 +410,6 @@ export interface Translations {
 
   // Issue Editor
   editor: {
-    title: string;
     titlePlaceholder: string;
     contentPlaceholder: string;
     slashPlaceholder: string;
@@ -453,6 +452,8 @@ export interface Translations {
     date: string;
     time: string;
     scheduledDateRequired: string;
+    showPreview: string;
+    hidePreview: string;
     // Slash Commands
     slashHeading1: string;
     slashHeading1Desc: string;

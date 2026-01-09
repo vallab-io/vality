@@ -384,7 +384,6 @@ export const en: Translations = {
     countryHint: "Timezone will be automatically set based on the selected country.",
   },
   editor: {
-    title: "Title",
     titlePlaceholder: "Enter issue title...",
     contentPlaceholder: "Start writing...",
     slashPlaceholder: "Press '/' for commands",
@@ -427,6 +426,8 @@ export const en: Translations = {
     date: "Date",
     time: "Time",
     scheduledDateRequired: "Please enter scheduled date and time",
+    showPreview: "Show Preview",
+    hidePreview: "Hide Preview",
     // Slash Commands
     slashHeading1: "Heading 1",
     slashHeading1Desc: "Large heading",
