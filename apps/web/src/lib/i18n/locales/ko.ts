@@ -77,7 +77,7 @@ export const ko: Translations = {
     earlyAccess: "Early Access 특별 혜택",
     foundingMember: "Founding Member가 되어보세요",
     foundingMemberDescription:
-      "지금 가입하시면 Founding Member가 되어,\n결제 시스템 출시 후 Pro 플랜을 3개월간 무료로 이용하실 수 있습니다",
+      "지금 가입하시면 Founding Member가 되어,\n결제 시스템 출시 후 Starter 플랜을 3개월간 무료로 이용하실 수 있습니다",
     startButton: "Founding Member로 시작하기",
     earlyAccessBenefit1: "Early Access 가입자 한정",
     earlyAccessBenefit2: "결제 시스템 출시 시 자동 적용",
@@ -119,7 +119,11 @@ export const ko: Translations = {
     ctaDesc3: "진정성을 담은 콘텐츠로 독자와 연결하세요.",
   },
   home: {
-    forYou: "For you",
+    forYou: "당신을 위한",
+    ctaTitle: "나만의 뉴스레터를 쉽게 발행해보세요",
+    ctaDescription: "기술적 복잡성 없이 글쓰기에만 집중하세요. 지금 시작하면 누구나 쉽게 뉴스레터를 만들고 발행할 수 있습니다.",
+    ctaButton: "지금 시작하기",
+    ctaSubtext: "무료로 시작하고 언제든 취소할 수 있습니다",
   },
   dashboard: {
     title: "대시보드",
@@ -147,7 +151,8 @@ export const ko: Translations = {
     loading: "로딩 중...",
     noNewsletter: "뉴스레터 없음",
     createNewsletter: "새 뉴스레터 만들기",
-    logout: "로그아웃",
+    logout: "Sign out",
+    signIn: "Sign in",
     about: "소개",
     profile: "프로필",
   },

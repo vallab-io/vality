@@ -77,7 +77,7 @@ export const en: Translations = {
     earlyAccess: "Early Access Special Benefit",
     foundingMember: "Become a Founding Member",
     foundingMemberDescription:
-      "Sign up now to become a Founding Member,\nand get 3 months of Pro plan for free after the payment system launches",
+      "Sign up now to become a Founding Member,\nand get 3 months of Starter plan for free after the payment system launches",
     startButton: "Start as Founding Member",
     earlyAccessBenefit1: "Early Access members only",
     earlyAccessBenefit2: "Automatically applied when payment system launches",
@@ -120,6 +120,10 @@ export const en: Translations = {
   },
   home: {
     forYou: "For you",
+    ctaTitle: "Start your own newsletter easily",
+    ctaDescription: "Focus on writing without technical complexity. Start now and anyone can easily create and publish newsletters.",
+    ctaButton: "Get Started",
+    ctaSubtext: "Start for free, cancel anytime",
   },
   dashboard: {
     title: "Dashboard",
@@ -147,7 +151,8 @@ export const en: Translations = {
     loading: "Loading...",
     noNewsletter: "No Newsletter",
     createNewsletter: "Create New Newsletter",
-    logout: "Logout",
+    logout: "Sign out",
+    signIn: "Sign in",
     about: "About",
     profile: "Profile",
   },

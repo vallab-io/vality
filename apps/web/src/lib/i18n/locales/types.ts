@@ -126,6 +126,10 @@ export interface Translations {
   // Home
   home: {
     forYou: string;
+    ctaTitle: string;
+    ctaDescription: string;
+    ctaButton: string;
+    ctaSubtext: string;
   };
 
   // Dashboard
@@ -158,6 +162,7 @@ export interface Translations {
     noNewsletter: string;
     createNewsletter: string;
     logout: string;
+    signIn: string;
     about: string;
     profile: string;
   };

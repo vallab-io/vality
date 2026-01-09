@@ -27,7 +27,6 @@ import { useT } from "@/hooks/use-translation";
 import { formatRelativeTime } from "@/lib/utils/date";
 
 type PreviewMode = "archive" | "email";
-type SendOption = "now" | "scheduled";
 
 export default function IssuePage() {
   const params = useParams();
@@ -46,10 +45,6 @@ export default function IssuePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
 
-  // 발행 옵션 상태
-  const [sendOption, setSendOption] = useState<SendOption>("now");
-  const [scheduledDate, setScheduledDate] = useState("");
-  const [scheduledTime, setScheduledTime] = useState("");
 
   const [formData, setFormData] = useState({
     title: "",
@@ -298,18 +293,8 @@ export default function IssuePage() {
 
     setIsPublishing(true);
     try {
-      let status: "PUBLISHED" | "SCHEDULED" = "PUBLISHED";
-      let scheduledAt: string | null = null;
-
-      if (sendOption === "scheduled") {
-        if (!scheduledDate || !scheduledTime) {
-          toast.error(t("editor.scheduledDateRequired"));
-          setIsPublishing(false);
-          return;
-        }
-        status = "SCHEDULED";
-        scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
-      }
+      const status: "PUBLISHED" = "PUBLISHED";
+      const scheduledAt: string | null = null;
 
       // 발행 전에 마지막 <br> 태그들 제거
       const cleanedContent = removeTrailingBrTags(formData.content);
@@ -334,15 +319,7 @@ export default function IssuePage() {
         await createIssue(newsletterId, request);
       }
 
-      if (status === "SCHEDULED") {
-        toast.success(
-          t("editor.scheduledSuccess")
-            .replace("{date}", scheduledDate)
-            .replace("{time}", scheduledTime)
-        );
-      } else {
-        toast.success(t("editor.published"));
-      }
+      toast.success(t("editor.published"));
 
       router.push(`/dashboard/newsletters/${newsletterId}/issues`);
     } catch (error: any) {
@@ -581,66 +558,6 @@ export default function IssuePage() {
               </p>
             </div>
 
-            {/* Send Timing */}
-            <div className="space-y-3">
-              <Label>{t("editor.publishTiming")}</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSendOption("now")}
-                  className={cn(
-                    "rounded-lg border p-4 text-left transition-colors",
-                    sendOption === "now"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:bg-muted/50"
-                  )}
-                >
-                  <div className="font-medium">{t("editor.publishNow")}</div>
-                  <div className="mt-1 text-sm text-muted-foreground">
-                    {t("editor.publishNowDesc")}
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSendOption("scheduled")}
-                  className={cn(
-                    "rounded-lg border p-4 text-left transition-colors",
-                    sendOption === "scheduled"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:bg-muted/50"
-                  )}
-                >
-                  <div className="font-medium">{t("editor.schedulePublish")}</div>
-                  <div className="mt-1 text-sm text-muted-foreground">
-                    {t("editor.schedulePublishDesc")}
-                  </div>
-                </button>
-              </div>
-
-              {sendOption === "scheduled" && (
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <Label htmlFor="date">{t("editor.date")}</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={scheduledDate}
-                      onChange={(e) => setScheduledDate(e.target.value)}
-                      min={today}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="time">{t("editor.time")}</Label>
-                    <Input
-                      id="time"
-                      type="time"
-                      value={scheduledTime}
-                      onChange={(e) => setScheduledTime(e.target.value)}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
 
           <div className="flex justify-end gap-2">
@@ -652,11 +569,7 @@ export default function IssuePage() {
               {t("common.cancel")}
             </Button>
             <Button onClick={handlePublish} disabled={isPublishing}>
-              {isPublishing
-                ? t("editor.publishing")
-                : sendOption === "scheduled"
-                ? t("editor.schedulePublish")
-                : t("editor.publish")}
+              {isPublishing ? t("editor.publishing") : t("editor.publish")}
             </Button>
           </div>
         </DialogContent>
