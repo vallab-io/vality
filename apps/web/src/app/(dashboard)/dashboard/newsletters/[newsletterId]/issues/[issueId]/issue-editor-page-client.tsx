@@ -27,7 +27,6 @@ import { useT } from "@/hooks/use-translation";
 import { formatRelativeTime } from "@/lib/utils/date";
 
 type PreviewMode = "archive" | "email";
-type SendOption = "now" | "scheduled";
 
 export default function IssuePage() {
   const params = useParams();
@@ -40,15 +39,12 @@ export default function IssuePage() {
   const [newsletter, setNewsletter] = useState<Newsletter | null>(null);
   const [activeSubscriberCount, setActiveSubscriberCount] = useState<number>(0);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("email");
+  const [showPreview, setShowPreview] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
 
-  // 발행 옵션 상태
-  const [sendOption, setSendOption] = useState<SendOption>("now");
-  const [scheduledDate, setScheduledDate] = useState("");
-  const [scheduledTime, setScheduledTime] = useState("");
 
   const [formData, setFormData] = useState({
     title: "",
@@ -297,18 +293,8 @@ export default function IssuePage() {
 
     setIsPublishing(true);
     try {
-      let status: "PUBLISHED" | "SCHEDULED" = "PUBLISHED";
-      let scheduledAt: string | null = null;
-
-      if (sendOption === "scheduled") {
-        if (!scheduledDate || !scheduledTime) {
-          toast.error(t("editor.scheduledDateRequired"));
-          setIsPublishing(false);
-          return;
-        }
-        status = "SCHEDULED";
-        scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
-      }
+      const status: "PUBLISHED" = "PUBLISHED";
+      const scheduledAt: string | null = null;
 
       // 발행 전에 마지막 <br> 태그들 제거
       const cleanedContent = removeTrailingBrTags(formData.content);
@@ -333,15 +319,7 @@ export default function IssuePage() {
         await createIssue(newsletterId, request);
       }
 
-      if (status === "SCHEDULED") {
-        toast.success(
-          t("editor.scheduledSuccess")
-            .replace("{date}", scheduledDate)
-            .replace("{time}", scheduledTime)
-        );
-      } else {
-        toast.success(t("editor.published"));
-      }
+      toast.success(t("editor.published"));
 
       router.push(`/dashboard/newsletters/${newsletterId}/issues`);
     } catch (error: any) {
@@ -393,9 +371,9 @@ export default function IssuePage() {
       </header>
 
       {/* Main Content */}
-      <div className="flex flex-1 overflow-hidden bg-muted/20">
+      <div className="relative flex flex-1 overflow-hidden bg-muted/20">
         {/* Editor Section */}
-        <div className="flex flex-1 flex-col border-r border-border/50 bg-background">
+        <div className="relative flex flex-1 flex-col border-r border-border/50 bg-background">
           {/* Title Input */}
           <div className="border-b border-border/50 bg-background px-8 py-6">
             <Input
@@ -406,6 +384,28 @@ export default function IssuePage() {
               className="border-0 bg-transparent px-0 text-3xl font-semibold leading-tight placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
+
+          {/* Preview Toggle Button (when hidden) - Preview Header와 같은 높이 */}
+          {!showPreview && (
+            <div className="absolute right-0 top-0 flex h-[57px] items-center border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-5">
+              <button
+                onClick={() => setShowPreview(true)}
+                className="flex items-center gap-1 rounded p-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                aria-label={t("editor.showPreview")}
+              >
+                <span className="text-xs font-medium">{t("editor.preview")}</span>
+                <svg
+                  className="h-3.5 w-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            </div>
+          )}
 
           {/* Content Editor */}
           <div className="flex-1 overflow-auto px-8 py-6">
@@ -420,63 +420,83 @@ export default function IssuePage() {
           </div>
         </div>
 
-        {/* Preview Section */}
-        <div className="w-[480px] border-l border-border/50 bg-muted/20">
-          <div className="sticky top-0 flex h-full flex-col">
-            {/* Preview Header */}
-            <div className="flex items-center justify-between border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-5 py-3.5">
-              <h2 className="text-sm font-semibold text-foreground">{t("editor.preview")}</h2>
-              <div className="flex gap-1 rounded-md bg-muted/80 p-0.5">
-                <button
-                  type="button"
-                  onClick={() => setPreviewMode("email")}
-                  className={cn(
-                    "rounded-md px-2.5 py-1 text-xs font-medium transition-all",
-                    previewMode === "email"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {t("editor.email")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreviewMode("archive")}
-                  className={cn(
-                    "rounded-md px-2.5 py-1 text-xs font-medium transition-all",
-                    previewMode === "archive"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {t("editor.archive")}
-                </button>
-              </div>
-            </div>
 
-            {/* Preview Content */}
-            <div className="flex-1 overflow-auto p-6">
-              <div className="flex justify-center">
-                {previewMode === "email" ? (
-                  <EmailPreview
-                    title={formData.title}
-                    content={formData.content}
-                    newsletterName={newsletter?.name || ""}
-                    noTitle={t("editor.noTitle")}
-                    emailPreview={t("editor.email") + " " + t("editor.preview")}
-                  />
-                ) : (
-                  <ArchivePreview
-                    title={formData.title}
-                    content={formData.content}
-                    author={user?.username || ""}
-                    noTitle={t("editor.noTitle")}
-                  />
-                )}
+        {/* Preview Section */}
+        {showPreview && (
+          <div className="w-[480px] border-l border-border/50 bg-muted/20">
+            <div className="sticky top-0 flex h-full flex-col">
+              {/* Preview Header */}
+              <div className="flex items-center justify-between border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-5 py-3.5">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-semibold text-foreground">{t("editor.preview")}</h2>
+                  <button
+                    onClick={() => setShowPreview(false)}
+                    className="flex items-center justify-center rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    aria-label={t("editor.hidePreview")}
+                  >
+                    <svg
+                      className="h-3.5 w-3.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="flex gap-1 rounded-md bg-muted/80 p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewMode("email")}
+                    className={cn(
+                      "rounded-md px-2.5 py-1 text-xs font-medium transition-all",
+                      previewMode === "email"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {t("editor.email")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewMode("archive")}
+                    className={cn(
+                      "rounded-md px-2.5 py-1 text-xs font-medium transition-all",
+                      previewMode === "archive"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {t("editor.archive")}
+                  </button>
+                </div>
+              </div>
+
+              {/* Preview Content */}
+              <div className="flex-1 overflow-auto p-6">
+                <div className="flex justify-center">
+                  {previewMode === "email" ? (
+                    <EmailPreview
+                      title={formData.title}
+                      content={formData.content}
+                      newsletterName={newsletter?.name || ""}
+                      noTitle={t("editor.noTitle")}
+                      emailPreview={t("editor.email") + " " + t("editor.preview")}
+                    />
+                  ) : (
+                    <ArchivePreview
+                      title={formData.title}
+                      content={formData.content}
+                      author={user?.username || ""}
+                      noTitle={t("editor.noTitle")}
+                    />
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Publish Dialog */}
@@ -538,66 +558,6 @@ export default function IssuePage() {
               </p>
             </div>
 
-            {/* Send Timing */}
-            <div className="space-y-3">
-              <Label>{t("editor.publishTiming")}</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSendOption("now")}
-                  className={cn(
-                    "rounded-lg border p-4 text-left transition-colors",
-                    sendOption === "now"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:bg-muted/50"
-                  )}
-                >
-                  <div className="font-medium">{t("editor.publishNow")}</div>
-                  <div className="mt-1 text-sm text-muted-foreground">
-                    {t("editor.publishNowDesc")}
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSendOption("scheduled")}
-                  className={cn(
-                    "rounded-lg border p-4 text-left transition-colors",
-                    sendOption === "scheduled"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:bg-muted/50"
-                  )}
-                >
-                  <div className="font-medium">{t("editor.schedulePublish")}</div>
-                  <div className="mt-1 text-sm text-muted-foreground">
-                    {t("editor.schedulePublishDesc")}
-                  </div>
-                </button>
-              </div>
-
-              {sendOption === "scheduled" && (
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <Label htmlFor="date">{t("editor.date")}</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={scheduledDate}
-                      onChange={(e) => setScheduledDate(e.target.value)}
-                      min={today}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="time">{t("editor.time")}</Label>
-                    <Input
-                      id="time"
-                      type="time"
-                      value={scheduledTime}
-                      onChange={(e) => setScheduledTime(e.target.value)}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
 
           <div className="flex justify-end gap-2">
@@ -609,11 +569,7 @@ export default function IssuePage() {
               {t("common.cancel")}
             </Button>
             <Button onClick={handlePublish} disabled={isPublishing}>
-              {isPublishing
-                ? t("editor.publishing")
-                : sendOption === "scheduled"
-                ? t("editor.schedulePublish")
-                : t("editor.publish")}
+              {isPublishing ? t("editor.publishing") : t("editor.publish")}
             </Button>
           </div>
         </DialogContent>

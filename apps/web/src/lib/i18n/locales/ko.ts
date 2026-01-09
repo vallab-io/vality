@@ -77,7 +77,7 @@ export const ko: Translations = {
     earlyAccess: "Early Access 특별 혜택",
     foundingMember: "Founding Member가 되어보세요",
     foundingMemberDescription:
-      "지금 가입하시면 Founding Member가 되어,\n결제 시스템 출시 후 Pro 플랜을 3개월간 무료로 이용하실 수 있습니다",
+      "지금 가입하시면 Founding Member가 되어,\n결제 시스템 출시 후 Starter 플랜을 3개월간 무료로 이용하실 수 있습니다",
     startButton: "Founding Member로 시작하기",
     earlyAccessBenefit1: "Early Access 가입자 한정",
     earlyAccessBenefit2: "결제 시스템 출시 시 자동 적용",
@@ -89,6 +89,7 @@ export const ko: Translations = {
     heroDescription:
       "개인 창작자를 위한 뉴스레터 플랫폼입니다. 기술적 복잡성 없이 글쓰기에만 집중할 수 있도록 설계되었으며, 혼자서도 쉽게 시작할 수 있습니다.",
     valueTitle: "개인 창작자를 위한 진정한 가치를 전달합니다",
+    valueSubtitle: "개인 창작자를 위한 올인원 솔루션",
     valueCard1Title: "구독자들에게 당신의 진정성을 전달하세요",
     valueCard1Desc:
       "여러분이 진짜로 세상에 알리고 싶은 진정성을 전달하세요. 구독자들에게 가치를 주는 콘텐츠로 깊이 있는 소통을 만들어보세요.",
@@ -99,6 +100,7 @@ export const ko: Translations = {
     valueCard3Desc:
       "개인 창작자를 도울 수 있는 여러 서비스를 계획하고 있습니다. 정말 장기적인 계획을 가지고 있습니다. 더 오래, 그보다 더 오래 함께하겠습니다.",
     featuresTitle: "Vality가 도와드리겠습니다",
+    featuresSubtitle: "뉴스레터 작성을 단순화하고, 독자와의 소통을 혁신하세요",
     feature1Title: "쉽게 발행",
     feature1Desc:
       "직관적인 에디터로 글을 작성하고, 발행 버튼 하나로 뉴스레터를 발행할 수 있습니다. 이미지 업로드와 실시간 미리보기 기능을 제공합니다. 기술적 복잡성 없이 글쓰기에만 집중하세요.",
@@ -117,7 +119,11 @@ export const ko: Translations = {
     ctaDesc3: "진정성을 담은 콘텐츠로 독자와 연결하세요.",
   },
   home: {
-    forYou: "For you",
+    forYou: "당신을 위한",
+    ctaTitle: "나만의 뉴스레터를 쉽게 발행해보세요",
+    ctaDescription: "기술적 복잡성 없이 글쓰기에만 집중하세요. 지금 시작하면 누구나 쉽게 뉴스레터를 만들고 발행할 수 있습니다.",
+    ctaButton: "지금 시작하기",
+    ctaSubtext: "무료로 시작하고 언제든 취소할 수 있습니다",
   },
   dashboard: {
     title: "대시보드",
@@ -145,7 +151,8 @@ export const ko: Translations = {
     loading: "로딩 중...",
     noNewsletter: "뉴스레터 없음",
     createNewsletter: "새 뉴스레터 만들기",
-    logout: "로그아웃",
+    logout: "Sign out",
+    signIn: "Sign in",
     about: "소개",
     profile: "프로필",
   },
@@ -380,7 +387,6 @@ export const ko: Translations = {
     countryHint: "선택한 나라의 시간대가 자동으로 설정됩니다.",
   },
   editor: {
-    title: "제목",
     titlePlaceholder: "제목을 입력하세요",
     contentPlaceholder: "글을 작성하세요...",
     slashPlaceholder: "'/'를 눌러주세요",
@@ -423,6 +429,8 @@ export const ko: Translations = {
     date: "날짜",
     time: "시간",
     scheduledDateRequired: "예약 날짜와 시간을 입력해주세요.",
+    showPreview: "미리보기 보기",
+    hidePreview: "미리보기 숨기기",
     // Slash Commands
     slashHeading1: "제목 1",
     slashHeading1Desc: "큰 제목",

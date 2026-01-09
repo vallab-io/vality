@@ -22,7 +22,7 @@ export function DashboardTopbar() {
       return t("sidebar.subscription");
     }
     if (pathname?.includes("/issues/") && !pathname?.endsWith("/issues")) {
-      return t("editor.title");
+      return "";
     }
     if (pathname?.includes("/issues")) {
       return t("issues.title");

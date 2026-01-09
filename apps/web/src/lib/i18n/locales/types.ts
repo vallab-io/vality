@@ -100,6 +100,7 @@ export interface Translations {
     heroTitle2: string;
     heroDescription: string;
     valueTitle: string;
+    valueSubtitle: string;
     valueCard1Title: string;
     valueCard1Desc: string;
     valueCard2Title: string;
@@ -107,6 +108,7 @@ export interface Translations {
     valueCard3Title: string;
     valueCard3Desc: string;
     featuresTitle: string;
+    featuresSubtitle: string;
     feature1Title: string;
     feature1Desc: string;
     feature2Title: string;
@@ -124,6 +126,10 @@ export interface Translations {
   // Home
   home: {
     forYou: string;
+    ctaTitle: string;
+    ctaDescription: string;
+    ctaButton: string;
+    ctaSubtext: string;
   };
 
   // Dashboard
@@ -156,6 +162,7 @@ export interface Translations {
     noNewsletter: string;
     createNewsletter: string;
     logout: string;
+    signIn: string;
     about: string;
     profile: string;
   };
@@ -408,7 +415,6 @@ export interface Translations {
 
   // Issue Editor
   editor: {
-    title: string;
     titlePlaceholder: string;
     contentPlaceholder: string;
     slashPlaceholder: string;
@@ -451,6 +457,8 @@ export interface Translations {
     date: string;
     time: string;
     scheduledDateRequired: string;
+    showPreview: string;
+    hidePreview: string;
     // Slash Commands
     slashHeading1: string;
     slashHeading1Desc: string;

@@ -77,7 +77,7 @@ export const en: Translations = {
     earlyAccess: "Early Access Special Benefit",
     foundingMember: "Become a Founding Member",
     foundingMemberDescription:
-      "Sign up now to become a Founding Member,\nand get 3 months of Pro plan for free after the payment system launches",
+      "Sign up now to become a Founding Member,\nand get 3 months of Starter plan for free after the payment system launches",
     startButton: "Start as Founding Member",
     earlyAccessBenefit1: "Early Access members only",
     earlyAccessBenefit2: "Automatically applied when payment system launches",
@@ -89,6 +89,7 @@ export const en: Translations = {
     heroDescription:
       "A newsletter platform for individual creators. Designed to let you focus solely on writing without technical complexity, easy to start on your own.",
     valueTitle: "Delivering true value to individual creators",
+    valueSubtitle: "All-in-one solution for individual creators",
     valueCard1Title: "Deliver your authenticity to subscribers",
     valueCard1Desc:
       "Share the authenticity you truly want to tell the world. Create deeper connections with content that provides value to your subscribers.",
@@ -99,6 +100,7 @@ export const en: Translations = {
     valueCard3Desc:
       "We're planning various services to help individual creators. We have truly long-term plans. Longer, and even longer, we'll be with you.",
     featuresTitle: "Vality will help you",
+    featuresSubtitle: "Simplify newsletter creation and revolutionize communication with readers",
     feature1Title: "Easy Publishing",
     feature1Desc:
       "Write with an intuitive editor and publish your newsletter with a single button. We provide image upload and real-time preview. Focus on writing without technical complexity.",
@@ -118,6 +120,10 @@ export const en: Translations = {
   },
   home: {
     forYou: "For you",
+    ctaTitle: "Start your own newsletter easily",
+    ctaDescription: "Focus on writing without technical complexity. Start now and anyone can easily create and publish newsletters.",
+    ctaButton: "Get Started",
+    ctaSubtext: "Start for free, cancel anytime",
   },
   dashboard: {
     title: "Dashboard",
@@ -145,7 +151,8 @@ export const en: Translations = {
     loading: "Loading...",
     noNewsletter: "No Newsletter",
     createNewsletter: "Create New Newsletter",
-    logout: "Logout",
+    logout: "Sign out",
+    signIn: "Sign in",
     about: "About",
     profile: "Profile",
   },
@@ -382,7 +389,6 @@ export const en: Translations = {
     countryHint: "Timezone will be automatically set based on the selected country.",
   },
   editor: {
-    title: "Title",
     titlePlaceholder: "Enter issue title...",
     contentPlaceholder: "Start writing...",
     slashPlaceholder: "Press '/' for commands",
@@ -425,6 +431,8 @@ export const en: Translations = {
     date: "Date",
     time: "Time",
     scheduledDateRequired: "Please enter scheduled date and time",
+    showPreview: "Show Preview",
+    hidePreview: "Hide Preview",
     // Slash Commands
     slashHeading1: "Heading 1",
     slashHeading1Desc: "Large heading",
