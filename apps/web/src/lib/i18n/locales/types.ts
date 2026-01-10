@@ -125,10 +125,10 @@ export interface Translations {
 
   // Home
   home: {
-    forYou: string;
     ctaTitle: string;
     ctaDescription: string;
     ctaButton: string;
+    learnMore: string;
     ctaSubtext: string;
   };
 
@@ -421,6 +421,10 @@ export interface Translations {
     saveDraft: string;
     publish: string;
     publishing: string;
+    update: string;
+    updating: string;
+    updated: string;
+    updateFailed: string;
     saving: string;
     preview: string;
     settings: string;

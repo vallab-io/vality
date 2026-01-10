@@ -81,7 +81,7 @@ object Newsletters : Table("newsletters") {
 object Issues : Table("issues") {
     val id = varchar("id", 24)
     val title = varchar("title", 500).nullable()
-    val slug = varchar("slug", 255)
+    val slug = varchar("slug", 255).nullable() // nullable, PUBLISHED 상태일 때만 필수
     val content = text("content")
     val excerpt = text("excerpt").nullable()
     val coverImageUrl = varchar("cover_image_url", 500).nullable()
@@ -96,6 +96,7 @@ object Issues : Table("issues") {
     override val primaryKey = PrimaryKey(id)
 
     init {
+        // nullable 컬럼 포함 unique index는 PostgreSQL에서 허용됨 (NULL 값은 서로 다르게 간주)
         uniqueIndex(newsletterId, slug)
     }
 }

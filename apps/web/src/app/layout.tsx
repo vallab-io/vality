@@ -21,17 +21,24 @@ export const metadata: Metadata = {
     template: "%s | Vality",
   },
   description:
-    "뉴스레터를 발행하면 곧바로 웹에 기록되고, 검색 엔진에도 노출되는 개인 브랜딩 플랫폼",
-  keywords: ["뉴스레터", "블로그", "개인 브랜딩", "SEO", "이메일 마케팅"],
+    "Publish your newsletter and instantly record it on the web. A personal branding platform that's also indexed by search engines.",
+  keywords: [
+    "newsletter",
+    "blog",
+    "archive",
+    "personal branding",
+    "SEO",
+    "creator",
+  ],
   authors: [{ name: "Vality" }],
   openGraph: {
     type: "website",
-    locale: "ko_KR",
+    locale: "en_US",
     url: "https://vality.io",
     siteName: "Vality",
-    title: "Vality - 뉴스레터 & 웹 아카이빙 플랫폼",
+    title: "Vality - Newsletter",
     description:
-      "한 번 발행으로 이메일 · 블로그 · 프로필 콘텐츠가 동시에 완성되는 구조",
+      "A simple newsletter platform built for discovery and long-term growth.",
     images: [
       {
         url: "https://vality.io/logo.svg",
@@ -43,9 +50,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Vality - 뉴스레터 & 웹 아카이빙 플랫폼",
+    title: "Vality - Newsletter",
     description:
-      "한 번 발행으로 이메일 · 블로그 · 프로필 콘텐츠가 동시에 완성되는 구조",
+      "A simple newsletter platform built for discovery and long-term growth.",
     images: ["https://vality.io/logo.svg"],
   },
   icons: {

@@ -119,10 +119,10 @@ export const ko: Translations = {
     ctaDesc3: "진정성을 담은 콘텐츠로 독자와 연결하세요.",
   },
   home: {
-    forYou: "당신을 위한",
     ctaTitle: "나만의 뉴스레터를 쉽게 발행해보세요",
     ctaDescription: "기술적 복잡성 없이 글쓰기에만 집중하세요. 지금 시작하면 누구나 쉽게 뉴스레터를 만들고 발행할 수 있습니다.",
     ctaButton: "지금 시작하기",
+    learnMore: "더 알아보기",
     ctaSubtext: "무료로 시작하고 언제든 취소할 수 있습니다",
   },
   dashboard: {
@@ -393,6 +393,10 @@ export const ko: Translations = {
     saveDraft: "임시저장",
     publish: "발행하기",
     publishing: "발행 중...",
+    update: "업데이트",
+    updating: "업데이트 중...",
+    updated: "업데이트되었습니다!",
+    updateFailed: "업데이트에 실패했습니다.",
     saving: "저장 중...",
     preview: "미리보기",
     settings: "설정",

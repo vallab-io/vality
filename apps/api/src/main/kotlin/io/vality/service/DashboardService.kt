@@ -75,12 +75,17 @@ class DashboardService(
         return allIssues
             .sortedByDescending { it.publishedAt }
             .take(limit)
-            .map { issue ->
-                val newsletter = newsletterMap[issue.newsletterId]!!
+            .mapNotNull { issue ->
+                // slug가 null인 경우 제외 (PUBLISHED 상태이지만 slug가 없는 경우)
+                val slug = issue.slug ?: return@mapNotNull null
+                
+                // newsletter가 없으면 제외
+                val newsletter = newsletterMap[issue.newsletterId] ?: return@mapNotNull null
+                
                 RecentIssueResponse(
                     id = issue.id,
                     title = issue.title,
-                    slug = issue.slug,
+                    slug = slug,
                     status = issue.status.name,
                     publishedAt = issue.publishedAt?.toString(),
                     newsletterId = newsletter.id,

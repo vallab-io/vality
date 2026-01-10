@@ -68,7 +68,7 @@ export default function HomePageContent() {
                 <p className="text-sm text-muted-foreground max-w-xl mx-auto">
                   {t("home.ctaDescription")}
                 </p>
-                <div className="flex items-center justify-center pt-1">
+                <div className="flex items-center justify-center gap-3 pt-1">
                   <Button
                     asChild
                     size="sm"
@@ -78,6 +78,16 @@ export default function HomePageContent() {
                     <Link href="/signup">
                       {t("home.ctaButton")}
                       <ArrowRight className="ml-1.5 h-4 w-4" />
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="outline"
+                    className="text-sm"
+                  >
+                    <Link href="/about">
+                      {t("home.learnMore")}
                     </Link>
                   </Button>
                 </div>
@@ -105,7 +115,7 @@ export default function HomePageContent() {
             <div>
               {/* Section Header */}
               <div className="mb-8 pb-4 border-b border-border/50">
-                <h2 className="text-lg font-semibold text-foreground">{t("home.forYou")}</h2>
+                <h2 className="text-lg font-semibold text-foreground">For you</h2>
               </div>
 
               <div className="space-y-4 sm:space-y-6">
