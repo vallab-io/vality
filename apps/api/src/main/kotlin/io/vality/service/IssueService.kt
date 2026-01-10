@@ -2,7 +2,6 @@ package io.vality.service
 
 import io.vality.domain.Issue
 import io.vality.domain.IssueStatus
-import io.vality.dto.issue.CreateIssueCommand
 import io.vality.dto.issue.DeleteIssueCommand
 import io.vality.dto.issue.GetIssueQuery
 import io.vality.dto.issue.GetIssuesQuery
@@ -32,75 +31,39 @@ class IssueService(
 
     /**
      * 이슈 생성
+     * 웹 기준 생성 시점: 새로운 이슈 생성하기 누를 때
      * 
      * @throws IssueException.NewsletterNotFound 뉴스레터가 없는 경우
      * @throws IssueException.Forbidden 권한이 없는 경우
      * @throws IssueException.SlugConflict Slug가 중복되는 경우
      * @throws IssueException.ValidationError 유효성 검증 실패
      */
-    suspend fun createIssue(command: CreateIssueCommand): IssueResponse {
+    suspend fun createIssue(userId: String, newsletterId: String): IssueResponse {
         // 1. 뉴스레터 조회 및 권한 확인
-        val newsletter = newsletterRepository.findById(command.newsletterId)
+        val newsletter = newsletterRepository.findById(newsletterId)
             ?: throw IssueException.NewsletterNotFound()
-        
-        if (newsletter.ownerId != command.userId) {
+        if (newsletter.ownerId != userId) {
             throw IssueException.Forbidden()
         }
 
-        // 2. Slug 생성/검증
-        val slug = if (command.slug.isNullOrBlank()) {
-            "issue-${System.currentTimeMillis()}"
-        } else {
-            command.slug.trim()
-        }
-
-        if (issueRepository.existsByNewsletterIdAndSlug(command.newsletterId, slug)) {
-            throw IssueException.SlugConflict("Slug already exists in this newsletter")
-        }
-
-        // 3. 상태 파싱 및 검증
-        val status = parseAndValidateStatus(
-            statusStr = command.status,
-            title = command.title,
-            scheduledAt = command.scheduledAt,
-        )
-
-        // 4. SCHEDULED 상태가 아닌데 scheduledAt이 있으면 에러
-        if (status != IssueStatus.SCHEDULED && command.scheduledAt != null) {
-            throw IssueException.ValidationError("scheduledAt can only be set when status is SCHEDULED")
-        }
-
-        // 5. publishedAt 설정
-        val publishedAt = if (status == IssueStatus.PUBLISHED) Instant.now() else null
-
-        // 6. 이슈 생성
+        // 2. 이슈 생성
         val now = Instant.now()
         val issue = Issue(
             id = CuidGenerator.generate(),
-            title = command.title?.trim(),
-            slug = slug,
-            content = command.content,
-            excerpt = command.excerpt?.trim(),
-            coverImageUrl = command.coverImageUrl?.trim(),
-            status = status,
-            publishedAt = publishedAt,
-            scheduledAt = command.scheduledAt,
-            newsletterId = command.newsletterId,
+            title = null,
+            slug = null,
+            content = "",
+            excerpt = null,
+            coverImageUrl = null,
+            status = IssueStatus.DRAFT,
+            publishedAt = null,
+            scheduledAt = null,
+            newsletterId = newsletterId,
             createdAt = now,
             updatedAt = now,
         )
 
-        val createdIssue = issueRepository.create(issue)
-
-        // 7. 발행된 경우 이메일 큐에 작업 추가
-        if (createdIssue.status == IssueStatus.PUBLISHED) {
-            val owner = userRepository.findById(command.userId)
-            if (owner != null) {
-                issuePublishService.queueIssuePublishedEmail(createdIssue, newsletter, owner)
-            }
-        }
-
-        return createdIssue.toIssueResponse()
+        return issueRepository.create(issue).toIssueResponse()
     }
 
     /**
@@ -163,23 +126,36 @@ class IssueService(
             throw IssueException.ValidationError("Issue does not belong to this newsletter")
         }
 
-        // 3. Slug 중복 확인 (변경하는 경우)
-        if (command.slug != null && command.slug != existingIssue.slug) {
-            if (issueRepository.existsByNewsletterIdAndSlug(command.newsletterId, command.slug)) {
-                throw IssueException.SlugConflict("Slug already exists in this newsletter")
-            }
-        }
-
-        // 4. 상태 파싱 및 검증
+        // 3. 상태 파싱 및 검증
         val newStatus = if (command.status != null) {
             val finalTitle = command.title?.trim() ?: existingIssue.title
+            val finalSlug = command.slug?.trim() ?: existingIssue.slug
             parseAndValidateStatus(
                 statusStr = command.status,
                 title = finalTitle,
+                slug = finalSlug,
                 scheduledAt = command.scheduledAt,
             )
         } else {
             existingIssue.status
+        }
+
+        // 4. Slug 검증 및 설정 (PUBLISHED 상태일 때만 필수)
+        val slug = if (newStatus == IssueStatus.PUBLISHED) {
+            val newSlug = command.slug?.trim() ?: existingIssue.slug
+            if (newSlug.isNullOrBlank()) {
+                throw IssueException.ValidationError("Slug is required when publishing")
+            }
+            // Slug 변경 시 중복 확인
+            if (newSlug != existingIssue.slug) {
+                if (issueRepository.existsByNewsletterIdAndSlug(command.newsletterId, newSlug)) {
+                    throw IssueException.SlugConflict("Slug already exists in this newsletter")
+                }
+            }
+            newSlug
+        } else {
+            // DRAFT, SCHEDULED 상태일 때는 slug 변경 가능 (nullable)
+            command.slug?.trim() ?: existingIssue.slug
         }
 
         // 5. SCHEDULED 상태가 아닌데 scheduledAt이 있으면 에러
@@ -197,7 +173,7 @@ class IssueService(
         // 7. 이슈 업데이트
         val updatedIssue = existingIssue.copy(
             title = command.title?.trim() ?: existingIssue.title,
-            slug = command.slug?.trim() ?: existingIssue.slug,
+            slug = slug,
             content = command.content,
             excerpt = command.excerpt?.trim() ?: existingIssue.excerpt,
             coverImageUrl = command.coverImageUrl?.trim() ?: existingIssue.coverImageUrl,
@@ -255,6 +231,7 @@ class IssueService(
     private fun parseAndValidateStatus(
         statusStr: String?,
         title: String?,
+        slug: String?,
         scheduledAt: Instant?,
     ): IssueStatus {
         return when (statusStr?.uppercase()) {
@@ -271,6 +248,9 @@ class IssueService(
             "PUBLISHED" -> {
                 if (title.isNullOrBlank()) {
                     throw IssueException.ValidationError("Title is required for publishing")
+                }
+                if (slug.isNullOrBlank()) {
+                    throw IssueException.ValidationError("Slug is required for publishing")
                 }
                 IssueStatus.PUBLISHED
             }
@@ -349,6 +329,11 @@ class IssueService(
             throw IllegalArgumentException("Issue not found")
         }
 
+        // PUBLISHED 상태일 때는 slug가 필수
+        if (issue.slug == null) {
+            throw IllegalStateException("Published issue must have a slug")
+        }
+
         val user = userRepository.findById(newsletter.ownerId)
             ?: throw IllegalStateException("User not found")
 
@@ -391,13 +376,14 @@ class IssueService(
             ?: throw IllegalStateException("Newsletter owner not found")
 
         val issues = issueRepository.findPublishedByNewsletterId(newsletter.id)
+            .filter { it.slug != null } // slug가 null인 경우 제외 (PUBLISHED 상태이지만 slug가 없는 경우)
             .sortedByDescending { it.publishedAt }
             .drop(offset)
             .take(limit)
             .map { issue ->
                 PublicIssueResponse(
                     id = issue.id,
-                    slug = issue.slug,
+                    slug = issue.slug!!, // null 체크 후 사용
                     title = issue.title,
                     excerpt = issue.excerpt,
                     publishedAt = issue.publishedAt?.toString() ?: "",
@@ -433,10 +419,11 @@ class IssueService(
 
         val allIssues = newsletters.flatMap { newsletter ->
             issueRepository.findPublishedByNewsletterId(newsletter.id)
+                .filter { it.slug != null } // slug가 null인 경우 제외
                 .map { issue ->
                     PublicIssueResponse(
                         id = issue.id,
-                        slug = issue.slug,
+                        slug = issue.slug!!, // null 체크 후 사용
                         title = issue.title,
                         excerpt = issue.excerpt,
                         publishedAt = issue.publishedAt?.toString() ?: "",

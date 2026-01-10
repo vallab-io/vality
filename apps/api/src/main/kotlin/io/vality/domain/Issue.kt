@@ -15,7 +15,7 @@ enum class IssueStatus {
 data class Issue(
     val id: String,
     val title: String?, // nullable, 발행 시 필수
-    val slug: String,
+    val slug: String?, // nullable, PUBLISHED 상태일 때만 필수
     val content: String,
     val excerpt: String? = null,
     val coverImageUrl: String? = null,

@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { PlusIcon, MoreIcon, EditIcon, TrashIcon, SearchIcon } from "@/components/icons";
+import { Eye, ExternalLink } from "lucide-react";
 import { getIssues, deleteIssue, createIssue, type Issue } from "@/lib/api/issue";
 import { getNewsletterById, type Newsletter } from "@/lib/api/newsletter";
 import { useAtomValue } from "jotai";
@@ -98,10 +99,7 @@ export default function IssuesPageClient() {
   const handleCreateNewIssue = useCallback(async () => {
     setIsCreating(true);
     try {
-      const newIssue = await createIssue(newsletterId, {
-        status: "DRAFT",
-        content: "",
-      });
+      const newIssue = await createIssue(newsletterId);
       router.push(`/dashboard/newsletters/${newsletterId}/issues/${newIssue.id}`);
     } catch (error: any) {
       console.error("Failed to create issue:", error);
@@ -195,38 +193,40 @@ export default function IssuesPageClient() {
   return (
     <div className="mx-auto max-w-4xl">
       {/* Stats */}
-      <div className="mt-6 grid grid-cols-3 gap-4">
+      <div className="mt-6 grid grid-cols-3 gap-3">
         {(["all", "published", "draft"] as const).map((status) => (
           <button
             key={status}
             onClick={() => setStatusFilter(status)}
             className={cn(
-              "rounded-lg border border-border p-4 text-left transition-colors hover:bg-muted/50",
-              statusFilter === status && "border-primary bg-muted"
+              "group relative rounded-xl border p-4 text-left transition-all duration-200",
+              statusFilter === status
+                ? "border-primary/50 bg-primary/5 shadow-sm"
+                : "border-border/50 bg-card/50 hover:border-border hover:bg-card hover:shadow-sm"
             )}
           >
-            <p className="text-2xl font-semibold">{statusCounts[status]}</p>
-            <p className="text-sm text-muted-foreground">{STATUS_LABELS[status]}</p>
+            <p className="text-2xl font-bold mb-1">{statusCounts[status]}</p>
+            <p className="text-sm font-medium text-muted-foreground">{STATUS_LABELS[status]}</p>
           </button>
         ))}
       </div>
 
       {/* Search & Filter */}
-      <div className="mt-6 flex gap-4">
-        <div className="relative flex-1">
+      <div className="mt-6 flex flex-wrap gap-3">
+        <div className="relative flex-1 min-w-[200px]">
           <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t("issues.searchPlaceholder")}
-            className="pl-10"
+            className="pl-10 h-10 rounded-lg border-border/50 bg-background"
           />
         </div>
         <Select
           value={statusFilter}
           onValueChange={(value) => setStatusFilter(value as IssueStatus)}
         >
-          <SelectTrigger className="w-32">
+          <SelectTrigger className="w-[140px] h-10 rounded-lg border-border/50">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -241,7 +241,7 @@ export default function IssuesPageClient() {
           value={sortOrder}
           onValueChange={(value) => setSortOrder(value as SortOrder)}
         >
-          <SelectTrigger className="w-32">
+          <SelectTrigger className="w-[140px] h-10 rounded-lg border-border/50">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -297,20 +297,23 @@ export default function IssuesPageClient() {
             {filteredIssues.map((issue) => (
               <div
                 key={issue.id}
-                className="group rounded-lg border border-border p-4 transition-colors hover:bg-muted/30"
+                className="group relative rounded-lg border border-border p-4 transition-all duration-200 hover:bg-muted/50 hover:border-primary/20"
               >
                 <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
+                  {/* Main Content */}
+                  <Link
+                    href={`/dashboard/newsletters/${newsletterId}/issues/${issue.id}`}
+                    className="min-w-0 flex-1"
+                  >
                     <div className="flex items-center gap-2">
-                      <Link
-                        href={`/dashboard/newsletters/${newsletterId}/issues/${issue.id}`}
+                      <span
                         className={cn(
-                          "font-medium hover:underline truncate",
+                          "font-medium truncate text-foreground",
                           !issue.title && "text-muted-foreground italic"
                         )}
                       >
                         {issue.title || t("common.untitled")}
-                      </Link>
+                      </span>
                       <span
                         className={cn(
                           "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
@@ -320,11 +323,6 @@ export default function IssuesPageClient() {
                         {STATUS_DISPLAY[issue.status] || issue.status}
                       </span>
                     </div>
-                    {issue.excerpt && (
-                      <p className="mt-1 text-sm text-muted-foreground line-clamp-1">
-                        {issue.excerpt}
-                      </p>
-                    )}
                     <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
                       {issue.status === "PUBLISHED" && issue.publishedAt ? (
                         <span>{t("issues.publishedAt")}: {formatDateLocal(issue.publishedAt)}</span>
@@ -334,56 +332,55 @@ export default function IssuesPageClient() {
                         <span>{t("issues.createdAt")}: {formatDateLocal(issue.createdAt)}</span>
                       )}
                     </div>
-                  </div>
+                  </Link>
 
-                  {/* Actions */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                  {/* Actions - 세련된 아이콘 버튼 */}
+                  <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* View Button (Published only) */}
+                    {issue.status === "PUBLISHED" && getPublicIssueUrl(issue) && (
                       <Button
                         variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100"
+                        size="icon"
+                        asChild
+                        className="h-8 w-8 rounded-md hover:bg-muted"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <MoreIcon className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link href={`/dashboard/newsletters/${newsletterId}/issues/${issue.id}`}>
-                          <EditIcon className="mr-2 h-4 w-4" />
-                          {t("issues.edit")}
+                        <Link href={getPublicIssueUrl(issue)!} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4" />
+                          <span className="sr-only">{t("issues.view")}</span>
                         </Link>
-                      </DropdownMenuItem>
-                      {issue.status === "PUBLISHED" && getPublicIssueUrl(issue) && (
-                        <DropdownMenuItem asChild>
-                          <Link href={getPublicIssueUrl(issue)!} target="_blank">
-                            <svg
-                              className="mr-2 h-4 w-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                              />
-                            </svg>
-                            {t("issues.view")}
-                          </Link>
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="text-destructive focus:text-destructive"
-                        onClick={() => handleDelete(issue.id, issue.title)}
-                      >
-                        <TrashIcon className="mr-2 h-4 w-4" />
-                        {t("common.delete")}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                      </Button>
+                    )}
+
+                    {/* Edit Button */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      asChild
+                      className="h-8 w-8 rounded-md hover:bg-muted"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Link href={`/dashboard/newsletters/${newsletterId}/issues/${issue.id}`}>
+                        <EditIcon className="h-4 w-4" />
+                        <span className="sr-only">{t("issues.edit")}</span>
+                      </Link>
+                    </Button>
+
+                    {/* Delete Button */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDelete(issue.id, issue.title);
+                      }}
+                      className="h-8 w-8 rounded-md text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                      <span className="sr-only">{t("common.delete")}</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}

@@ -2,24 +2,35 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/common";
 import { HomeIcon, DashboardIcon, MenuIcon, CloseIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
-import { useAtomValue } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 import { userAtom } from "@/stores/auth.store";
 import { cn } from "@/lib/utils";
 import { useT } from "@/hooks/use-translation";
 
 export function HomeSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const user = useAtomValue(userAtom);
+  const setUser = useSetAtom(userAtom);
   const isAuthenticated = !!user;
   const t = useT();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
+
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    setUser(null);
+    closeMenu(); // 모바일 메뉴 닫기
+    // 홈 페이지에 그대로 유지
+    router.refresh();
+  };
 
   const NavContent = ({ onItemClick }: { onItemClick?: () => void }) => (
     <>
@@ -57,19 +68,19 @@ export function HomeSidebar() {
           </Link>
         )}
 
-        {/* Profile - 인증된 경우만 표시 */}
-        {isAuthenticated && user?.username && (
-          <Link
-            href={`/@${user.username}`}
-            onClick={onItemClick}
-            className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-              pathname === `/@${user.username}`
-                ? "bg-muted text-foreground"
-                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-            )}
-          >
-            {user.imageUrl ? (
+        {/* Profile - 항상 표시 (인증되지 않은 경우 로그인으로 이동) */}
+        <Link
+          href={isAuthenticated && user?.username ? `/@${user.username}` : "/login"}
+          onClick={onItemClick}
+          className={cn(
+            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+            isAuthenticated && user?.username && pathname === `/@${user.username}`
+              ? "bg-muted text-foreground"
+              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          )}
+        >
+          {isAuthenticated && user ? (
+            user.imageUrl ? (
               <img
                 src={user.imageUrl}
                 alt={user.name || user.email || t("common.user")}
@@ -79,21 +90,50 @@ export function HomeSidebar() {
               <div className="h-5 w-5 rounded-full bg-muted flex items-center justify-center text-xs font-medium flex-shrink-0">
                 {(user.name || user.email || "U")[0].toUpperCase()}
               </div>
-            )}
-            {t("sidebar.profile")}
-          </Link>
-        )}
+            )
+          ) : (
+            <div className="h-5 w-5 rounded-full bg-muted flex items-center justify-center text-xs font-medium flex-shrink-0">
+              <svg
+                className="h-3.5 w-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+            </div>
+          )}
+          {t("sidebar.profile")}
+        </Link>
       </nav>
 
-      {/* Footer - About */}
-      <div className="border-t border-border px-3 py-4">
+      {/* Footer - About & Sign Out */}
+      <div className="border-t border-border px-3 py-4 space-y-2">
         <Link
           href="/about"
           onClick={onItemClick}
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="block text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           {t("sidebar.about")}
         </Link>
+        {isAuthenticated && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              handleLogout();
+              onItemClick?.();
+            }}
+            className="w-full justify-start text-xs text-muted-foreground hover:text-foreground h-auto py-1.5 px-0"
+          >
+            {t("sidebar.logout")}
+          </Button>
+        )}
       </div>
     </>
   );

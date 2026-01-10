@@ -80,7 +80,7 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
           </Link>
           <h1 className="mt-4 text-2xl sm:text-3xl font-bold">{newsletter.name}</h1>
           {newsletter.description && (
-            <p className="mt-4 text-base sm:text-lg text-muted-foreground">
+            <p className="mt-4 text-base sm:text-lg text-muted-foreground whitespace-pre-wrap">
               {newsletter.description}
             </p>
           )}
@@ -139,19 +139,21 @@ export default async function NewsletterPage({ params }: NewsletterPageProps) {
                       </Link>
                     )}
                     <div className="min-w-0 flex-1 sm:order-1">
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <time>{formatDateLocal(issue.publishedAt)}</time>
                       </div>
                       <Link
                         href={`/@${username}/${newsletterSlug}/${issue.slug}`}
                       >
-                        <h3 className="mt-2 font-semibold group-hover:underline">
+                        <h3 className="mt-2 text-lg font-semibold group-hover:underline leading-snug">
                           {issue.title}
                         </h3>
                       </Link>
-                      <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
-                        {issue.excerpt}
-                      </p>
+                      {issue.excerpt && (
+                        <p className="mt-2 text-base text-muted-foreground line-clamp-2 leading-relaxed">
+                          {issue.excerpt}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </article>

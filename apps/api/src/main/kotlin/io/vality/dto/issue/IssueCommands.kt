@@ -3,21 +3,6 @@ package io.vality.dto.issue
 import java.time.Instant
 
 /**
- * 이슈 생성 명령 (비즈니스 로직용)
- */
-data class CreateIssueCommand(
-    val userId: String,
-    val newsletterId: String,
-    val title: String?,
-    val slug: String?,
-    val content: String,
-    val excerpt: String?,
-    val coverImageUrl: String?,
-    val status: String?, // "DRAFT", "SCHEDULED", "PUBLISHED"
-    val scheduledAt: Instant?,
-)
-
-/**
  * 이슈 수정 명령 (비즈니스 로직용)
  */
 data class UpdateIssueCommand(

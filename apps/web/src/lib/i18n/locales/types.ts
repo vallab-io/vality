@@ -100,6 +100,7 @@ export interface Translations {
     heroTitle2: string;
     heroDescription: string;
     valueTitle: string;
+    valueSubtitle: string;
     valueCard1Title: string;
     valueCard1Desc: string;
     valueCard2Title: string;
@@ -107,6 +108,7 @@ export interface Translations {
     valueCard3Title: string;
     valueCard3Desc: string;
     featuresTitle: string;
+    featuresSubtitle: string;
     feature1Title: string;
     feature1Desc: string;
     feature2Title: string;
@@ -123,7 +125,11 @@ export interface Translations {
 
   // Home
   home: {
-    forYou: string;
+    ctaTitle: string;
+    ctaDescription: string;
+    ctaButton: string;
+    learnMore: string;
+    ctaSubtext: string;
   };
 
   // Dashboard
@@ -156,6 +162,7 @@ export interface Translations {
     noNewsletter: string;
     createNewsletter: string;
     logout: string;
+    signIn: string;
     about: string;
     profile: string;
   };
@@ -408,13 +415,16 @@ export interface Translations {
 
   // Issue Editor
   editor: {
-    title: string;
     titlePlaceholder: string;
     contentPlaceholder: string;
     slashPlaceholder: string;
     saveDraft: string;
     publish: string;
     publishing: string;
+    update: string;
+    updating: string;
+    updated: string;
+    updateFailed: string;
     saving: string;
     preview: string;
     settings: string;
@@ -451,6 +461,31 @@ export interface Translations {
     date: string;
     time: string;
     scheduledDateRequired: string;
+    showPreview: string;
+    hidePreview: string;
+    // Slash Commands
+    slashHeading1: string;
+    slashHeading1Desc: string;
+    slashHeading2: string;
+    slashHeading2Desc: string;
+    slashHeading3: string;
+    slashHeading3Desc: string;
+    slashBulletList: string;
+    slashBulletListDesc: string;
+    slashNumberedList: string;
+    slashNumberedListDesc: string;
+    slashQuote: string;
+    slashQuoteDesc: string;
+    slashDivider: string;
+    slashDividerDesc: string;
+    slashImage: string;
+    slashImageDesc: string;
+    slashImageSaveFirst: string;
+    slashImageInvalidFormat: string;
+    slashImageTooLarge: string;
+    slashImageUploading: string;
+    slashImageUploaded: string;
+    slashImageUploadFailed: string;
   };
 
   // Embed Widget

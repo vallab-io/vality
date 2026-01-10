@@ -77,26 +77,26 @@ export default async function IssuePage({ params }: IssuePageProps) {
 
       <main className="mx-auto max-w-5xl px-4 sm:px-6 py-6 sm:py-12">
         {/* Article Header */}
-        <header className="mb-6 sm:mb-10">
-          <time className="text-sm text-muted-foreground">
+        <header className="mb-8 sm:mb-12">
+          <time className="text-base text-muted-foreground">
             {formatDateLocal(issue.publishedAt)}
           </time>
-          <h1 className="mt-2 text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight">
+          <h1 className="mt-3 text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight leading-tight">
             {issue.title || t("common.untitled")}
           </h1>
 
           {/* Author */}
-          <div className="mt-4 sm:mt-6 flex items-center gap-3">
+          <div className="mt-6 sm:mt-8 flex items-center gap-3">
             <UserAvatar 
               name={issue.ownerName || issue.ownerUsername || ""} 
               imageUrl={issue.ownerImageUrl} 
               size="md" 
             />
             <div>
-              <Link href={`/@${username}`} className="font-medium hover:underline">
+              <Link href={`/@${username}`} className="text-base font-medium hover:underline">
                 {issue.ownerName || issue.ownerUsername || username}
               </Link>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground mt-0.5">
                 <Link href={`/@${username}/${newsletterSlug}`} className="hover:underline">
                   {issue.newsletterName}
                 </Link>
@@ -107,7 +107,7 @@ export default async function IssuePage({ params }: IssuePageProps) {
 
         {/* Article Content */}
         <article 
-          className="prose prose-sm sm:prose prose-neutral max-w-none dark:prose-invert [&_img]:mx-auto [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:my-4"
+          className="prose prose-lg sm:prose-xl prose-neutral max-w-none dark:prose-invert prose-headings:font-semibold prose-p:leading-relaxed prose-p:text-foreground [&_p]:text-lg [&_p]:sm:text-xl [&_p]:leading-8 [&_li]:text-lg [&_li]:sm:text-xl [&_li]:leading-8 [&_img]:mx-auto [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:my-6 [&_h1]:text-3xl [&_h1]:sm:text-4xl [&_h2]:text-2xl [&_h2]:sm:text-3xl [&_h3]:text-xl [&_h3]:sm:text-2xl"
           dangerouslySetInnerHTML={{ __html: issue.content }}
         />
 

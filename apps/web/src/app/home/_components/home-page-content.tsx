@@ -9,9 +9,10 @@ import { getAllPublicIssues, type PublicIssue } from "@/lib/api/public";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/auth.store";
 import { localeAtom } from "@/stores/locale.store";
-import { Heart } from "lucide-react";
+import { Heart, ArrowRight } from "lucide-react";
 import { useT } from "@/hooks/use-translation";
 import { formatRelativeTime } from "@/lib/utils/date";
+import { Button } from "@/components/ui/button";
 
 export default function HomePageContent() {
   const user = useAtomValue(userAtom);
@@ -57,6 +58,46 @@ export default function HomePageContent() {
       
       <main className="md:ml-64 min-h-screen">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+          {/* CTA Section - 로그인하지 않은 사용자에게만 표시 */}
+          {!user && (
+            <div className="mb-8 rounded-lg border border-border/40 bg-muted/30 p-5 sm:p-6">
+              <div className="text-center space-y-3">
+                <h3 className="text-lg sm:text-xl font-semibold text-foreground">
+                  {t("home.ctaTitle")}
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-xl mx-auto">
+                  {t("home.ctaDescription")}
+                </p>
+                <div className="flex items-center justify-center gap-3 pt-1">
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="default"
+                    className="text-sm"
+                  >
+                    <Link href="/signup">
+                      {t("home.ctaButton")}
+                      <ArrowRight className="ml-1.5 h-4 w-4" />
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="outline"
+                    className="text-sm"
+                  >
+                    <Link href="/about">
+                      {t("home.learnMore")}
+                    </Link>
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {t("home.ctaSubtext")}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Issues List */}
           {issues.length === 0 ? (
             <div className="mt-12 rounded-xl border border-border bg-card py-20 text-center shadow-sm">
@@ -74,7 +115,7 @@ export default function HomePageContent() {
             <div>
               {/* Section Header */}
               <div className="mb-8 pb-4 border-b border-border/50">
-                <h2 className="text-lg font-semibold text-foreground">{t("home.forYou")}</h2>
+                <h2 className="text-lg font-semibold text-foreground">For you</h2>
               </div>
 
               <div className="space-y-4 sm:space-y-6">

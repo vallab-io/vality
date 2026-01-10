@@ -230,10 +230,15 @@ class IssueRepository {
             .orderBy(Issues.publishedAt to SortOrder.DESC)
             .limit(limit)
             .drop(offset)
-            .map { row ->
+            .mapNotNull { row ->
+                val slug = row[Issues.slug]
+                // PUBLISHED 상태이지만 slug가 null인 경우 제외
+                if (slug == null) {
+                    return@mapNotNull null
+                }
                 IssueWithNewsletterAndOwner(
                     issueId = row[Issues.id],
-                    issueSlug = row[Issues.slug],
+                    issueSlug = slug,
                     issueTitle = row[Issues.title],
                     issueExcerpt = row[Issues.excerpt],
                     issuePublishedAt = row[Issues.publishedAt],

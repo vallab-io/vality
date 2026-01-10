@@ -5,7 +5,7 @@ import type { ApiResponse } from "./types";
 export interface Issue {
   id: string;
   title: string | null; // nullable
-  slug: string;
+  slug: string | null; // nullable, PUBLISHED 상태일 때만 필수
   content: string;
   excerpt: string | null;
   coverImageUrl: string | null;
@@ -17,7 +17,8 @@ export interface Issue {
   updatedAt: string;
 }
 
-// 이슈 생성 요청
+// 이슈 생성 요청 (더 이상 사용하지 않음 - API는 body를 받지 않음)
+// @deprecated API는 이제 body를 받지 않고 빈 이슈만 생성합니다
 export interface CreateIssueRequest {
   title?: string | null; // nullable
   slug?: string | null; // nullable, 자동 생성 가능
@@ -39,14 +40,12 @@ export interface UpdateIssueRequest {
   scheduledAt?: string | null;
 }
 
-// 이슈 생성
+// 이슈 생성 (빈 DRAFT 이슈만 생성, body 없음)
 export async function createIssue(
-  newsletterId: string,
-  data: CreateIssueRequest
+  newsletterId: string
 ): Promise<Issue> {
   const response = await apiClient.post<ApiResponse<Issue>>(
-    `/newsletters/${newsletterId}/issues`,
-    data
+    `/newsletters/${newsletterId}/issues`
   );
   if (!response.data.data) {
     throw new Error(response.data.message || "Failed to create issue");
