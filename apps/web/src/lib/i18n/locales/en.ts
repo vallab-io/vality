@@ -119,10 +119,10 @@ export const en: Translations = {
     ctaDesc3: "Connect with readers through authentic content.",
   },
   home: {
-    forYou: "For you",
     ctaTitle: "Start your own newsletter easily",
     ctaDescription: "Focus on writing without technical complexity. Start now and anyone can easily create and publish newsletters.",
     ctaButton: "Get Started",
+    learnMore: "Learn more",
     ctaSubtext: "Start for free, cancel anytime",
   },
   dashboard: {
@@ -395,6 +395,10 @@ export const en: Translations = {
     saveDraft: "Save Draft",
     publish: "Publish",
     publishing: "Publishing...",
+    update: "Update",
+    updating: "Updating...",
+    updated: "Updated!",
+    updateFailed: "Failed to update",
     saving: "Saving...",
     preview: "Preview",
     settings: "Settings",

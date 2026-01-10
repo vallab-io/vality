@@ -10,7 +10,7 @@ import java.time.Instant
 data class IssueResponse(
     val id: String,
     val title: String?,
-    val slug: String,
+    val slug: String?,
     val content: String,
     val excerpt: String?,
     val coverImageUrl: String?,

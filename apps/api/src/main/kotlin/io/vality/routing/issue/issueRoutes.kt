@@ -15,8 +15,6 @@ import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.vality.dto.ApiResponse
-import io.vality.dto.issue.CreateIssueCommand
-import io.vality.dto.issue.CreateIssueRequest
 import io.vality.dto.issue.DeleteIssueCommand
 import io.vality.dto.issue.GetIssueQuery
 import io.vality.dto.issue.GetIssuesQuery
@@ -38,21 +36,7 @@ fun Route.issueRoutes() {
                 val newsletterId = call.getNewsletterId() ?: return@post call.respondBadRequest("Newsletter ID is required")
 
                 try {
-                    val request = call.receive<CreateIssueRequest>()
-                    
-                    val command = CreateIssueCommand(
-                        userId = userId,
-                        newsletterId = newsletterId,
-                        title = request.title,
-                        slug = request.slug,
-                        content = request.content,
-                        excerpt = request.excerpt,
-                        coverImageUrl = request.coverImageUrl,
-                        status = request.status,
-                        scheduledAt = request.scheduledAt,
-                    )
-
-                    val issueResponse = issueService.createIssue(command)
+                    val issueResponse = issueService.createIssue(userId, newsletterId)
 
                     call.respond(
                         HttpStatusCode.Created,

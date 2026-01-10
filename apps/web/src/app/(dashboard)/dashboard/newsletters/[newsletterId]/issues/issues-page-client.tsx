@@ -99,10 +99,7 @@ export default function IssuesPageClient() {
   const handleCreateNewIssue = useCallback(async () => {
     setIsCreating(true);
     try {
-      const newIssue = await createIssue(newsletterId, {
-        status: "DRAFT",
-        content: "",
-      });
+      const newIssue = await createIssue(newsletterId);
       router.push(`/dashboard/newsletters/${newsletterId}/issues/${newIssue.id}`);
     } catch (error: any) {
       console.error("Failed to create issue:", error);
