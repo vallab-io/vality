@@ -41,9 +41,9 @@ export const metadata: Metadata = {
       "A simple newsletter platform built for discovery and long-term growth.",
     images: [
       {
-        url: "https://vality.io/logo.svg",
+        url: "https://vality.io/og-default.svg",
         width: 1200,
-        height: 1200,
+        height: 630,
         alt: "Vality",
       },
     ],
@@ -53,7 +53,14 @@ export const metadata: Metadata = {
     title: "Vality - Newsletter",
     description:
       "A simple newsletter platform built for discovery and long-term growth.",
-    images: ["https://vality.io/logo.svg"],
+    images: [
+      {
+        url: "https://vality.io/og-default.svg",
+        width: 1200,
+        height: 630,
+        alt: "Vality",
+      },
+    ],
   },
   icons: {
     icon: [
