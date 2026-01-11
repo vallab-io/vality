@@ -65,3 +65,25 @@ export function generateExcerpt(html: string, maxLength: number = 160): string {
 export function getAbsoluteUrl(path: string): string {
   return `${SITE_URL}${path}`;
 }
+
+/**
+ * HTML content에서 이미지 URL 추출
+ * @param html HTML 문자열
+ * @returns 이미지 URL 배열
+ */
+export function extractImageUrls(html: string): string[] {
+  if (!html) return [];
+  
+  const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+  const urls: string[] = [];
+  let match;
+  
+  while ((match = imgRegex.exec(html)) !== null) {
+    const url = match[1];
+    if (url && !urls.includes(url)) {
+      urls.push(url);
+    }
+  }
+  
+  return urls;
+}

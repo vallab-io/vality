@@ -429,6 +429,18 @@ export interface Translations {
     preview: string;
     settings: string;
     coverImage: string;
+    coverImageHint: string;
+    selectFromContent: string;
+    noImagesInContent: string;
+    imageLoadFailed: string;
+    selected: string;
+    generatingImage: string;
+    uploadImage: string;
+    uploading: string;
+    imageUploaded: string;
+    imageUploadFailed: string;
+    imageGenerationFailed: string;
+    invalidImageFile: string;
     excerpt: string;
     excerptPlaceholder: string;
     sendEmail: string;
