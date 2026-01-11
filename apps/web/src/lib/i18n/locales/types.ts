@@ -430,6 +430,7 @@ export interface Translations {
     settings: string;
     coverImage: string;
     coverImageHint: string;
+    coverImageRecommendedSize: string;
     selectFromContent: string;
     noImagesInContent: string;
     imageLoadFailed: string;

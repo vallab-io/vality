@@ -817,11 +817,9 @@ export default function IssuePage() {
                 onChange={(e) => setPublishExcerpt(e.target.value)}
                 placeholder={t("editor.excerptPlaceholder")}
                 rows={3}
-                className="resize-none"
+                className="resize-none overflow-y-auto"
+                style={{ maxHeight: "calc(3 * 1.5rem + 1rem + 2px)" }}
               />
-              <p className="text-xs text-muted-foreground">
-                {t("editor.excerptPlaceholder")}
-              </p>
             </div>
 
             {/* Cover Image Selection */}
@@ -829,7 +827,7 @@ export default function IssuePage() {
               <div>
                 <Label>{t("editor.coverImage")}</Label>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {t("editor.coverImageHint")} (1200×630 권장)
+                  {t("editor.coverImageHint")} {t("editor.coverImageRecommendedSize")}
                 </p>
               </div>
 
