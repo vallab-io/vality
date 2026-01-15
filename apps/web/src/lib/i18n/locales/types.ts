@@ -455,8 +455,8 @@ export interface Translations {
     imageUploadFailed: string;
     imageGenerationFailed: string;
     invalidImageFile: string;
-    excerpt: string;
-    excerptPlaceholder: string;
+    description: string;
+    descriptionPlaceholder: string;
     sendEmail: string;
     sendEmailDesc: string;
     back: string;
@@ -479,6 +479,7 @@ export interface Translations {
     emailNoticeZero: string;
     urlSlug: string;
     urlSlugHint: string;
+    slugAlreadyExists: string;
     publishTiming: string;
     publishNow: string;
     publishNowDesc: string;

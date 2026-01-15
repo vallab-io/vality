@@ -14,7 +14,7 @@ data class PublicIssueDetailResponse(
     val slug: String,
     val title: String?,
     val content: String, // 전체 content
-    val excerpt: String?,
+    val description: String?,
     val coverImageUrl: String?,
     val publishedAt: String,
     val createdAt: String,

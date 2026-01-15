@@ -160,9 +160,9 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                           {issue.title}
                         </h3>
                       </Link>
-                      {issue.excerpt && (
+                      {issue.description && (
                         <p className="mt-2 text-base text-muted-foreground line-clamp-2 leading-relaxed">
-                          {issue.excerpt}
+                          {issue.description}
                         </p>
                       )}
                     </div>

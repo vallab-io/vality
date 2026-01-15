@@ -19,7 +19,7 @@ data class EmailJob(
     val recipientEmails: List<String>,
     val subject: String,
     val issueTitle: String,
-    val issueExcerpt: String?,
+    val issueDescription: String?,
     val issueContent: String?, // 이슈 전체 내용 (HTML)
     val issueUrl: String,
     val newsletterName: String,

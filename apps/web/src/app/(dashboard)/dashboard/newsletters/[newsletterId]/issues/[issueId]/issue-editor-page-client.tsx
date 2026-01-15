@@ -17,7 +17,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ArrowLeftIcon } from "@/components/icons";
-import { getIssueById, updateIssue, type UpdateIssueRequest } from "@/lib/api/issue";
+import { getIssueById, updateIssue, checkSlugExists, type UpdateIssueRequest } from "@/lib/api/issue";
 import { getNewsletterById, type Newsletter } from "@/lib/api/newsletter";
 import { getSubscribers } from "@/lib/api/subscriber";
 import { uploadIssueImage } from "@/lib/api/upload";
@@ -55,14 +55,17 @@ export default function IssuePage() {
   });
 
   const [publishSlug, setPublishSlug] = useState("");
-  const [publishExcerpt, setPublishExcerpt] = useState("");
+  const [publishDescription, setPublishDescription] = useState("");
   const [publishCoverImageUrl, setPublishCoverImageUrl] = useState("");
   const [generatedCoverImageUrl, setGeneratedCoverImageUrl] = useState<string | null>(null);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [issueStatus, setIssueStatus] = useState<"DRAFT" | "SCHEDULED" | "PUBLISHED" | "ARCHIVED" | null>(null);
+  const [slugExists, setSlugExists] = useState(false);
+  const [isCheckingSlug, setIsCheckingSlug] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const slugCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // 뉴스레터 및 이슈 정보 로드
   useEffect(() => {
@@ -89,7 +92,7 @@ export default function IssuePage() {
           });
           const slug = issueData.slug || "";
           setPublishSlug(slug);
-          setPublishExcerpt(issueData.excerpt || "");
+          setPublishDescription(issueData.description || "");
           setPublishCoverImageUrl(issueData.coverImageUrl || "");
           setIssueStatus(issueData.status);
         }
@@ -419,6 +422,23 @@ export default function IssuePage() {
     if (!currentSlug || currentSlug === "") {
       const autoSlug = generateSlug(formData.title);
       setPublishSlug(autoSlug);
+      
+      // 생성된 slug가 이미 존재하는지 확인
+      try {
+        setIsCheckingSlug(true);
+        const exists = await checkSlugExists(
+          newsletterId,
+          autoSlug,
+          issueId // 현재 이슈 제외
+        );
+        setSlugExists(exists);
+      } catch (error: any) {
+        console.error("Failed to check slug:", error);
+        // 에러 발생 시 체크 실패로 간주하지 않음 (기존 동작 유지)
+        setSlugExists(false);
+      } finally {
+        setIsCheckingSlug(false);
+      }
     }
 
     // 이미 생성된 이미지가 없으면 자동으로 생성
@@ -493,7 +513,7 @@ export default function IssuePage() {
         title: formData.title.trim(),
         slug: slug,
         content: cleanedContent,
-        excerpt: publishExcerpt.trim() || null,
+        description: publishDescription.trim() || null,
         coverImageUrl: finalCoverImageUrl,
         status: "PUBLISHED",
         scheduledAt: null,
@@ -556,7 +576,7 @@ export default function IssuePage() {
         title: formData.title.trim(),
         slug: slug,
         content: cleanedContent,
-        excerpt: publishExcerpt.trim() || null,
+        description: publishDescription.trim() || null,
         coverImageUrl: finalCoverImageUrl,
         status: "PUBLISHED",
         scheduledAt: null,
@@ -576,8 +596,48 @@ export default function IssuePage() {
   };
 
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPublishSlug(e.target.value);
+    const newSlug = e.target.value;
+    setPublishSlug(newSlug);
+    setSlugExists(false); // 초기화
+
+    // 이전 타이머 취소
+    if (slugCheckTimeoutRef.current) {
+      clearTimeout(slugCheckTimeoutRef.current);
+    }
+
+    // slug가 비어있으면 체크하지 않음
+    if (!newSlug.trim()) {
+      return;
+    }
+
+    // debounce: 500ms 후에 체크
+    slugCheckTimeoutRef.current = setTimeout(async () => {
+      try {
+        setIsCheckingSlug(true);
+        const exists = await checkSlugExists(
+          newsletterId,
+          newSlug.trim(),
+          issueId // 현재 이슈 제외
+        );
+        setSlugExists(exists);
+      } catch (error: any) {
+        console.error("Failed to check slug:", error);
+        // 에러 발생 시 체크 실패로 간주하지 않음 (기존 동작 유지)
+        setSlugExists(false);
+      } finally {
+        setIsCheckingSlug(false);
+      }
+    }, 500);
   };
+
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (slugCheckTimeoutRef.current) {
+        clearTimeout(slugCheckTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (isLoading) {
     return (
@@ -731,6 +791,8 @@ export default function IssuePage() {
                       title={formData.title}
                       content={formData.content}
                       newsletterName={newsletter?.name || ""}
+                      userName={user?.name || user?.username || ""}
+                      userImageUrl={user?.imageUrl || null}
                       noTitle={t("editor.noTitle")}
                       emailPreview={t("editor.email") + " " + t("editor.preview")}
                     />
@@ -795,27 +857,43 @@ export default function IssuePage() {
                 <span className="shrink-0 text-sm text-muted-foreground">
                   /@{user?.username || "username"}/{newsletter?.slug || "slug"}/
                 </span>
-                <Input
-                  id="slug"
-                  value={publishSlug}
-                  onChange={handleSlugChange}
-                  placeholder="url-slug"
-                  className="flex-1"
-                />
+                <div className="flex-1 relative">
+                  <Input
+                    id="slug"
+                    value={publishSlug}
+                    onChange={handleSlugChange}
+                    placeholder="url-slug"
+                    className={cn(
+                      slugExists && "border-red-500 focus-visible:ring-red-500"
+                    )}
+                  />
+                  {isCheckingSlug && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+                    </div>
+                  )}
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {t("editor.urlSlugHint")}
-              </p>
+              {slugExists && (
+                <p className="text-xs text-red-500">
+                  {t("editor.slugAlreadyExists")}
+                </p>
+              )}
+              {!slugExists && !isCheckingSlug && publishSlug.trim() && (
+                <p className="text-xs text-muted-foreground">
+                  {t("editor.urlSlugHint")}
+                </p>
+              )}
             </div>
 
-            {/* Excerpt */}
+            {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="excerpt">{t("editor.excerpt")}</Label>
+              <Label htmlFor="description">{t("editor.description")}</Label>
               <Textarea
-                id="excerpt"
-                value={publishExcerpt}
-                onChange={(e) => setPublishExcerpt(e.target.value)}
-                placeholder={t("editor.excerptPlaceholder")}
+                id="description"
+                value={publishDescription}
+                onChange={(e) => setPublishDescription(e.target.value)}
+                placeholder={t("editor.descriptionPlaceholder")}
                 rows={3}
                 className="resize-none overflow-y-auto"
                 style={{ maxHeight: "calc(3 * 1.5rem + 1rem + 2px)" }}
@@ -969,7 +1047,10 @@ export default function IssuePage() {
             >
               {t("common.cancel")}
             </Button>
-            <Button onClick={handlePublish} disabled={isPublishing || !publishSlug.trim()}>
+            <Button 
+              onClick={handlePublish} 
+              disabled={isPublishing || !publishSlug.trim() || slugExists || isCheckingSlug}
+            >
               {isPublishing ? t("editor.publishing") : t("editor.publish")}
             </Button>
           </div>
@@ -1018,17 +1099,31 @@ function EmailPreview({
   title,
   content,
   newsletterName,
+  userName,
+  userImageUrl,
   noTitle,
   emailPreview,
 }: {
   title: string;
   content: string;
   newsletterName: string;
+  userName: string;
+  userImageUrl: string | null;
   noTitle: string;
   emailPreview: string;
 }) {
   const locale = useAtomValue(localeAtom);
   const today = formatRelativeTime(new Date().toISOString(), locale);
+
+  // 프로필 이미지 또는 이니셜 생성
+  const getInitials = (name: string): string => {
+    if (!name) return "U";
+    const parts = name.trim().split(" ");
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name[0].toUpperCase();
+  };
 
   return (
     <div className="w-full max-w-[360px] rounded-lg border border-border bg-background shadow-sm">
@@ -1037,17 +1132,28 @@ function EmailPreview({
       </div>
 
       <div className="p-4">
-        <div className="mb-4 flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-            {newsletterName.charAt(0).toUpperCase()}
+        {/* 프로필 이미지와 뉴스레터 정보 - 세로 레이아웃 */}
+        <div className="mb-4">
+          <div className="mb-2">
+            {userImageUrl ? (
+              <img
+                src={userImageUrl}
+                alt={userName}
+                className="h-10 w-10 rounded-full object-cover"
+              />
+            ) : (
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-sm font-medium text-foreground">
+                {getInitials(userName)}
+              </div>
+            )}
           </div>
-          <div className="min-w-0">
-            <div className="truncate text-sm font-semibold">{newsletterName}</div>
-            <div className="text-xs text-muted-foreground">{today}</div>
-          </div>
+          <div className="text-sm font-semibold text-foreground">{newsletterName}</div>
+          <div className="text-xs text-muted-foreground">by {userName}</div>
         </div>
 
-        <h1 className="mb-3 text-lg font-bold leading-tight">{title || noTitle}</h1>
+        <div className="mb-4 border-t border-border pt-4">
+          <h1 className="mb-3 text-lg font-bold leading-tight">{title || noTitle}</h1>
+        </div>
         <div
           className="prose prose-sm prose-neutral max-w-none dark:prose-invert [&_img]:mx-auto [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:my-4"
           dangerouslySetInnerHTML={{ __html: content }}

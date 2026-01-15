@@ -118,7 +118,7 @@ fun Route.issueRoutes() {
                         title = request.title,
                         slug = request.slug,
                         content = request.content,
-                        excerpt = request.excerpt,
+                        description = request.description,
                         coverImageUrl = request.coverImageUrl,
                         status = request.status,
                         scheduledAt = request.scheduledAt,
@@ -167,6 +167,36 @@ fun Route.issueRoutes() {
                     call.respond(
                         HttpStatusCode.InternalServerError,
                         ApiResponse.error<Nothing>(message = "Failed to delete issue: ${e.message}"),
+                    )
+                }
+            }
+
+            // GET /api/newsletters/{newsletterId}/issues/check-slug?slug={slug}&excludeIssueId={issueId} - Slug 존재 여부 확인
+            get("/check-slug") {
+                val userId = call.getUserId() ?: return@get call.respondUnauthorized()
+                val newsletterId = call.getNewsletterId() ?: return@get call.respondBadRequest("Newsletter ID is required")
+                val slug = call.request.queryParameters["slug"] ?: return@get call.respondBadRequest("Slug is required")
+                val excludeIssueId = call.request.queryParameters["excludeIssueId"]
+
+                try {
+                    val exists = issueService.checkSlugExists(
+                        userId = userId,
+                        newsletterId = newsletterId,
+                        slug = slug,
+                        excludeIssueId = excludeIssueId
+                    )
+
+                    call.respond(
+                        HttpStatusCode.OK,
+                        ApiResponse.success(data = mapOf("exists" to exists)),
+                    )
+                } catch (e: IssueException) {
+                    call.respondIssueException(e)
+                } catch (e: Exception) {
+                    call.application.log.error("Failed to check slug", e)
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        ApiResponse.error<Nothing>(message = "Failed to check slug: ${e.message}"),
                     )
                 }
             }
