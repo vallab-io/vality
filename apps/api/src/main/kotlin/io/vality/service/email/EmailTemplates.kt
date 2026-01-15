@@ -207,34 +207,17 @@ $confirmationUrl
         issueUrl: String,
         unsubscribeUrl: String,
     ): String {
-        // 초기 이니셜 생성 함수
-        fun getInitials(name: String): String {
-            val parts = name.trim().split("\\s+".toRegex())
-            return when {
-                parts.size >= 2 -> (parts[0].firstOrNull()?.toString() ?: "") + (parts[1].firstOrNull()?.toString() ?: "")
-                parts.isNotEmpty() && parts[0].isNotEmpty() -> parts[0].first().toString()
-                else -> "U"
-            }.uppercase()
-        }
-
-        // 이미지 또는 초기 표시 섹션
-        val initials = getInitials(senderName)
-        val avatarSection = """
-                            <div style="width: 40px; height: 40px; border-radius: 50%; background-color: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; color: #64748b; margin-bottom: 12px;">
-                                $initials
-                            </div>
-            """.trimIndent()
 
         // 이슈 내용이 있으면 본문에 포함, 없으면 excerpt만 표시
         val contentSection = if (!issueContent.isNullOrBlank()) {
             """
-                            <div style="margin: 0 0 32px 0; font-size: 15px; line-height: 1.7; color: #1e293b;">
+                            <div style="margin: 0 0 32px 0; font-size: 16px; line-height: 1.75; color: #334155;">
                                 $issueContent
                             </div>
             """.trimIndent()
         } else if (!issueExcerpt.isNullOrBlank()) {
             """
-                            <p style="margin: 0 0 32px 0; font-size: 15px; line-height: 1.7; color: #64748b;">
+                            <p style="margin: 0 0 32px 0; font-size: 16px; line-height: 1.75; color: #64748b;">
                                 $issueExcerpt
                             </p>
             """.trimIndent()
@@ -254,15 +237,14 @@ $confirmationUrl
     <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #F8FAFC;">
         <tr>
             <td align="center" style="padding: 48px 20px;">
-                <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 6px; border: 1px solid #e2e8f0;">
+                <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);">
                     <!-- Header -->
                     <tr>
-                        <td style="padding: 32px 32px 24px 32px; border-bottom: 1px solid #e2e8f0;">
-                            $avatarSection
-                            <p style="margin: 0; font-size: 14px; color: #64748b;">
+                        <td style="padding: 40px 40px 32px 40px; border-bottom: 1px solid #e2e8f0;">
+                            <p style="margin: 0 0 6px 0; font-size: 15px; font-weight: 600; color: #1e293b; letter-spacing: -0.01em;">
                                 $newsletterName
                             </p>
-                            <p style="margin: 4px 0 0 0; font-size: 13px; color: #94a3b8;">
+                            <p style="margin: 0; font-size: 13px; color: #64748b;">
                                 by $senderName
                             </p>
                         </td>
@@ -270,16 +252,16 @@ $confirmationUrl
                     
                     <!-- Content -->
                     <tr>
-                        <td style="padding: 32px;">
-                            <h1 style="margin: 0 0 24px 0; font-size: 24px; font-weight: 600; line-height: 1.4; color: #1e293b; letter-spacing: -0.02em;">
+                        <td style="padding: 40px;">
+                            <h1 style="margin: 0 0 28px 0; font-size: 26px; font-weight: 700; line-height: 1.3; color: #0f172a; letter-spacing: -0.03em;">
                                 $issueTitle
                             </h1>
                             
                             $contentSection
                             
                             <!-- Read on Web (텍스트 링크) -->
-                            <div style="text-align: center; margin: 32px 0; padding-top: 24px; border-top: 1px solid #e2e8f0;">
-                                <a href="$issueUrl" style="color: #2563EB; text-decoration: underline; font-size: 14px;">
+                            <div style="text-align: center; margin: 40px 0 0 0; padding-top: 28px; border-top: 1px solid #e2e8f0;">
+                                <a href="$issueUrl" style="color: #2563EB; text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s;">
                                     Read on Web →
                                 </a>
                             </div>
@@ -288,14 +270,14 @@ $confirmationUrl
                     
                     <!-- Footer -->
                     <tr>
-                        <td style="padding: 24px 32px; background-color: #f8f9fa; border-top: 1px solid #e2e8f0; border-radius: 0 0 6px 6px;">
-                            <p style="margin: 0 0 16px 0; font-size: 12px; line-height: 1.5; color: #64748b; text-align: center;">
+                        <td style="padding: 28px 40px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; border-radius: 0 0 6px 6px;">
+                            <p style="margin: 0 0 12px 0; font-size: 12px; line-height: 1.6; color: #64748b; text-align: center;">
                                 You received this email because you subscribed to $newsletterName.
                             </p>
-                            <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #94a3b8; text-align: center;">
+                            <p style="margin: 0; font-size: 12px; line-height: 1.6; color: #94a3b8; text-align: center;">
                                 <a href="$unsubscribeUrl" style="color: #64748b; text-decoration: underline;">Unsubscribe</a>
-                                &nbsp;•&nbsp;
-                                Powered by <a href="https://vality.io" style="color: #64748b; text-decoration: none;">Vality</a>
+                                <span style="margin: 0 8px; color: #cbd5e1;">•</span>
+                                <a href="https://vality.io" style="color: #64748b; text-decoration: none;">Powered by Vality</a>
                             </p>
                         </td>
                     </tr>
@@ -323,22 +305,6 @@ $confirmationUrl
         issueUrl: String,
         unsubscribeUrl: String,
     ): String {
-        // 초기 이니셜 생성 함수
-        fun getInitials(name: String): String {
-            val parts = name.trim().split("\\s+".toRegex())
-            return when {
-                parts.size >= 2 -> (parts[0].firstOrNull()?.toString() ?: "") + (parts[1].firstOrNull()?.toString() ?: "")
-                parts.isNotEmpty() && parts[0].isNotEmpty() -> parts[0].first().toString()
-                else -> "U"
-            }.uppercase()
-        }
-
-        // 텍스트 버전에서는 이미지 대신 초기만 표시
-        val avatarText = if (!ownerImageUrl.isNullOrBlank()) {
-            "[Avatar: $senderName]"
-        } else {
-            "[${getInitials(senderName)}]"
-        }
         // HTML 태그 제거 함수
         fun stripHtml(html: String?): String {
             if (html.isNullOrBlank()) return ""
@@ -376,7 +342,7 @@ $issueExcerpt
         }
 
         return """
-$avatarText $newsletterName
+$newsletterName
 by $senderName
 
 $issueTitle

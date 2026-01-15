@@ -109,3 +109,21 @@ export async function deleteIssue(
   }
 }
 
+// Slug 존재 여부 확인
+export async function checkSlugExists(
+  newsletterId: string,
+  slug: string,
+  excludeIssueId?: string
+): Promise<boolean> {
+  const params = new URLSearchParams({ slug });
+  if (excludeIssueId) {
+    params.append("excludeIssueId", excludeIssueId);
+  }
+  const response = await apiClient.get<ApiResponse<{ exists: boolean }>>(
+    `/newsletters/${newsletterId}/issues/check-slug?${params.toString()}`
+  );
+  if (!response.data.data) {
+    throw new Error(response.data.message || "Failed to check slug");
+  }
+  return response.data.data.exists;
+}

@@ -451,6 +451,7 @@ export const ko: Translations = {
     emailNoticeZero: "아직 활성 구독자가 없습니다. 이슈는 아카이브에만 게시됩니다.",
     urlSlug: "URL 슬러그",
     urlSlugHint: "영문 소문자, 숫자, 하이픈(-)만 사용 가능합니다.",
+    slugAlreadyExists: "이미 사용 중인 슬러그입니다.",
     publishTiming: "발행 시점",
     publishNow: "지금 발행",
     publishNowDesc: "즉시 발행됩니다",

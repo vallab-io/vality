@@ -157,6 +157,21 @@ class IssueRepository {
             .firstOrNull() != null
     }
 
+    suspend fun existsByNewsletterIdAndSlugExcludingIssue(
+        newsletterId: String,
+        slug: String,
+        excludeIssueId: String
+    ): Boolean = dbQuery {
+        Issues.select(listOf(Issues.id))
+            .where {
+                (Issues.newsletterId eq newsletterId) and
+                (Issues.slug eq slug) and
+                (Issues.id neq excludeIssueId)
+            }
+            .limit(1)
+            .firstOrNull() != null
+    }
+
     suspend fun create(issue: Issue): Issue = dbQuery {
         Issues.insert {
             it[id] = issue.id

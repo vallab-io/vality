@@ -453,6 +453,7 @@ export const en: Translations = {
     emailNoticeZero: "No active subscribers yet. The issue will be published to your archive.",
     urlSlug: "URL Slug",
     urlSlugHint: "Only lowercase letters, numbers, and hyphens (-) allowed.",
+    slugAlreadyExists: "This slug already exists",
     publishTiming: "Publish Timing",
     publishNow: "Publish Now",
     publishNowDesc: "Publish immediately",

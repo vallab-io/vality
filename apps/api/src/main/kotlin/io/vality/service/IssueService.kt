@@ -107,6 +107,49 @@ class IssueService(
     }
 
     /**
+     * Slug 존재 여부 확인 (현재 이슈 제외)
+     * 
+     * @param userId 사용자 ID
+     * @param newsletterId 뉴스레터 ID
+     * @param slug 확인할 slug
+     * @param excludeIssueId 제외할 이슈 ID (현재 편집 중인 이슈)
+     * @return slug가 존재하면 true, 없으면 false
+     */
+    suspend fun checkSlugExists(
+        userId: String,
+        newsletterId: String,
+        slug: String,
+        excludeIssueId: String?
+    ): Boolean {
+        // 1. 뉴스레터 조회 및 권한 확인
+        val newsletter = newsletterRepository.findById(newsletterId)
+            ?: throw IssueException.NewsletterNotFound()
+        
+        if (newsletter.ownerId != userId) {
+            throw IssueException.Forbidden()
+        }
+
+        // 2. Slug가 비어있으면 false 반환
+        if (slug.isBlank()) {
+            return false
+        }
+
+        // 3. Slug 존재 여부 확인 (현재 이슈 제외)
+        return if (excludeIssueId != null) {
+            issueRepository.existsByNewsletterIdAndSlugExcludingIssue(
+                newsletterId = newsletterId,
+                slug = slug.trim(),
+                excludeIssueId = excludeIssueId
+            )
+        } else {
+            issueRepository.existsByNewsletterIdAndSlug(
+                newsletterId = newsletterId,
+                slug = slug.trim()
+            )
+        }
+    }
+
+    /**
      * 이슈 수정
      */
     suspend fun updateIssue(command: UpdateIssueCommand): IssueResponse {
@@ -140,22 +183,38 @@ class IssueService(
             existingIssue.status
         }
 
-        // 4. Slug 검증 및 설정 (PUBLISHED 상태일 때만 필수)
-        val slug = if (newStatus == IssueStatus.PUBLISHED) {
-            val newSlug = command.slug?.trim() ?: existingIssue.slug
-            if (newSlug.isNullOrBlank()) {
-                throw IssueException.ValidationError("Slug is required when publishing")
-            }
-            // Slug 변경 시 중복 확인
-            if (newSlug != existingIssue.slug) {
-                if (issueRepository.existsByNewsletterIdAndSlug(command.newsletterId, newSlug)) {
-                    throw IssueException.SlugConflict("Slug already exists in this newsletter")
+        // 4. Slug 검증 및 설정
+        val slug = when {
+            // PUBLISHED 상태인 경우
+            newStatus == IssueStatus.PUBLISHED -> {
+                // 기존이 PUBLISHED인 경우 slug 변경 불가능
+                if (existingIssue.status == IssueStatus.PUBLISHED) {
+                    if (command.slug != null && command.slug.trim() != existingIssue.slug) {
+                        throw IssueException.ValidationError("Cannot change slug of a published issue")
+                    }
+                    existingIssue.slug
+                } else {
+                    // DRAFT/SCHEDULED -> PUBLISHED: slug 필수, 중복 확인 (현재 이슈 제외)
+                    val newSlug = command.slug?.trim() ?: existingIssue.slug
+                    if (newSlug.isNullOrBlank()) {
+                        throw IssueException.ValidationError("Slug is required when publishing")
+                    }
+                    // 현재 이슈를 제외하고 중복 확인
+                    if (issueRepository.existsByNewsletterIdAndSlugExcludingIssue(
+                        newsletterId = command.newsletterId,
+                        slug = newSlug,
+                        excludeIssueId = command.issueId
+                    )) {
+                        throw IssueException.SlugConflict("Slug already exists in this newsletter")
+                    }
+                    newSlug
                 }
             }
-            newSlug
-        } else {
-            // DRAFT, SCHEDULED 상태일 때는 slug 변경 가능 (nullable)
-            command.slug?.trim() ?: existingIssue.slug
+            // DRAFT 상태인 경우: slug는 항상 null
+            // SCHEDULED 상태인 경우: slug 변경 가능 (nullable)
+            else -> {
+                command.slug?.trim() ?: existingIssue.slug
+            }
         }
 
         // 5. SCHEDULED 상태가 아닌데 scheduledAt이 있으면 에러
