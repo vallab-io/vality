@@ -202,23 +202,23 @@ $confirmationUrl
         senderName: String,
         ownerImageUrl: String?,
         issueTitle: String,
-        issueExcerpt: String?,
+        issueDescription: String?,
         issueContent: String?,
         issueUrl: String,
         unsubscribeUrl: String,
     ): String {
 
-        // 이슈 내용이 있으면 본문에 포함, 없으면 excerpt만 표시
+        // 이슈 내용이 있으면 본문에 포함, 없으면 description만 표시
         val contentSection = if (!issueContent.isNullOrBlank()) {
             """
                             <div style="margin: 0 0 32px 0; font-size: 16px; line-height: 1.75; color: #334155;">
                                 $issueContent
                             </div>
             """.trimIndent()
-        } else if (!issueExcerpt.isNullOrBlank()) {
+        } else if (!issueDescription.isNullOrBlank()) {
             """
                             <p style="margin: 0 0 32px 0; font-size: 16px; line-height: 1.75; color: #64748b;">
-                                $issueExcerpt
+                                $issueDescription
                             </p>
             """.trimIndent()
         } else {
@@ -300,7 +300,7 @@ $confirmationUrl
         senderName: String,
         ownerImageUrl: String?,
         issueTitle: String,
-        issueExcerpt: String?,
+        issueDescription: String?,
         issueContent: String?,
         issueUrl: String,
         unsubscribeUrl: String,
@@ -319,7 +319,7 @@ $confirmationUrl
                 .trim()
         }
 
-        // 이슈 내용이 있으면 본문에 포함, 없으면 excerpt만 표시
+        // 이슈 내용이 있으면 본문에 포함, 없으면 description만 표시
         val contentSection = if (!issueContent.isNullOrBlank()) {
             val textContent = stripHtml(issueContent)
             if (textContent.isNotBlank()) {
@@ -331,9 +331,9 @@ $textContent
             } else {
                 ""
             }
-        } else if (!issueExcerpt.isNullOrBlank()) {
+        } else if (!issueDescription.isNullOrBlank()) {
             """
-$issueExcerpt
+$issueDescription
 
 ---
             """.trimIndent()

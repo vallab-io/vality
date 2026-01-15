@@ -33,8 +33,8 @@ export async function generateMetadata({
     const issue = await getPublicIssueDetail(username, newsletterSlug, issueSlug);
 
     const title = issue.title || getTranslation(locale, "common.untitled");
-    // excerpt가 있으면 사용, 없으면 content에서 HTML 태그 제거 후 자동 생성 (160자)
-    const description = issue.excerpt || generateExcerpt(issue.content, 160);
+    // description이 있으면 사용, 없으면 content에서 HTML 태그 제거 후 자동 생성 (160자)
+    const description = issue.description || generateExcerpt(issue.content, 160);
     const ogImageUrl = issue.coverImageUrl || DEFAULT_OG_IMAGE
     const pageUrl = getAbsoluteUrl(`/@${username}/${newsletterSlug}/${issueSlug}`);
 

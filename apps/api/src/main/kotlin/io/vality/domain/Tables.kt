@@ -83,7 +83,7 @@ object Issues : Table("issues") {
     val title = varchar("title", 500).nullable()
     val slug = varchar("slug", 255).nullable() // nullable, PUBLISHED 상태일 때만 필수
     val content = text("content")
-    val excerpt = text("excerpt").nullable()
+    val description = text("description").nullable()
     val coverImageUrl = varchar("cover_image_url", 500).nullable()
     val status = varchar("status", 20).default("DRAFT")
     val publishedAt = timestamp("published_at").nullable()

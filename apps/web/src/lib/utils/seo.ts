@@ -33,10 +33,10 @@ export function stripHtmlTags(html: string): string {
 }
 
 /**
- * HTML에서 excerpt 생성 (첫 N자)
+ * HTML에서 description 생성 (첫 N자)
  * @param html HTML 문자열
  * @param maxLength 최대 길이 (기본값: 160)
- * @returns excerpt 문자열
+ * @returns description 문자열
  */
 export function generateExcerpt(html: string, maxLength: number = 160): string {
   const text = stripHtmlTags(html);

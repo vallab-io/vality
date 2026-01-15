@@ -25,7 +25,7 @@ class IssueRepository {
             title = this[Issues.title],
             slug = this[Issues.slug],
             content = this[Issues.content],
-            excerpt = this[Issues.excerpt],
+            description = this[Issues.description],
             coverImageUrl = this[Issues.coverImageUrl],
             status = IssueStatus.valueOf(this[Issues.status]),
             publishedAt = this[Issues.publishedAt],
@@ -44,7 +44,7 @@ class IssueRepository {
                 Issues.title,
                 Issues.slug,
                 Issues.content,
-                Issues.excerpt,
+                Issues.description,
                 Issues.coverImageUrl,
                 Issues.status,
                 Issues.publishedAt,
@@ -67,7 +67,7 @@ class IssueRepository {
                 Issues.title,
                 Issues.slug,
                 Issues.content,
-                Issues.excerpt,
+                Issues.description,
                 Issues.coverImageUrl,
                 Issues.status,
                 Issues.publishedAt,
@@ -90,7 +90,7 @@ class IssueRepository {
                 Issues.title,
                 Issues.slug,
                 Issues.content,
-                Issues.excerpt,
+                Issues.description,
                 Issues.coverImageUrl,
                 Issues.status,
                 Issues.publishedAt,
@@ -113,7 +113,7 @@ class IssueRepository {
                 Issues.title,
                 Issues.slug,
                 Issues.content,
-                Issues.excerpt,
+                Issues.description,
                 Issues.coverImageUrl,
                 Issues.status,
                 Issues.publishedAt,
@@ -135,7 +135,7 @@ class IssueRepository {
                 Issues.title,
                 Issues.slug,
                 Issues.content,
-                Issues.excerpt,
+                Issues.description,
                 Issues.coverImageUrl,
                 Issues.status,
                 Issues.publishedAt,
@@ -178,7 +178,7 @@ class IssueRepository {
             it[title] = issue.title
             it[slug] = issue.slug
             it[content] = issue.content
-            it[excerpt] = issue.excerpt
+            it[description] = issue.description
             it[coverImageUrl] = issue.coverImageUrl
             it[status] = issue.status.name
             it[publishedAt] = issue.publishedAt
@@ -195,7 +195,7 @@ class IssueRepository {
             it[title] = issue.title
             it[slug] = issue.slug
             it[content] = issue.content
-            it[excerpt] = issue.excerpt
+            it[description] = issue.description
             it[coverImageUrl] = issue.coverImageUrl
             it[status] = issue.status.name
             it[publishedAt] = issue.publishedAt
@@ -223,7 +223,7 @@ class IssueRepository {
                     Issues.id,
                     Issues.slug,
                     Issues.title,
-                    Issues.excerpt,
+                    Issues.description,
                     Issues.publishedAt,
                     Issues.coverImageUrl,
                     Issues.likeCount,
@@ -255,7 +255,7 @@ class IssueRepository {
                     issueId = row[Issues.id],
                     issueSlug = slug,
                     issueTitle = row[Issues.title],
-                    issueExcerpt = row[Issues.excerpt],
+                    issueDescription = row[Issues.description],
                     issuePublishedAt = row[Issues.publishedAt],
                     issueCoverImageUrl = row[Issues.coverImageUrl],
                     issueLikeCount = row[Issues.likeCount],
@@ -287,7 +287,7 @@ data class IssueWithNewsletterAndOwner(
     val issueId: String,
     val issueSlug: String,
     val issueTitle: String?,
-    val issueExcerpt: String?,
+    val issueDescription: String?,
     val issuePublishedAt: java.time.Instant?,
     val issueCoverImageUrl: String?,
     val issueLikeCount: Long,

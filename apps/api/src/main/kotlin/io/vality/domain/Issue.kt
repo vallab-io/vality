@@ -17,7 +17,7 @@ data class Issue(
     val title: String?, // nullable, 발행 시 필수
     val slug: String?, // nullable, PUBLISHED 상태일 때만 필수
     val content: String,
-    val excerpt: String? = null,
+    val description: String? = null,
     val coverImageUrl: String? = null,
     val status: IssueStatus = IssueStatus.DRAFT,
     @Contextual val publishedAt: Instant? = null,

@@ -98,7 +98,7 @@ class IssuePublishService(
                 recipientEmails = recipientEmails,
                 subject = subject,
                 issueTitle = issue.title ?: "Untitled",
-                issueExcerpt = issue.excerpt,
+                issueDescription = issue.description,
                 issueContent = issue.content, // 이슈 전체 내용 포함
                 issueUrl = issueUrl,
                 newsletterName = newsletter.name,

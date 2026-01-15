@@ -135,9 +135,9 @@ export default function HomePageClient() {
                         {issue.title || "Untitled"}
                       </h3>
                     </Link>
-                    {issue.excerpt && (
+                    {issue.description && (
                       <p className="mt-2 text-muted-foreground line-clamp-2">
-                        {issue.excerpt}
+                        {issue.description}
                       </p>
                     )}
                     <Link

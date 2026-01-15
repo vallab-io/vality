@@ -55,7 +55,7 @@ export default function IssuePage() {
   });
 
   const [publishSlug, setPublishSlug] = useState("");
-  const [publishExcerpt, setPublishExcerpt] = useState("");
+  const [publishDescription, setPublishDescription] = useState("");
   const [publishCoverImageUrl, setPublishCoverImageUrl] = useState("");
   const [generatedCoverImageUrl, setGeneratedCoverImageUrl] = useState<string | null>(null);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
@@ -92,7 +92,7 @@ export default function IssuePage() {
           });
           const slug = issueData.slug || "";
           setPublishSlug(slug);
-          setPublishExcerpt(issueData.excerpt || "");
+          setPublishDescription(issueData.description || "");
           setPublishCoverImageUrl(issueData.coverImageUrl || "");
           setIssueStatus(issueData.status);
         }
@@ -513,7 +513,7 @@ export default function IssuePage() {
         title: formData.title.trim(),
         slug: slug,
         content: cleanedContent,
-        excerpt: publishExcerpt.trim() || null,
+        description: publishDescription.trim() || null,
         coverImageUrl: finalCoverImageUrl,
         status: "PUBLISHED",
         scheduledAt: null,
@@ -576,7 +576,7 @@ export default function IssuePage() {
         title: formData.title.trim(),
         slug: slug,
         content: cleanedContent,
-        excerpt: publishExcerpt.trim() || null,
+        description: publishDescription.trim() || null,
         coverImageUrl: finalCoverImageUrl,
         status: "PUBLISHED",
         scheduledAt: null,
@@ -886,14 +886,14 @@ export default function IssuePage() {
               )}
             </div>
 
-            {/* Excerpt */}
+            {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="excerpt">{t("editor.excerpt")}</Label>
+              <Label htmlFor="description">{t("editor.description")}</Label>
               <Textarea
-                id="excerpt"
-                value={publishExcerpt}
-                onChange={(e) => setPublishExcerpt(e.target.value)}
-                placeholder={t("editor.excerptPlaceholder")}
+                id="description"
+                value={publishDescription}
+                onChange={(e) => setPublishDescription(e.target.value)}
+                placeholder={t("editor.descriptionPlaceholder")}
                 rows={3}
                 className="resize-none overflow-y-auto"
                 style={{ maxHeight: "calc(3 * 1.5rem + 1rem + 2px)" }}

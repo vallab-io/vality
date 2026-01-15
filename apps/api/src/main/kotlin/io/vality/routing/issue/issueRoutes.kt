@@ -118,7 +118,7 @@ fun Route.issueRoutes() {
                         title = request.title,
                         slug = request.slug,
                         content = request.content,
-                        excerpt = request.excerpt,
+                        description = request.description,
                         coverImageUrl = request.coverImageUrl,
                         status = request.status,
                         scheduledAt = request.scheduledAt,

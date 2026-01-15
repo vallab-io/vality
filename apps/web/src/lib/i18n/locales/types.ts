@@ -455,8 +455,8 @@ export interface Translations {
     imageUploadFailed: string;
     imageGenerationFailed: string;
     invalidImageFile: string;
-    excerpt: string;
-    excerptPlaceholder: string;
+    description: string;
+    descriptionPlaceholder: string;
     sendEmail: string;
     sendEmailDesc: string;
     back: string;

@@ -12,7 +12,7 @@ data class IssueResponse(
     val title: String?,
     val slug: String?,
     val content: String,
-    val excerpt: String?,
+    val description: String?,
     val coverImageUrl: String?,
     val status: String, // "DRAFT", "SCHEDULED", "PUBLISHED", "ARCHIVED"
     @Contextual
@@ -35,7 +35,7 @@ fun Issue.toIssueResponse(): IssueResponse {
         title = title,
         slug = slug,
         content = content,
-        excerpt = excerpt,
+        description = description,
         coverImageUrl = coverImageUrl,
         status = status.name,
         publishedAt = publishedAt,

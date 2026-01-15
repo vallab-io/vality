@@ -7,7 +7,7 @@ export interface Issue {
   title: string | null; // nullable
   slug: string | null; // nullable, PUBLISHED 상태일 때만 필수
   content: string;
-  excerpt: string | null;
+  description: string | null;
   coverImageUrl: string | null;
   status: "DRAFT" | "SCHEDULED" | "PUBLISHED" | "ARCHIVED";
   publishedAt: string | null;
@@ -23,7 +23,7 @@ export interface CreateIssueRequest {
   title?: string | null; // nullable
   slug?: string | null; // nullable, 자동 생성 가능
   content?: string; // 기본값: 빈 문자열
-  excerpt?: string | null;
+  description?: string | null;
   coverImageUrl?: string | null;
   status?: "DRAFT" | "SCHEDULED" | "PUBLISHED";
   scheduledAt?: string | null;
@@ -34,7 +34,7 @@ export interface UpdateIssueRequest {
   title?: string | null;
   slug?: string;
   content?: string;
-  excerpt?: string | null;
+  description?: string | null;
   coverImageUrl?: string | null;
   status?: "DRAFT" | "SCHEDULED" | "PUBLISHED";
   scheduledAt?: string | null;
