@@ -11,7 +11,7 @@ data class PublicIssueResponse(
     val id: String,
     val slug: String,
     val title: String?,
-    val excerpt: String?, // Short 버전 (excerpt)
+    val description: String?, // Short 버전 (description)
     val coverImageUrl: String?,
     val publishedAt: String,
     val likeCount: Long = 0,

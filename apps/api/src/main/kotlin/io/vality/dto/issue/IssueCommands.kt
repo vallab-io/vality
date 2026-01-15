@@ -12,7 +12,7 @@ data class UpdateIssueCommand(
     val title: String?,
     val slug: String?,
     val content: String,
-    val excerpt: String?,
+    val description: String?,
     val coverImageUrl: String?,
     val status: String?,
     val scheduledAt: Instant?,

@@ -1435,10 +1435,10 @@ components:
         title:
           type: string
           nullable: true
-        excerpt:
+        description:
           type: string
           nullable: true
-          description: 요약 (Short 버전)
+          description: 설명 (Short 버전)
         publishedAt:
           type: string
           format: date-time

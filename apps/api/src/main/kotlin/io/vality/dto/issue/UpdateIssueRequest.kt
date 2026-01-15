@@ -9,7 +9,7 @@ data class UpdateIssueRequest(
     val title: String? = null,
     val slug: String? = null,
     val content: String,
-    val excerpt: String? = null,
+    val description: String? = null,
     val coverImageUrl: String? = null,
     val status: String? = null, // "DRAFT", "SCHEDULED", "PUBLISHED"
     @Contextual

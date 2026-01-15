@@ -174,10 +174,10 @@ export default function HomePageContent() {
                     </h2>
                   </Link>
 
-                  {/* Excerpt */}
-                  {issue.excerpt && (
+                  {/* Description */}
+                  {issue.description && (
                     <p className="text-sm leading-relaxed text-muted-foreground mb-3 line-clamp-2">
-                      {issue.excerpt}
+                      {issue.description}
                     </p>
                   )}
 

@@ -13,6 +13,11 @@ import {
 import { getTranslation } from "@/lib/i18n/utils";
 import { getLocaleFromCookieServer } from "@/lib/i18n/utils-server";
 import { formatRelativeTime } from "@/lib/utils/date";
+import {
+  generateExcerpt,
+  getAbsoluteUrl,
+  DEFAULT_OG_IMAGE,
+} from "@/lib/utils/seo";
 
 interface IssuePageProps {
   params: Promise<{ username: string; newsletterSlug: string; issueSlug: string }>;
@@ -26,15 +31,45 @@ export async function generateMetadata({
   
   try {
     const issue = await getPublicIssueDetail(username, newsletterSlug, issueSlug);
-    const user = await getPublicUserProfile(username);
+
+    const title = issue.title || getTranslation(locale, "common.untitled");
+    // description이 있으면 사용, 없으면 content에서 HTML 태그 제거 후 자동 생성 (160자)
+    const description = issue.description || generateExcerpt(issue.content, 160);
+    const ogImageUrl = issue.coverImageUrl || DEFAULT_OG_IMAGE
+    const pageUrl = getAbsoluteUrl(`/@${username}/${newsletterSlug}/${issueSlug}`);
 
     return {
-      title: issue.title || getTranslation(locale, "common.untitled"),
-      description: issue.excerpt || issue.content.slice(0, 160).replace(/<[^>]*>/g, " ").trim(),
+      title,
+      description,
       openGraph: {
-        title: issue.title || getTranslation(locale, "common.untitled"),
+        title,
+        description,
         type: "article",
+        url: pageUrl,
+        siteName: "Vality",
+        images: [
+          {
+            url: ogImageUrl,
+            width: 1200,
+            height: 630,
+            alt: title,
+          },
+        ],
         authors: issue.ownerName ? [issue.ownerName] : undefined,
+        publishedTime: issue.publishedAt,
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description,
+        images: [
+          {
+            url: ogImageUrl,
+            width: 1200,
+            height: 630,
+            alt: "Vality",
+          }
+        ],
       },
     };
   } catch {

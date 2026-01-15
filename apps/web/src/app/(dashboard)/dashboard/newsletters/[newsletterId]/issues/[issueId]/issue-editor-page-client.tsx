@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -16,15 +17,18 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ArrowLeftIcon } from "@/components/icons";
-import { getIssueById, updateIssue, type UpdateIssueRequest } from "@/lib/api/issue";
+import { getIssueById, updateIssue, checkSlugExists, type UpdateIssueRequest } from "@/lib/api/issue";
 import { getNewsletterById, type Newsletter } from "@/lib/api/newsletter";
 import { getSubscribers } from "@/lib/api/subscriber";
+import { uploadIssueImage } from "@/lib/api/upload";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/auth.store";
 import { localeAtom } from "@/stores/locale.store";
 import { ValityEditor } from "@/components/editor/vality-editor";
 import { useT } from "@/hooks/use-translation";
 import { formatRelativeTime } from "@/lib/utils/date";
+import { extractImageUrls } from "@/lib/utils/seo";
+import { generateSlug } from "@/lib/utils/slug";
 
 type PreviewMode = "archive" | "email";
 
@@ -51,7 +55,17 @@ export default function IssuePage() {
   });
 
   const [publishSlug, setPublishSlug] = useState("");
+  const [publishDescription, setPublishDescription] = useState("");
+  const [publishCoverImageUrl, setPublishCoverImageUrl] = useState("");
+  const [generatedCoverImageUrl, setGeneratedCoverImageUrl] = useState<string | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [issueStatus, setIssueStatus] = useState<"DRAFT" | "SCHEDULED" | "PUBLISHED" | "ARCHIVED" | null>(null);
+  const [slugExists, setSlugExists] = useState(false);
+  const [isCheckingSlug, setIsCheckingSlug] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const slugCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // 뉴스레터 및 이슈 정보 로드
   useEffect(() => {
@@ -78,6 +92,8 @@ export default function IssuePage() {
           });
           const slug = issueData.slug || "";
           setPublishSlug(slug);
+          setPublishDescription(issueData.description || "");
+          setPublishCoverImageUrl(issueData.coverImageUrl || "");
           setIssueStatus(issueData.status);
         }
       } catch (error: any) {
@@ -95,105 +111,6 @@ export default function IssuePage() {
       loadData();
     }
   }, [newsletterId, issueId, router]);
-
-  /**
-   * 한글을 로마자로 변환
-   * 한글 음절을 초성, 중성, 종성으로 분해하여 로마자로 변환
-   * ㅇ 초성은 받침이 없으면 생략, 받침이 있으면 적절히 처리
-   */
-  const koreanToRoman = (text: string): string => {
-    // 초성 19개: ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ
-    const initialChars = ['g', 'kk', 'n', 'd', 'tt', 'r', 'm', 'b', 'pp', 's', 'ss', '', 'j', 'jj', 'ch', 'k', 't', 'p', 'h'];
-    // 중성 21개: ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ
-    const medialChars = ['a', 'ae', 'ya', 'yae', 'eo', 'e', 'yeo', 'ye', 'o', 'wa', 'wae', 'oe', 'yo', 'u', 'wo', 'we', 'wi', 'yu', 'eu', 'ui', 'i'];
-    // 종성 28개 (받침): 없음ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ
-    const finalChars = ['', 'g', 'kk', 'gs', 'n', 'nj', 'nh', 'd', 'l', 'lg', 'lm', 'lb', 'ls', 'lt', 'lp', 'lh', 'm', 'b', 'bs', 's', 'ss', 'ng', 'j', 'ch', 'k', 't', 'p', 'h'];
-
-    let result = '';
-    for (let i = 0; i < text.length; i++) {
-      const char = text[i];
-      const code = char.charCodeAt(0);
-      
-      // 한글 완성형 유니코드 범위 (AC00-D7AF)
-      if (code >= 0xAC00 && code <= 0xD7AF) {
-        // 한글 음절을 초성, 중성, 종성으로 분해
-        const base = code - 0xAC00;
-        const initial = Math.floor(base / (21 * 28)); // 0 ~ 18 (초성 19개)
-        const medial = Math.floor((base % (21 * 28)) / 28); // 0 ~ 20 (중성 21개)
-        const final = base % 28; // 0 ~ 27 (종성 28개, 0은 받침 없음)
-        
-        if (medial >= 0 && medial < medialChars.length) {
-          const medialChar = medialChars[medial];
-          
-          // 초성이 ㅇ(11번)인 경우: 초성 생략하고 중성만 사용
-          if (initial === 11) {
-            // ㅇ 초성: 초성 생략, 중성 + 받침만
-            result += medialChar;
-            // 받침이 있으면 추가
-            if (final > 0 && final < finalChars.length && finalChars[final]) {
-              result += finalChars[final];
-            }
-          } else {
-            // 일반 초성: 초성 + 중성 + 받침
-            const initialChar = initialChars[initial];
-            if (initialChar) {
-              result += initialChar + medialChar;
-              // 받침이 있으면 추가
-              if (final > 0 && final < finalChars.length && finalChars[final]) {
-                result += finalChars[final];
-              }
-            }
-          }
-        }
-        // 변환 실패 시 해당 문자는 건너뜀 (나중에 제거됨)
-      } else {
-        // 한글이 아닌 문자는 그대로 유지
-        result += char;
-      }
-    }
-    return result;
-  };
-
-  /**
-   * 제목을 기반으로 slug 생성
-   * - 한글, 영어, 다른 언어를 모두 처리
-   * - 한글은 로마자로 변환
-   * - 최종적으로 영문 소문자, 숫자, 하이픈만 남김
-   * - 제목이 없거나 결과가 비어있으면 빈값 반환
-   */
-  const generateSlug = (title: string): string => {
-    let slug = title.trim();
-    
-    // 1. 한글을 로마자로 변환
-    slug = koreanToRoman(slug);
-
-    // 2. 유니코드 정규화 (악센트 제거 등)
-    slug = slug
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
-
-    // 3. 소문자로 변환
-    slug = slug.toLowerCase();
-
-    // 4. 영문, 숫자, 공백, 하이픈만 남기고 나머지 제거 (한글이 로마자로 변환된 후에도 유지)
-    slug = slug.replace(/[^a-z0-9\s-]/g, "");
-
-    // 5. 연속된 공백을 하이픈으로 변환
-    slug = slug.replace(/\s+/g, "-");
-
-    // 6. 연속된 하이픈을 하나로 변환
-    slug = slug.replace(/-+/g, "-");
-
-    // 7. 앞뒤 하이픈 제거
-    slug = slug.replace(/^-+|-+$/g, "");
-
-    // 8. 결과가 비어있거나 너무 짧으면 빈값 사용
-    if (!slug || slug.length < 1) {
-      return ``;
-    }
-
-    return slug;
-  };
 
   const handleSaveDraft = useCallback(async () => {
     if (!formData.content.trim() || formData.content === "<p></p>") {
@@ -340,7 +257,153 @@ export default function IssuePage() {
     return body.innerHTML;
   };
 
-  const openPublishDialog = () => {
+
+  /**
+   * Canvas를 사용하여 커버 이미지 생성 (1200x630)
+   */
+  const generateCoverImage = async (): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 1200;
+      canvas.height = 630;
+      const ctx = canvas.getContext("2d");
+      
+      if (!ctx) {
+        reject(new Error("Failed to get canvas context"));
+        return;
+      }
+
+      // 배경 그라데이션
+      const gradient = ctx.createLinearGradient(0, 0, 1200, 630);
+      gradient.addColorStop(0, "#F8FAFC");
+      gradient.addColorStop(1, "#FFFFFF");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 1200, 630);
+
+      // 제목 (중앙 상단)
+      const title = formData.title || t("common.untitled");
+      ctx.fillStyle = "#1e293b";
+      ctx.font = "bold 64px system-ui, -apple-system, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      
+      // 제목이 너무 길면 줄바꿈
+      const maxWidth = 1000;
+      const titleLines = wrapText(ctx, title, maxWidth, 64);
+      const titleY = 200;
+      titleLines.forEach((line, index) => {
+        ctx.fillText(line, 600, titleY + index * 80);
+      });
+
+      // 뉴스레터 이름 (하단 왼쪽)
+      const newsletterName = newsletter?.name || "";
+      if (newsletterName) {
+        ctx.fillStyle = "#1e293b";
+        ctx.font = "400 24px system-ui, -apple-system, sans-serif";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "bottom";
+        ctx.fillText(newsletterName, 60, 570);
+      }
+
+      // 날짜 (하단 오른쪽)
+      const today = new Date();
+      const dateStr = today.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+      ctx.fillStyle = "#64748b";
+      ctx.font = "400 20px system-ui, -apple-system, sans-serif";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "bottom";
+      ctx.fillText(dateStr, 1140, 570);
+
+      // Canvas를 Blob으로 변환
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error("Failed to create image blob"));
+            return;
+          }
+          const url = URL.createObjectURL(blob);
+          resolve(url);
+        },
+        "image/png",
+        1.0
+      );
+    });
+  };
+
+  /**
+   * 텍스트를 여러 줄로 나누기
+   */
+  const wrapText = (
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    maxWidth: number,
+    fontSize: number
+  ): string[] => {
+    const words = text.split(" ");
+    const lines: string[] = [];
+    let currentLine = "";
+
+    for (let i = 0; i < words.length; i++) {
+      const testLine = currentLine + (currentLine ? " " : "") + words[i];
+      const metrics = ctx.measureText(testLine);
+      
+      if (metrics.width > maxWidth && currentLine) {
+        lines.push(currentLine);
+        currentLine = words[i];
+      } else {
+        currentLine = testLine;
+      }
+    }
+    
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+
+    return lines.length > 0 ? lines : [text];
+  };
+
+  /**
+   * 파일 선택하여 이미지 업로드
+   */
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !issueId) {
+      return;
+    }
+
+    // 이미지 파일인지 확인
+    if (!file.type.startsWith("image/")) {
+      toast.error(t("editor.invalidImageFile"));
+      return;
+    }
+
+    setIsUploadingImage(true);
+    try {
+      // S3에 업로드
+      const uploadedUrl = await uploadIssueImage(issueId, file);
+      
+      // 업로드된 URL로 설정
+      setUploadedImageUrl(uploadedUrl);
+      setPublishCoverImageUrl(uploadedUrl);
+      
+      toast.success(t("editor.imageUploaded"));
+    } catch (error: any) {
+      console.error("Failed to upload image:", error);
+      toast.error(error.message || t("editor.imageUploadFailed"));
+    } finally {
+      setIsUploadingImage(false);
+      // 파일 input 초기화
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const openPublishDialog = async () => {
     if (!formData.title.trim()) {
       toast.error(t("editor.titleRequired"));
       return;
@@ -359,10 +422,47 @@ export default function IssuePage() {
     if (!currentSlug || currentSlug === "") {
       const autoSlug = generateSlug(formData.title);
       setPublishSlug(autoSlug);
+      
+      // 생성된 slug가 이미 존재하는지 확인
+      try {
+        setIsCheckingSlug(true);
+        const exists = await checkSlugExists(
+          newsletterId,
+          autoSlug,
+          issueId // 현재 이슈 제외
+        );
+        setSlugExists(exists);
+      } catch (error: any) {
+        console.error("Failed to check slug:", error);
+        // 에러 발생 시 체크 실패로 간주하지 않음 (기존 동작 유지)
+        setSlugExists(false);
+      } finally {
+        setIsCheckingSlug(false);
+      }
     }
+
+    // 이미 생성된 이미지가 없으면 자동으로 생성
+    if (!generatedCoverImageUrl && !publishCoverImageUrl) {
+      try {
+        setIsGeneratingImage(true);
+        const imageUrl = await generateCoverImage();
+        setGeneratedCoverImageUrl(imageUrl);
+        // 생성된 이미지를 자동으로 선택
+        setPublishCoverImageUrl(imageUrl);
+      } catch (error: any) {
+        console.error("Failed to generate cover image:", error);
+        // 이미지 생성 실패해도 다이얼로그는 열림
+      } finally {
+        setIsGeneratingImage(false);
+      }
+    }
+
     setShowPublishDialog(true);
   };
 
+  /**
+   * 이미 발행되어 있는 이슈를 업데이트 할 때
+   */
   const handleUpdate = async () => {
     if (!formData.title.trim()) {
       toast.error(t("editor.titleRequired"));
@@ -392,10 +492,29 @@ export default function IssuePage() {
         return;
       }
 
+      // Blob URL인 경우 먼저 업로드
+      let finalCoverImageUrl = publishCoverImageUrl.trim() || null;
+      if (finalCoverImageUrl && finalCoverImageUrl.startsWith("blob:")) {
+        try {
+          const response = await fetch(finalCoverImageUrl);
+          const blob = await response.blob();
+          const file = new File([blob], `cover-${slug}-${Date.now()}.png`, { type: "image/png" });
+          finalCoverImageUrl = await uploadIssueImage(issueId, file);
+          URL.revokeObjectURL(publishCoverImageUrl);
+        } catch (uploadError: any) {
+          console.error("Failed to upload cover image:", uploadError);
+          toast.error(uploadError.message || t("editor.imageUploadFailed"));
+          setIsPublishing(false);
+          return;
+        }
+      }
+
       const updateRequest: UpdateIssueRequest = {
         title: formData.title.trim(),
         slug: slug,
         content: cleanedContent,
+        description: publishDescription.trim() || null,
+        coverImageUrl: finalCoverImageUrl,
         status: "PUBLISHED",
         scheduledAt: null,
       };
@@ -435,11 +554,30 @@ export default function IssuePage() {
         return;
       }
 
+      // Blob URL인 경우 먼저 업로드
+      let finalCoverImageUrl = publishCoverImageUrl.trim() || null;
+      if (finalCoverImageUrl && finalCoverImageUrl.startsWith("blob:")) {
+        try {
+          const response = await fetch(finalCoverImageUrl);
+          const blob = await response.blob();
+          const file = new File([blob], `cover-${slug}-${Date.now()}.png`, { type: "image/png" });
+          finalCoverImageUrl = await uploadIssueImage(issueId, file);
+          URL.revokeObjectURL(publishCoverImageUrl);
+        } catch (uploadError: any) {
+          console.error("Failed to upload cover image:", uploadError);
+          toast.error(uploadError.message || t("editor.imageUploadFailed"));
+          setIsPublishing(false);
+          return;
+        }
+      }
+
       // 그 다음 PUBLISHED로 업데이트
       const publishRequest: UpdateIssueRequest = {
         title: formData.title.trim(),
         slug: slug,
         content: cleanedContent,
+        description: publishDescription.trim() || null,
+        coverImageUrl: finalCoverImageUrl,
         status: "PUBLISHED",
         scheduledAt: null,
       };
@@ -458,8 +596,48 @@ export default function IssuePage() {
   };
 
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPublishSlug(e.target.value);
+    const newSlug = e.target.value;
+    setPublishSlug(newSlug);
+    setSlugExists(false); // 초기화
+
+    // 이전 타이머 취소
+    if (slugCheckTimeoutRef.current) {
+      clearTimeout(slugCheckTimeoutRef.current);
+    }
+
+    // slug가 비어있으면 체크하지 않음
+    if (!newSlug.trim()) {
+      return;
+    }
+
+    // debounce: 500ms 후에 체크
+    slugCheckTimeoutRef.current = setTimeout(async () => {
+      try {
+        setIsCheckingSlug(true);
+        const exists = await checkSlugExists(
+          newsletterId,
+          newSlug.trim(),
+          issueId // 현재 이슈 제외
+        );
+        setSlugExists(exists);
+      } catch (error: any) {
+        console.error("Failed to check slug:", error);
+        // 에러 발생 시 체크 실패로 간주하지 않음 (기존 동작 유지)
+        setSlugExists(false);
+      } finally {
+        setIsCheckingSlug(false);
+      }
+    }, 500);
   };
+
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (slugCheckTimeoutRef.current) {
+        clearTimeout(slugCheckTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (isLoading) {
     return (
@@ -613,6 +791,8 @@ export default function IssuePage() {
                       title={formData.title}
                       content={formData.content}
                       newsletterName={newsletter?.name || ""}
+                      userName={user?.name || user?.username || ""}
+                      userImageUrl={user?.imageUrl || null}
                       noTitle={t("editor.noTitle")}
                       emailPreview={t("editor.email") + " " + t("editor.preview")}
                     />
@@ -677,17 +857,184 @@ export default function IssuePage() {
                 <span className="shrink-0 text-sm text-muted-foreground">
                   /@{user?.username || "username"}/{newsletter?.slug || "slug"}/
                 </span>
-                <Input
-                  id="slug"
-                  value={publishSlug}
-                  onChange={handleSlugChange}
-                  placeholder="url-slug"
-                  className="flex-1"
-                />
+                <div className="flex-1 relative">
+                  <Input
+                    id="slug"
+                    value={publishSlug}
+                    onChange={handleSlugChange}
+                    placeholder="url-slug"
+                    className={cn(
+                      slugExists && "border-red-500 focus-visible:ring-red-500"
+                    )}
+                  />
+                  {isCheckingSlug && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+                    </div>
+                  )}
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {t("editor.urlSlugHint")}
-              </p>
+              {slugExists && (
+                <p className="text-xs text-red-500">
+                  {t("editor.slugAlreadyExists")}
+                </p>
+              )}
+              {!slugExists && !isCheckingSlug && publishSlug.trim() && (
+                <p className="text-xs text-muted-foreground">
+                  {t("editor.urlSlugHint")}
+                </p>
+              )}
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description">{t("editor.description")}</Label>
+              <Textarea
+                id="description"
+                value={publishDescription}
+                onChange={(e) => setPublishDescription(e.target.value)}
+                placeholder={t("editor.descriptionPlaceholder")}
+                rows={3}
+                className="resize-none overflow-y-auto"
+                style={{ maxHeight: "calc(3 * 1.5rem + 1rem + 2px)" }}
+              />
+            </div>
+
+            {/* Cover Image Selection */}
+            <div className="space-y-4">
+              <div>
+                <Label>{t("editor.coverImage")}</Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t("editor.coverImageHint")} {t("editor.coverImageRecommendedSize")}
+                </p>
+              </div>
+
+              {/* 이미지 업로드 버튼 */}
+              <div className="space-y-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingImage || !issueId}
+                  className="w-full"
+                >
+                  {isUploadingImage ? t("editor.uploading") : t("editor.uploadImage")}
+                </Button>
+              </div>
+
+              {/* 이미지 선택 옵션들 - 한 row로 통합 */}
+              {(() => {
+                const imageUrls = extractImageUrls(formData.content);
+                const allImages: Array<{ url: string; type: "content" | "generated" | "uploaded" }> = [];
+                
+                // Content 이미지 추가
+                imageUrls.forEach(url => {
+                  allImages.push({ url, type: "content" });
+                });
+                
+                // 생성된 이미지 추가
+                if (generatedCoverImageUrl) {
+                  allImages.push({ url: generatedCoverImageUrl, type: "generated" });
+                }
+
+                // 업로드된 이미지 추가
+                if (uploadedImageUrl) {
+                  allImages.push({ url: uploadedImageUrl, type: "uploaded" });
+                }
+
+                if (allImages.length === 0 && !isGeneratingImage) {
+                  return null;
+                }
+
+                return (
+                  <div className="space-y-3">
+                    {/* 이미지 생성 중 표시 */}
+                    {isGeneratingImage && (
+                      <div className="flex items-center justify-center rounded-lg border border-border bg-muted/30 p-8">
+                        <div className="text-center">
+                          <div className="text-sm text-muted-foreground">
+                            {t("editor.generatingImage")}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 모든 이미지를 한 row로 표시 */}
+                    {allImages.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="overflow-x-auto pb-2">
+                          <div className="flex gap-3 min-w-max">
+                            {allImages.map((image, index) => (
+                              <button
+                                key={`${image.type}-${index}`}
+                                type="button"
+                                onClick={() => setPublishCoverImageUrl(image.url)}
+                                className={cn(
+                                  "group relative aspect-[1200/630] w-32 shrink-0 overflow-hidden rounded-lg border-2 transition-all",
+                                  publishCoverImageUrl === image.url
+                                    ? "border-primary ring-2 ring-primary/20"
+                                    : "border-border hover:border-primary/50"
+                                )}
+                              >
+                                <img
+                                  src={image.url}
+                                  alt={
+                                    image.type === "generated" 
+                                      ? "Generated cover" 
+                                      : image.type === "uploaded"
+                                      ? "Uploaded cover"
+                                      : `Image ${index + 1}`
+                                  }
+                                  className="h-full w-full object-cover"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = "none";
+                                  }}
+                                />
+                                {publishCoverImageUrl === image.url && (
+                                  <div className="absolute inset-0 flex items-center justify-center bg-primary/10">
+                                    <div className="rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">
+                                      {t("editor.selected")}
+                                    </div>
+                                  </div>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+              
+              {/* 선택된 이미지 큰 미리보기 */}
+              {publishCoverImageUrl && !isGeneratingImage && (
+                <div className="space-y-2">
+                  <Label className="text-sm">{t("editor.preview")}</Label>
+                  <div className="relative aspect-[1200/630] overflow-hidden rounded-lg border border-border bg-muted">
+                    <img
+                      src={publishCoverImageUrl}
+                      alt="Cover preview"
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = "none";
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.innerHTML = `<div class="flex h-full items-center justify-center text-sm text-muted-foreground">${t("editor.imageLoadFailed")}</div>`;
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
           </div>
@@ -700,7 +1047,10 @@ export default function IssuePage() {
             >
               {t("common.cancel")}
             </Button>
-            <Button onClick={handlePublish} disabled={isPublishing || !publishSlug.trim()}>
+            <Button 
+              onClick={handlePublish} 
+              disabled={isPublishing || !publishSlug.trim() || slugExists || isCheckingSlug}
+            >
               {isPublishing ? t("editor.publishing") : t("editor.publish")}
             </Button>
           </div>
@@ -749,17 +1099,31 @@ function EmailPreview({
   title,
   content,
   newsletterName,
+  userName,
+  userImageUrl,
   noTitle,
   emailPreview,
 }: {
   title: string;
   content: string;
   newsletterName: string;
+  userName: string;
+  userImageUrl: string | null;
   noTitle: string;
   emailPreview: string;
 }) {
   const locale = useAtomValue(localeAtom);
   const today = formatRelativeTime(new Date().toISOString(), locale);
+
+  // 프로필 이미지 또는 이니셜 생성
+  const getInitials = (name: string): string => {
+    if (!name) return "U";
+    const parts = name.trim().split(" ");
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name[0].toUpperCase();
+  };
 
   return (
     <div className="w-full max-w-[360px] rounded-lg border border-border bg-background shadow-sm">
@@ -768,17 +1132,28 @@ function EmailPreview({
       </div>
 
       <div className="p-4">
-        <div className="mb-4 flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-            {newsletterName.charAt(0).toUpperCase()}
+        {/* 프로필 이미지와 뉴스레터 정보 - 세로 레이아웃 */}
+        <div className="mb-4">
+          <div className="mb-2">
+            {userImageUrl ? (
+              <img
+                src={userImageUrl}
+                alt={userName}
+                className="h-10 w-10 rounded-full object-cover"
+              />
+            ) : (
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-sm font-medium text-foreground">
+                {getInitials(userName)}
+              </div>
+            )}
           </div>
-          <div className="min-w-0">
-            <div className="truncate text-sm font-semibold">{newsletterName}</div>
-            <div className="text-xs text-muted-foreground">{today}</div>
-          </div>
+          <div className="text-sm font-semibold text-foreground">{newsletterName}</div>
+          <div className="text-xs text-muted-foreground">by {userName}</div>
         </div>
 
-        <h1 className="mb-3 text-lg font-bold leading-tight">{title || noTitle}</h1>
+        <div className="mb-4 border-t border-border pt-4">
+          <h1 className="mb-3 text-lg font-bold leading-tight">{title || noTitle}</h1>
+        </div>
         <div
           className="prose prose-sm prose-neutral max-w-none dark:prose-invert [&_img]:mx-auto [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:my-4"
           dangerouslySetInnerHTML={{ __html: content }}

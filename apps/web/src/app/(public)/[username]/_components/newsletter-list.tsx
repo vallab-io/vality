@@ -6,7 +6,7 @@ interface Newsletter {
   id: string;
   slug: string;
   title: string;
-  excerpt: string;
+  description: string;
   publishedAt: string;
 }
 
@@ -40,7 +40,7 @@ export function NewsletterList({ newsletters, username, locale }: NewsletterList
             {newsletter.title}
           </h3>
           <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground line-clamp-3">
-            {newsletter.excerpt}
+            {newsletter.description}
           </p>
           <span className="mt-4 text-xs font-medium text-primary">
             읽기 →

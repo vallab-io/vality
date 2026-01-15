@@ -36,7 +36,7 @@ export interface PublicIssue {
   id: string;
   slug: string;
   title: string | null;
-  excerpt: string | null; // Short 버전 (excerpt)
+  description: string | null; // Short 버전 (description)
   coverImageUrl?: string | null;
   publishedAt: string;
   likeCount: number;
@@ -55,7 +55,7 @@ export interface PublicIssueDetail {
   slug: string;
   title: string | null;
   content: string; // 전체 content
-  excerpt: string | null;
+  description: string | null;
   coverImageUrl: string | null;
   publishedAt: string;
   createdAt: string;

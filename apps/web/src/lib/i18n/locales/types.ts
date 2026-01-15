@@ -85,13 +85,26 @@ export interface Translations {
   pricing: {
     title: string;
     description: string;
-    earlyAccess: string;
-    foundingMember: string;
-    foundingMemberDescription: string;
     startButton: string;
-    earlyAccessBenefit1: string;
-    earlyAccessBenefit2: string;
-    earlyAccessBenefit3: string;
+    // Beta pricing
+    betaTitle: string;
+    betaDescription: string;
+    betaFree: string;
+    free: string;
+    custom: string;
+    addonsTitle: string;
+    addonsSubtitle: string;
+    addonAdditionalNewsletters: string;
+    addonScheduledSending: string;
+    addonPaidSubscription: string;
+    addonAdvancedAnalytics: string;
+    addonRssToEmail: string;
+    addonCustomDomain: string;
+    addonAutomations: string;
+    emailCountInputLabel: string;
+    emailCountPlaceholder: string;
+    emailCountHint: string;
+    estimatedPrice: string;
   };
 
   // About
@@ -429,8 +442,21 @@ export interface Translations {
     preview: string;
     settings: string;
     coverImage: string;
-    excerpt: string;
-    excerptPlaceholder: string;
+    coverImageHint: string;
+    coverImageRecommendedSize: string;
+    selectFromContent: string;
+    noImagesInContent: string;
+    imageLoadFailed: string;
+    selected: string;
+    generatingImage: string;
+    uploadImage: string;
+    uploading: string;
+    imageUploaded: string;
+    imageUploadFailed: string;
+    imageGenerationFailed: string;
+    invalidImageFile: string;
+    description: string;
+    descriptionPlaceholder: string;
     sendEmail: string;
     sendEmailDesc: string;
     back: string;
@@ -453,6 +479,7 @@ export interface Translations {
     emailNoticeZero: string;
     urlSlug: string;
     urlSlugHint: string;
+    slugAlreadyExists: string;
     publishTiming: string;
     publishNow: string;
     publishNowDesc: string;
