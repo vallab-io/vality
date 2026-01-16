@@ -126,6 +126,8 @@ export const ko: Translations = {
     feature4Title: "구독자 관리",
     feature4Desc:
       "구독자 목록을 쉽게 관리하고, 구독 상태를 추적할 수 있습니다. 수동으로 구독자를 추가하거나 제거할 수 있으며, 각 구독자의 상태를 한눈에 확인할 수 있습니다.",
+    contactTitle: "문의하기",
+    contactSubtitle: "궁금한 점이 있으신가요? 언제든지 문의해주세요.",
     ctaTitle: "지금 뉴스레터를 시작해보세요",
     ctaDesc1: "복잡한 설정 없이, 바로 글쓰기를 시작하세요.",
     ctaDesc2: "가치 있는 뉴스레터를 전달하세요.",
@@ -552,6 +554,23 @@ export const ko: Translations = {
     notFound: "구독자를 찾을 수 없습니다.",
     retry: "다시 시도",
     goHome: "홈으로 이동",
+  },
+  contact: {
+    name: "이름",
+    namePlaceholder: "이름을 입력하세요",
+    nameRequired: "이름을 입력해주세요.",
+    email: "이메일",
+    emailPlaceholder: "이메일을 입력하세요",
+    emailRequired: "유효한 이메일을 입력해주세요.",
+    message: "문의 내용",
+    messagePlaceholder: "문의 내용을 입력하세요",
+    messageRequired: "문의 내용을 입력해주세요.",
+    privacyAgreed: "개인 정보 수집 및 이용에 동의합니다.",
+    privacyAgreedRequired: "개인 정보 수집 및 이용에 동의해주세요.",
+    submit: "문의하기",
+    submitting: "전송 중...",
+    submitSuccess: "문의가 접수되었습니다. 빠른 시일 내에 답변드리겠습니다.",
+    submitFailed: "문의 접수에 실패했습니다. 다시 시도해주세요.",
   },
 };
 
