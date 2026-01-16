@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/hooks/use-translation";
 import { cn } from "@/lib/utils";
+import { ContactForm } from "./contact-form";
 
 export function AboutPageClient() {
   const t = useT();
@@ -112,6 +113,28 @@ export function AboutPageClient() {
               title={t("about.feature4Title")}
               description={t("about.feature4Desc")}
             />
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section className="border-t border-border bg-muted/30">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 py-20 sm:py-28">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center mb-4">
+              <span className="text-4xl">💬</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4">
+              {t("about.contactTitle")}
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              {t("about.contactSubtitle")}
+            </p>
+          </div>
+          <div className="max-w-2xl mx-auto">
+            <div className="rounded-2xl border border-border bg-card p-8 sm:p-10 shadow-sm">
+              <ContactForm />
+            </div>
           </div>
         </div>
       </section>

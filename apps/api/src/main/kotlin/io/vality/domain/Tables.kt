@@ -204,3 +204,23 @@ object SubscriptionWebhookEvents : Table("subscription_webhook_events") {
         // 마이그레이션 파일에서 직접 외래키를 설정
     }
 }
+
+// ============================================
+// Contact - 문의하기
+// ============================================
+object Contacts : Table("contacts") {
+    val id = varchar("id", 24)
+    val name = varchar("name", 255)
+    val email = varchar("email", 255)
+    val message = text("message")
+    val userId = varchar("user_id", 24).nullable() // nullable, 로그인한 사용자의 경우
+    val createdAt = timestamp("created_at")
+
+    override val primaryKey = PrimaryKey(id)
+    
+    init {
+        // nullable 컬럼의 경우 외래키는 데이터베이스 레벨에서만 설정
+        // Exposed v1에서는 nullable 컬럼에 대한 references가 제한적이므로
+        // 마이그레이션 파일에서 직접 외래키를 설정
+    }
+}

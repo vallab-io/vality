@@ -130,10 +130,30 @@ export interface Translations {
     feature3Desc: string;
     feature4Title: string;
     feature4Desc: string;
+    contactTitle: string;
+    contactSubtitle: string;
     ctaTitle: string;
     ctaDesc1: string;
     ctaDesc2: string;
     ctaDesc3: string;
+  };
+  // Contact
+  contact: {
+    name: string;
+    namePlaceholder: string;
+    nameRequired: string;
+    email: string;
+    emailPlaceholder: string;
+    emailRequired: string;
+    message: string;
+    messagePlaceholder: string;
+    messageRequired: string;
+    privacyAgreed: string;
+    privacyAgreedRequired: string;
+    submit: string;
+    submitting: string;
+    submitSuccess: string;
+    submitFailed: string;
   };
 
   // Home

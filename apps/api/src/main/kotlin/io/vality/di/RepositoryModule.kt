@@ -1,6 +1,7 @@
 package io.vality.di
 
 import io.vality.repository.AccountRepository
+import io.vality.repository.ContactRepository
 import io.vality.repository.EmailLogRepository
 import io.vality.repository.IssueRepository
 import io.vality.repository.NewsletterRepository
@@ -27,5 +28,6 @@ val repositoryModule = module {
     singleOf(::EmailLogRepository)
     singleOf(::SubscriptionRepository)
     singleOf(::SubscriptionWebhookEventRepository)
+    singleOf(::ContactRepository)
 }
 
