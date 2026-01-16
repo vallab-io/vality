@@ -126,6 +126,8 @@ export const en: Translations = {
     feature4Title: "Subscriber Management",
     feature4Desc:
       "Easily manage your subscriber list and track subscription status. You can manually add or remove subscribers, and see each subscriber's status at a glance.",
+    contactTitle: "Contact Us",
+    contactSubtitle: "Have any questions? Feel free to reach out to us.",
     ctaTitle: "Start your newsletter now",
     ctaDesc1: "Start writing right away, no complex setup.",
     ctaDesc2: "Deliver valuable newsletters.",
@@ -554,6 +556,23 @@ export const en: Translations = {
     notFound: "Subscriber not found.",
     retry: "Try Again",
     goHome: "Go to Home",
+  },
+  contact: {
+    name: "Name",
+    namePlaceholder: "Enter your name",
+    nameRequired: "Please enter your name.",
+    email: "Email",
+    emailPlaceholder: "Enter your email",
+    emailRequired: "Please enter a valid email.",
+    message: "How can we help?",
+    messagePlaceholder: "Describe your question",
+    messageRequired: "Please enter your inquiry.",
+    privacyAgreed: "I agree to the collection and use of personal information.",
+    privacyAgreedRequired: "Please agree to the collection and use of personal information.",
+    submit: "Submit",
+    submitting: "Submitting...",
+    submitSuccess: "Your inquiry has been received. We will get back to you soon.",
+    submitFailed: "Failed to submit inquiry. Please try again.",
   },
 };
 

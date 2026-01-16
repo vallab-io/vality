@@ -80,6 +80,9 @@ dependencies {
     
     // Redis - Lettuce (비동기 지원)
     implementation("io.lettuce:lettuce-core:6.3.1.RELEASE")
+    
+    // Slack API Client
+    implementation("com.slack.api:slack-api-client:1.20.2")
 
     // Testing
     testImplementation("io.ktor:ktor-server-tests-jvm")

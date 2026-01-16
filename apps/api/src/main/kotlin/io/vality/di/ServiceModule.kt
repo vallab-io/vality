@@ -2,11 +2,13 @@ package io.vality.di
 
 import com.typesafe.config.Config
 import io.vality.service.AuthService
+import io.vality.service.ContactService
 import io.vality.service.DashboardService
 import io.vality.service.IssuePublishService
 import io.vality.service.IssueService
 import io.vality.service.LemonSqueezyService
 import io.vality.service.NewsletterService
+import io.vality.service.SlackService
 import io.vality.service.SubscriberService
 import io.vality.service.SubscriptionService
 import io.vality.service.UserService
@@ -176,6 +178,22 @@ val serviceModule = module {
             emailService = get(),
             emailLogRepository = get(),
             subscriberRepository = get(),
+        )
+    }
+
+    // Slack Service
+    single<SlackService> {
+        val config = get<Config>()
+        val token = config.getString("ktor.slack.token")
+        val channelId = config.getString("ktor.slack.channelId")
+        SlackService(token, channelId)
+    }
+
+    // Contact Service
+    single<ContactService> {
+        ContactService(
+            contactRepository = get(),
+            slackService = get(),
         )
     }
 }
