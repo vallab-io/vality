@@ -293,6 +293,23 @@ export interface Translations {
   analytics: {
     title: string;
     description: string;
+    demoDisclaimer: string;
+    overviewTitle: string;
+    overviewDescription: string;
+    opens: string;
+    clicks: string;
+    growth: string;
+    issues: string;
+    issuesUnit: string;
+    delivered: string;
+    deliveredUnit: string;
+    opensCountUnit: string;
+    clicksCountUnit: string;
+    newSubscribers: string;
+    period: string;
+    last7Days: string;
+    last30Days: string;
+    demoNote: string;
     comingSoon: string;
     comingSoonDesc: string;
     subscriberStats: string;
